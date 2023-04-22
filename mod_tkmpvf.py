@@ -348,7 +348,6 @@ class Application(tk.Frame):
 			sfsize = sizeof_fmt(fsize)
 			self.lbVideosDurations.insert(tk.END, sduration)
 			self.lbVideosSizes.insert(tk.END, sfsize)
-			#~ print(repr(title))
 			self.lbVideosTitles.insert(tk.END, " "
 				+ title.replace("\n", " / "))
 
