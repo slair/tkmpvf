@@ -6,18 +6,22 @@ import sys
 import random
 import glob
 import tempfile
+import time
 import re
+import subprocess
 import tkinter as tk
 from datetime import datetime, timedelta
 
 from transliterate import translit  # , get_available_language_codes
 #~ get_available_language_codes()	# без этого заменяются языки
-#~ import translit_pikabu_lp		# добавляем свой язык
-
+import translit_pikabu_lp		# noqa добавляем свой язык
 from num2t4ru import num2text		# , num2text_VP
 from saymod import say_async		# , get_narrators
-
 import cv2
+import psutil
+
+#~ video_folder = r"C:\slair\to-delete\tg all"
+video_folder = r"."
 
 player_binary = "mpv.exe"
 play_cmd_tpl = " ".join((
@@ -47,6 +51,21 @@ sFN_ASC = "FN ↓"
 sTITLE = "Название"
 sTITLE_DESC = "Название ↑"
 sTITLE_ASC = "Название ↓"
+
+TIME_TO_RENAME = 3.0
+TIME_TO_START = 0.0
+PLAY_FINISHED = "play finished"
+VIDEO_RENAMED = "video renamed"
+PLAYING = "playing"
+
+COLOR_RENAMED_FG_NORM = "#c01000"
+COLOR_RENAMED_BG_NORM = "SystemButtonFace"
+
+COLOR_RENAMED_FG_FAILED = "#800000"
+COLOR_RENAMED_BG_FAILED = "#ffff00"
+
+COLOR_FG_TITLE = "#000080"
+COLOR_BG_TITLE = "SystemButtonFace"
 
 PARTSEP = "·"
 
@@ -126,10 +145,16 @@ def untranslit(s):
 	for word in words:
 		res.append(untranslit_word(word))
 	res = " ".join(res)
-	return res[0].upper() + res[1:]
+	if res:
+		return res[0].upper() + res[1:]
+	else:
+		return res
 
 
 def get_video_title(s):
+	if os.sep in s:
+		s = os.path.basename(s)
+
 	#~ s = strip_above_0xffff(s)
 
 	if "Й" in s:
@@ -173,7 +198,13 @@ def get_video_title(s):
 	else:
 		title = s
 
-	#~ title = untranslit(title)
+	if title.endswith("yapfiles ru") and title != "yapfiles ru":
+		title = untranslit(title[:-11])
+
+	#~ print(title)
+	#~ print(repr(title))
+	#~ print()
+
 	return title
 
 
@@ -214,10 +245,11 @@ def get_videos(folder=".", announce=None):
 		count_videos = len(_)
 		prefix = random.choice(ann_prefixes)
 		suffix = random.choice(ann_suffixes)
-		numsuf = num2text(count_videos, (suffix, "m")).split()
+		numsuf = num2text(count_videos, (suffix, "m"))  # .split()
 		narrator = random.choice(narrators)
-		say_async((prefix, " ".join(numsuf[:-1]), numsuf[-1])
-			, narrator=narrator)
+		#~ say_async((prefix, " ".join(numsuf[:-1]), numsuf[-1])
+			#~ , narrator=narrator)
+		say_async((prefix, numsuf), narrator=narrator)
 
 	for fn in _:
 		fsize = os.stat(fn).st_size
@@ -248,48 +280,116 @@ def duration_fmt(duration):
 	return res
 
 
+#~ @asnc
+def do_command_bg(cmd):
+	proc = subprocess.Popen(cmd, shell=False, stdin=subprocess.PIPE
+		, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+	return proc
+
+
 class Application(tk.Frame):
-	video_folder = r"C:\slair\to-delete\videos"
+	my_state = None
+	player_pid = None
+	video_folder = video_folder
 	_palette = {
 		"SystemWindow" : "#dac9bf",
 	}
-	sort_by = "fn_asc"
+	sort_by = None
+	videos = []
+	first_run = True
 
-	def __init__(self, master=None):
+	def __init__(self, master=None, sort_by="fsize_desc"):
 		super().__init__(master)
+		self.sort_by = sort_by
 		self.master = master
 		self.master.title("tkmpvf - %s" % self.video_folder)
 		self.pack(side="top", fill="both", expand=True)
 		self.create_widgets()
-		self.on_every_second()
+		self.master.bind("<KeyPress>", self.on_keypress)
 		self.bind("<KeyPress>", self.on_keypress)
-		self.focus()
-		self.master.state('zoomed')
-		self.master.after(1000, self.on_every_second)
-		self.get_videos(True)
-		self.sort_videos()
-		self.start_video()
+		self.master.focus()
+
+		self.my_state = VIDEO_RENAMED
+		self.my_state_start = 1
+
+		self.on_every_second()
+		#~ self.master.state('zoomed')
+		self.master.state("iconic")
 
 	def start_video(self):
-		fn, title, fsize, duration = self.videos.pop(0)
-		#~ do_command(play_cmd_tpl % fn)
+		#~ print("! start_video", id(self.videos))
+		#~ for item in self.videos[:5]:print(item)
+		self.fp_video, title, fsize, duration = self.videos.pop(0)
+		p = do_command_bg(play_cmd_tpl % self.fp_video)
+		self.sort_videos()
+		self.player_pid = p.pid
+		#~ print(self.player_pid)
 		self.lVideoTitle["text"] = title
+		self.lVideoTitle["fg"] = COLOR_FG_TITLE
+		self.lVideoTitle["bg"] = COLOR_BG_TITLE
 		count_videos = len(self.videos)
 		self.lStatus["text"] = "Осталось %s %s" % (count_videos, "video")
-		self.sort_videos()
+		#~ print("! start_video", id(self.videos))
 
 	def on_every_second(self):
 		now = datetime.now()
 		self.lClock["text"] = now.strftime("%H:%M:%S")
+
+		if self.player_pid:
+			if not psutil.pid_exists(self.player_pid):
+				self.master.state("normal")
+				self.master.focus_force()
+				self.player_pid = None
+				self.my_state = PLAY_FINISHED
+				self.my_state_start = time.perf_counter()
+
+		if self.my_state == PLAY_FINISHED:
+			if time.perf_counter() - self.my_state_start > TIME_TO_RENAME:
+				if os.path.exists(self.fp_video):
+					rename_status = "<переименовано>"
+					color_fg_renamed = COLOR_RENAMED_FG_NORM
+					color_bg_renamed = COLOR_RENAMED_BG_NORM
+					try:
+						os.rename(self.fp_video, self.fp_video + ".seen")
+					except PermissionError:
+						rename_status = "<не удалось переименовать>\nнет прав"
+						color_fg_renamed = COLOR_RENAMED_FG_FAILED
+						color_bg_renamed = COLOR_RENAMED_BG_FAILED
+					except FileExistsError:
+						rename_status = "<не удалось переименовать>"\
+							"\nтакой файл уже есть"
+						color_fg_renamed = COLOR_RENAMED_FG_FAILED
+						color_bg_renamed = COLOR_RENAMED_BG_FAILED
+
+					self.lVideoTitle["text"] = rename_status
+					self.lVideoTitle["fg"] = color_fg_renamed
+					self.lVideoTitle["bg"] = color_bg_renamed
+					self.my_state = VIDEO_RENAMED
+					self.my_state_start = time.perf_counter()
+
+		elif self.my_state == VIDEO_RENAMED:
+			if time.perf_counter() - self.my_state_start > TIME_TO_START:
+				if self.first_run:
+					self.get_videos(True)
+					self.first_run = None
+				else:
+					self.get_videos()
+				self.sort_videos()
+				self.start_video()
+				self.my_state = PLAYING
+				self.my_state_start = time.perf_counter()
+
 		self.master.after(1000, self.on_every_second)
 
 	def on_keypress(self, e):
-		#~ print(e)
+		print(e)
 		if e.keysym == "Escape":
 			self.master.destroy()
 
 	def get_videos(self, announce=None):
 		self.videos = get_videos(self.video_folder, announce)
+		#~ print("! get_videos", id(self.videos))
+		#~ for item in self.videos[:5]:print(item)
 
 	def sort_videos(self):
 		if not self.videos:
@@ -318,11 +418,13 @@ class Application(tk.Frame):
 			self.bVideoSize["text"] = sFSIZE_ASC
 
 		elif self.sort_by == "fn_desc":
-			self.videos.sort(key=lambda x: x[0], reverse=True)
+			self.videos.sort(key=lambda x: x[0].lower(), reverse=True)
 			self.bVideoFilename["text"] = sFN_DESC
 
 		elif self.sort_by == "fn_asc":
-			self.videos.sort(key=lambda x: x[0], reverse=False)
+			self.videos.sort(key=lambda x: x[0].lower(), reverse=False)
+			#~ print(">", "sort by fn_asc", id(self.videos))
+			#~ for item in self.videos:print(item)
 			self.bVideoFilename["text"] = sFN_ASC
 
 		elif self.sort_by == "title_desc":
@@ -335,6 +437,9 @@ class Application(tk.Frame):
 
 		else:
 			print("! unknown self.sort_by=%r" % self.sort_by)
+
+		#~ print("! sort_videos", id(self.videos))
+		#~ for item in self.videos[:5]:print(item)
 
 		self.lbVideosDurations.delete(0, tk.END)
 		self.lbVideosSizes.delete(0, tk.END)
@@ -483,8 +588,13 @@ def main():
 		#~ logd("%16s = %s", var, value)
 
 	root = tk.Tk()
+	#~ print(root["bg"])
+	#~ sys.exit(0)
 	root.geometry("1024x512+100+100")
-	app = Application(root)
+	if len(sys.argv) > 1:
+		app = Application(root, sys.argv[1][1:])
+	else:
+		app = Application(root)
 	app.mainloop()
 
 	#~ logi("Finished")
