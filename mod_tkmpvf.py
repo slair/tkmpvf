@@ -544,7 +544,7 @@ class Application(tk.Frame):
 			#~ , listvariable=self.lvVDurations
 			, justify="center", font=self.tFont, bd=0
 			, bg=self._palette["SystemWindow"])
-		self.lbVideosDurations.pack(side="top", fill=None, expand=True, pady=0)
+		self.lbVideosDurations.pack(side="top", fill="x", expand=True, pady=0)
 
 		self.sf = tk.Frame(self.lf)
 		self.sf.pack(side="left", fill="x", expand=False)
