@@ -52,7 +52,7 @@ sTITLE = "Название"
 sTITLE_DESC = "Название ↑"
 sTITLE_ASC = "Название ↓"
 
-TIME_TO_RENAME = 3.0
+TIME_TO_RENAME = 2.0
 TIME_TO_START = 0.0
 PLAY_FINISHED = "play finished"
 VIDEO_RENAMED = "video renamed"
@@ -243,13 +243,14 @@ def get_videos(folder=".", announce=None):
 
 	if announce:
 		count_videos = len(_)
-		prefix = random.choice(ann_prefixes)
+		#~ prefix = random.choice(ann_prefixes)
 		suffix = random.choice(ann_suffixes)
 		numsuf = num2text(count_videos, (suffix, "m"))  # .split()
 		narrator = random.choice(narrators)
 		#~ say_async((prefix, " ".join(numsuf[:-1]), numsuf[-1])
 			#~ , narrator=narrator)
-		say_async((prefix, numsuf), narrator=narrator)
+		#~ say_async((prefix, numsuf), narrator=narrator)
+		say_async(numsuf, narrator=narrator)
 
 	for fn in _:
 		fsize = os.stat(fn).st_size
@@ -302,7 +303,7 @@ class Application(tk.Frame):
 		super().__init__(master)
 		self.sort_by = sort_by
 		self.master = master
-		self.master.title("tkmpvf - %s" % self.video_folder)
+		self.master.title("tkmpvf - %s" % os.getcwd())
 		self.pack(side="top", fill="both", expand=True)
 		self.create_widgets()
 		self.master.bind("<KeyPress>", self.on_keypress)
@@ -344,6 +345,7 @@ class Application(tk.Frame):
 				self.my_state_start = time.perf_counter()
 
 		if self.my_state == PLAY_FINISHED:
+			self.lVideoTitle["text"] += "."
 			if time.perf_counter() - self.my_state_start > TIME_TO_RENAME:
 				if os.path.exists(self.fp_video):
 					rename_status = "<переименовано>"
@@ -368,6 +370,7 @@ class Application(tk.Frame):
 					self.my_state_start = time.perf_counter()
 
 		elif self.my_state == VIDEO_RENAMED:
+			self.lVideoTitle["text"] += "."
 			if time.perf_counter() - self.my_state_start > TIME_TO_START:
 				if self.first_run:
 					self.get_videos(True)
