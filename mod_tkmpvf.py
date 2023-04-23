@@ -231,40 +231,6 @@ narrators = (
 )
 
 
-def get_videos(folder=".", announce=None):
-	res = []
-	_ = glob.glob(opj(folder, "*.mp4"))
-	_ += glob.glob(opj(folder, "*.mkv"))
-	_ += glob.glob(opj(folder, "*.avi"))
-	_ += glob.glob(opj(folder, "*.webm"))
-	_ += glob.glob(opj(folder, "*.m4v"))
-	_ += glob.glob(opj(folder, "*.mov"))
-	_ += glob.glob(opj(folder, "*.dat"))
-
-	if announce:
-		count_videos = len(_)
-		#~ prefix = random.choice(ann_prefixes)
-		suffix = random.choice(ann_suffixes)
-		numsuf = num2text(count_videos, (suffix, "m"))  # .split()
-		narrator = random.choice(narrators)
-		#~ say_async((prefix, " ".join(numsuf[:-1]), numsuf[-1])
-			#~ , narrator=narrator)
-		#~ say_async((prefix, numsuf), narrator=narrator)
-		say_async(numsuf, narrator=narrator)
-
-	for fn in _:
-		fsize = os.stat(fn).st_size
-		if fsize == 0:
-			try:
-				os.unlink(fn)
-			except PermissionError:
-				res.append((fn + " Пустой файл! Не могу удалить!"
-					, fsize))
-		else:
-			res.append((fn, get_video_title(fn), fsize, get_duration(fn)))
-	return res
-
-
 def duration_fmt(duration):
 	dur_sec = duration[0]
 	res = str(timedelta(seconds=dur_sec))
@@ -390,7 +356,39 @@ class Application(tk.Frame):
 			self.master.destroy()
 
 	def get_videos(self, announce=None):
-		self.videos = get_videos(self.video_folder, announce)
+		folder = self.video_folder
+		self.videos.clear()
+		_ = glob.glob(opj(folder, "*.mp4"))
+		_ += glob.glob(opj(folder, "*.mkv"))
+		_ += glob.glob(opj(folder, "*.avi"))
+		_ += glob.glob(opj(folder, "*.webm"))
+		_ += glob.glob(opj(folder, "*.m4v"))
+		_ += glob.glob(opj(folder, "*.mov"))
+		_ += glob.glob(opj(folder, "*.dat"))
+
+		if announce:
+			count_videos = len(_)
+			#~ prefix = random.choice(ann_prefixes)
+			suffix = random.choice(ann_suffixes)
+			numsuf = num2text(count_videos, (suffix, "m"))  # .split()
+			narrator = random.choice(narrators)
+			#~ say_async((prefix, " ".join(numsuf[:-1]), numsuf[-1])
+				#~ , narrator=narrator)
+			#~ say_async((prefix, numsuf), narrator=narrator)
+			say_async(numsuf, narrator=narrator)
+
+		for fn in _:
+			fsize = os.stat(fn).st_size
+			if fsize == 0:
+				try:
+					os.unlink(fn)
+				except PermissionError:
+					self.videos.append((fn, fn
+						+ "\nПустой файл! Не могу удалить!"
+						, fsize, (0.0, 0)))
+			else:
+				self.videos.append((fn, get_video_title(fn), fsize
+					, get_duration(fn)))
 		#~ print("! get_videos", id(self.videos))
 		#~ for item in self.videos[:5]:print(item)
 
