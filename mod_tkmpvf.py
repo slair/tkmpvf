@@ -531,7 +531,7 @@ class Application(tk.Frame):
 		self.lf = tk.Frame(self)
 		self.lf.pack(side="top", fill="both", expand=True)
 
-		self.tFont = ("Liberation Serif", 24)
+		self.tFont = ("Liberation Sans Narrow", 24)
 
 		self.df = tk.Frame(self.lf, bg="#800000")
 		self.df.pack(side="left", fill=None, expand=False)
