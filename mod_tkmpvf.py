@@ -19,6 +19,7 @@ from num2t4ru import num2text		# , num2text_VP
 from saymod import say_async		# , get_narrators
 import cv2
 import psutil
+from saymod import snd_play_async
 
 #~ video_folder = r"C:\slair\to-delete\tg all"
 video_folder = r"."
@@ -54,9 +55,11 @@ sTITLE_ASC = "Название ↓"
 
 TIME_TO_RENAME = 2.0
 TIME_TO_START = 0.0
+TIME_TO_EXIT = 7.0
 PLAY_FINISHED = "play finished"
 VIDEO_RENAMED = "video renamed"
 PLAYING = "playing"
+STOPPED = "stopped"
 
 COLOR_RENAMED_FG_NORM = "#c01000"
 COLOR_RENAMED_BG_NORM = "SystemButtonFace"
@@ -295,7 +298,10 @@ class Application(tk.Frame):
 		self.lVideoTitle["fg"] = COLOR_FG_TITLE
 		self.lVideoTitle["bg"] = COLOR_BG_TITLE
 		count_videos = len(self.videos)
-		self.lStatus["text"] = "Осталось %s %s" % (count_videos, "video")
+		if count_videos:
+			self.lStatus["text"] = "Осталось %s %s" % (count_videos, "video")
+		else:
+			self.lStatus["text"] = "Последнее video"
 		#~ print("! start_video", id(self.videos))
 
 	def on_every_second(self):
@@ -343,10 +349,28 @@ class Application(tk.Frame):
 					self.first_run = None
 				else:
 					self.get_videos()
-				self.sort_videos()
-				self.start_video()
-				self.my_state = PLAYING
-				self.my_state_start = time.perf_counter()
+
+				if self.videos:
+					self.my_state = PLAYING
+					self.my_state_start = time.perf_counter()
+					self.sort_videos()
+					self.start_video()
+				else:
+					self.my_state = STOPPED
+					self.my_state_start = time.perf_counter()
+					self.clear_videos()
+
+		elif self.my_state == STOPPED:
+			snd_play_async("C:\\slair\\share\\sounds\\click-6.wav")
+			state_duration = time.perf_counter() - self.my_state_start
+
+			self.lVideoTitle["text"] = "выход через %.1f" \
+				% (TIME_TO_EXIT - state_duration)
+
+			self.lStatus["text"] = "Нет video"
+			if state_duration > TIME_TO_EXIT:
+				snd_play_async("C:\\slair\\share\\sounds\\drum.wav", ep=True)
+				self.master.destroy()
 
 		self.master.after(1000, self.on_every_second)
 
@@ -391,6 +415,11 @@ class Application(tk.Frame):
 					, get_duration(fn)))
 		#~ print("! get_videos", id(self.videos))
 		#~ for item in self.videos[:5]:print(item)
+
+	def clear_videos(self):
+		self.lbVideosDurations.delete(0, tk.END)
+		self.lbVideosSizes.delete(0, tk.END)
+		self.lbVideosTitles.delete(0, tk.END)
 
 	def sort_videos(self):
 		if not self.videos:
@@ -442,9 +471,11 @@ class Application(tk.Frame):
 		#~ print("! sort_videos", id(self.videos))
 		#~ for item in self.videos[:5]:print(item)
 
-		self.lbVideosDurations.delete(0, tk.END)
-		self.lbVideosSizes.delete(0, tk.END)
-		self.lbVideosTitles.delete(0, tk.END)
+		#~ self.lbVideosDurations.delete(0, tk.END)
+		#~ self.lbVideosSizes.delete(0, tk.END)
+		#~ self.lbVideosTitles.delete(0, tk.END)
+		self.clear_videos()
+
 		idx = 0
 		max_len_fsize = 0
 		max_len_duration = 0
@@ -544,7 +575,8 @@ class Application(tk.Frame):
 			#~ , listvariable=self.lvVDurations
 			, justify="center", font=self.tFont, bd=0
 			, bg=self._palette["SystemWindow"])
-		self.lbVideosDurations.pack(side="top", fill="x", expand=True, pady=0)
+		self.lbVideosDurations.pack(side="top", fill="both", expand=True
+			, pady=0)
 
 		self.sf = tk.Frame(self.lf)
 		self.sf.pack(side="left", fill="x", expand=False)
@@ -556,7 +588,7 @@ class Application(tk.Frame):
 		self.lbVideosSizes = tk.Listbox(self.sf, activestyle="none"
 			, justify="center", font=self.tFont, bd=0
 			, bg=self._palette["SystemWindow"])
-		self.lbVideosSizes.pack(side="top", fill="both", expand=True)
+		self.lbVideosSizes.pack(side="top", fill="both", expand=True, pady=0)
 
 		self.tf = tk.Frame(self.lf)
 		self.tf.pack(side="left", fill="x", expand=True)
@@ -577,7 +609,7 @@ class Application(tk.Frame):
 		self.lbVideosTitles = tk.Listbox(self.tf, activestyle="none"
 			, justify="left", font=self.tFont, bd=0
 			, bg=self._palette["SystemWindow"])
-		self.lbVideosTitles.pack(side="top", fill="both", expand=True)
+		self.lbVideosTitles.pack(side="top", fill="both", expand=True, pady=0)
 
 		for w in all_children(self):
 			w.bind("<KeyPress>", self.on_keypress)
@@ -591,7 +623,10 @@ def main():
 	root = tk.Tk()
 	#~ print(root["bg"])
 	#~ sys.exit(0)
-	root.geometry("1024x512+100+100")
+
+	root.geometry("1024x512+" + str(1366 - 1024 - 7)
+		+ "+" + str(720 - 512 - 31))
+
 	if len(sys.argv) > 1:
 		app = Application(root, sys.argv[1][1:])
 	else:
