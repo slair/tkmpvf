@@ -87,6 +87,18 @@ my_name = os.path.splitext(os.path.basename(my_file_name))[0]
 #~ log|
 
 
+def dp(*args):
+	if _DEBUG:
+		a1 = args[0]
+		if isinstance(a1, str):
+			bl = ""
+			if a1[0] in "!><-+":
+				bl = a1[0]
+				#~ na0 = a1[1:]
+				#~ args = (na0, *args[1:])
+		print(bl + " %.2f" % time.perf_counter(), *args)
+
+
 def all_children(wid):
 	_list = wid.winfo_children()
 
@@ -284,7 +296,7 @@ class Application(tk.Frame):
 
 		self.on_every_second()
 		#~ self.master.state('zoomed')
-		self.master.state("iconic")
+		#~ self.master.state("iconic")
 
 	def start_video(self):
 		#~ print("! start_video", id(self.videos))
@@ -358,7 +370,7 @@ class Application(tk.Frame):
 				else:
 					self.my_state = STOPPED
 					self.my_state_start = time.perf_counter()
-					self.clear_videos()
+					self.clear_lb_videos()
 
 		elif self.my_state == STOPPED:
 			snd_play_async("C:\\slair\\share\\sounds\\click-6.wav")
@@ -381,7 +393,9 @@ class Application(tk.Frame):
 
 	def get_videos(self, announce=None):
 		folder = self.video_folder
-		self.videos.clear()
+
+		#~ self.videos.clear()
+
 		_ = glob.glob(opj(folder, "*.mp4"))
 		_ += glob.glob(opj(folder, "*.mkv"))
 		_ += glob.glob(opj(folder, "*.avi"))
@@ -392,38 +406,41 @@ class Application(tk.Frame):
 
 		if announce:
 			count_videos = len(_)
-			#~ prefix = random.choice(ann_prefixes)
 			suffix = random.choice(ann_suffixes)
 			numsuf = num2text(count_videos, (suffix, "m"))  # .split()
 			narrator = random.choice(narrators)
-			#~ say_async((prefix, " ".join(numsuf[:-1]), numsuf[-1])
-				#~ , narrator=narrator)
-			#~ say_async((prefix, numsuf), narrator=narrator)
 			say_async(numsuf, narrator=narrator)
 
-		for fn in _:
-			fsize = os.stat(fn).st_size
-			if fsize == 0:
-				try:
-					os.unlink(fn)
-				except PermissionError:
-					self.videos.append((fn, fn
-						+ "\nПустой файл! Не могу удалить!"
-						, fsize, (0.0, 0)))
-			else:
-				self.videos.append((fn, get_video_title(fn), fsize
-					, get_duration(fn)))
-		#~ print("! get_videos", id(self.videos))
-		#~ for item in self.videos[:5]:print(item)
+		dp("> checking for deleted videos")
+		for i, video_struct in enumerate(self.videos):
+			if video_struct[0] not in _:
+				dp("! deleting", i, video_struct)
+				del self.videos[i]
 
-	def clear_videos(self):
+		dp("> checking for added videos")
+		for fn in _:
+			if not any(e[0] == fn for e in self.videos):
+				dp("! adding", fn)
+				fsize = os.stat(fn).st_size
+				if fsize == 0:
+					try:
+						os.unlink(fn)
+					except PermissionError:
+						self.videos.append((fn, fn
+							+ "\nПустой файл! Не могу удалить!"
+							, fsize, (0.0, 0)))
+				else:
+					self.videos.append((fn, get_video_title(fn), fsize
+						, get_duration(fn)))
+
+	def clear_lb_videos(self):
 		self.lbVideosDurations.delete(0, tk.END)
 		self.lbVideosSizes.delete(0, tk.END)
 		self.lbVideosTitles.delete(0, tk.END)
 
 	def sort_videos(self):
 		if not self.videos:
-			print("! empty self.videos")
+			dp("! empty self.videos")
 			return
 
 		self.bVideoDuration["text"] = sDURATION
@@ -468,13 +485,7 @@ class Application(tk.Frame):
 		else:
 			print("! unknown self.sort_by=%r" % self.sort_by)
 
-		#~ print("! sort_videos", id(self.videos))
-		#~ for item in self.videos[:5]:print(item)
-
-		#~ self.lbVideosDurations.delete(0, tk.END)
-		#~ self.lbVideosSizes.delete(0, tk.END)
-		#~ self.lbVideosTitles.delete(0, tk.END)
-		self.clear_videos()
+		self.clear_lb_videos()
 
 		idx = 0
 		max_len_fsize = 0
