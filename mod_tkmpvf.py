@@ -655,6 +655,10 @@ def main():
 	root.geometry("1024x512+" + str(1366 - 1024 - 7)
 		+ "+" + str(720 - 512 - 31))
 
+	scriptpath = os.path.dirname(os.path.realpath(__file__))
+	icon = tk.PhotoImage(file=os.path.join(scriptpath, "icon.png"))
+	root.iconphoto(True, icon)
+
 	if len(sys.argv) > 1:
 		app = Application(root, sys.argv[1][1:])
 	else:
