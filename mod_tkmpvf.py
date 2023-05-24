@@ -284,7 +284,8 @@ class Application(tk.Frame):
 		super().__init__(master)
 		self.sort_by = sort_by
 		self.master = master
-		self.master.title("tkmpvf - %s" % os.getcwd())
+		self._base_title = "tkmpvf - %s" % os.getcwd()
+		self.master.title(self._base_title)
 		self.pack(side="top", fill="both", expand=True)
 		self.create_widgets()
 		self.master.bind("<KeyPress>", self.on_keypress)
@@ -507,8 +508,10 @@ class Application(tk.Frame):
 		idx = 0
 		max_len_fsize = 0
 		max_len_duration = 0
+		total_duration = 0
 		for item in self.videos:
 			fn, title, fsize, duration = item
+			total_duration += duration[0]
 			sduration = duration_fmt(duration)
 			sfsize = sizeof_fmt(fsize)
 			self.lbVideosDurations.insert(tk.END, sduration)
@@ -535,6 +538,9 @@ class Application(tk.Frame):
 
 		self.lbVideosDurations["width"] = max_len_duration
 		self.lbVideosSizes["width"] = max_len_fsize + 1
+
+		self.master.title(self._base_title + " - "
+			+ duration_fmt((total_duration, None)))
 
 	def set_sort(self, _sort_by):
 		if self.sort_by == _sort_by + "_desc":
