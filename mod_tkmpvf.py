@@ -335,6 +335,7 @@ class Application(tk.Frame):
 					rename_status = "<переименовано>"
 					color_fg_renamed = COLOR_RENAMED_FG_NORM
 					color_bg_renamed = COLOR_RENAMED_BG_NORM
+
 					try:
 						os.rename(self.fp_video, self.fp_video + ".seen")
 					except PermissionError:
@@ -346,6 +347,22 @@ class Application(tk.Frame):
 							"\nтакой файл уже есть"
 						color_fg_renamed = COLOR_RENAMED_FG_FAILED
 						color_bg_renamed = COLOR_RENAMED_BG_FAILED
+
+					fp_name, ext = os.path.splitext(self.fp_video)
+					vtt_fp = fp_name + ".ru.vtt"
+					if os.path.exists(vtt_fp):
+						try:
+							os.rename(vtt_fp, vtt_fp + ".seen")
+						except PermissionError:
+							rename_status = "<vtt не удалось переименовать>\n"\
+								"нет прав"
+							color_fg_renamed = COLOR_RENAMED_FG_FAILED
+							color_bg_renamed = COLOR_RENAMED_BG_FAILED
+						except FileExistsError:
+							rename_status = "<vtt не удалось переименовать>"\
+								"\nтакой файл уже есть"
+							color_fg_renamed = COLOR_RENAMED_FG_FAILED
+							color_bg_renamed = COLOR_RENAMED_BG_FAILED
 
 					self.lVideoTitle["text"] = rename_status
 					self.lVideoTitle["fg"] = color_fg_renamed

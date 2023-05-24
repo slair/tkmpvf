@@ -1,5 +1,6 @@
 *.mp4
 *.seen
+*.vtt
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
