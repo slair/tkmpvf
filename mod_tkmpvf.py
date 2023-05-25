@@ -539,7 +539,7 @@ class Application(tk.Frame):
 		self.lbVideosDurations["width"] = max_len_duration
 		self.lbVideosSizes["width"] = max_len_fsize + 1
 
-		self.master.title(self._base_title + " - "
+		self.master.title(self._base_title + " - Всего: "
 			+ duration_fmt((total_duration, None)))
 
 	def set_sort(self, _sort_by):
