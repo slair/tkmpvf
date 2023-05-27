@@ -649,10 +649,29 @@ class Application(tk.Frame):
 			w.bind("<KeyPress>", self.on_keypress)
 
 
+def check_for_running(end=False):
+	pid_fp = os.path.join(os.environ.get("temp"),
+		os.path.basename(__file__) + ".pid")
+	#~ print(pid_fp)
+
+	if os.path.exists(pid_fp):
+		if end:
+			os.unlink(pid_fp)
+		else:
+			say_async("Уже запущено!")
+			sys.exit(0)
+	else:
+		pid = os.getpid()
+		with open(pid_fp, "w") as f:
+			f.write("%d" % pid)
+
+
 def main():
 	#~ logi("Started")
 	#~ for var, value in globals().items():
 		#~ logd("%16s = %s", var, value)
+
+	check_for_running()
 
 	root = tk.Tk()
 	#~ print(root["bg"])
@@ -672,6 +691,8 @@ def main():
 	app.mainloop()
 
 	#~ logi("Finished")
+
+	check_for_running(True)
 
 
 if __name__ == '__main__':
