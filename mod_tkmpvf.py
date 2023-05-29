@@ -73,6 +73,7 @@ COLOR_BG_TITLE = "SystemButtonFace"
 PARTSEP = "·"
 
 opj = os.path.join
+tpc = time.perf_counter
 
 WIN32 = sys.platform == "win32"
 LINUX = sys.platform == "linux"
@@ -96,7 +97,7 @@ def dp(*args):
 				bl = a1[0]
 				#~ na0 = a1[1:]
 				#~ args = (na0, *args[1:])
-		print(bl + " %.2f" % time.perf_counter(), *args)
+		print(bl + " %.2f" % tpc(), *args)
 
 
 def all_children(wid):
@@ -327,11 +328,12 @@ class Application(tk.Frame):
 				self.master.focus_force()
 				self.player_pid = None
 				self.my_state = PLAY_FINISHED
-				self.my_state_start = time.perf_counter()
+				self.my_state_start = tpc()
+				self._points_added = 0
 
 		if self.my_state == PLAY_FINISHED:
-			self.lVideoTitle["text"] += "."
-			if time.perf_counter() - self.my_state_start > TIME_TO_RENAME:
+			if tpc() - self.my_state_start > (TIME_TO_RENAME + 1.0)\
+				and self._points_added >= TIME_TO_RENAME:
 				if os.path.exists(self.fp_video):
 					rename_status = "<переименовано>"
 					color_fg_renamed = COLOR_RENAMED_FG_NORM
@@ -369,11 +371,19 @@ class Application(tk.Frame):
 					self.lVideoTitle["fg"] = color_fg_renamed
 					self.lVideoTitle["bg"] = color_bg_renamed
 					self.my_state = VIDEO_RENAMED
-					self.my_state_start = time.perf_counter()
+					self.my_state_start = tpc()
+					#~ self._points_added = TIME_TO_RENAME * 2
+
+					self.master.after(1000, self.on_every_second)
+					return
+
+			if self._points_added <= TIME_TO_RENAME:
+				self.lVideoTitle["text"] += "."
+				self._points_added += 1
 
 		elif self.my_state == VIDEO_RENAMED:
-			self.lVideoTitle["text"] += "."
-			if time.perf_counter() - self.my_state_start > TIME_TO_START:
+			#~ self.lVideoTitle["text"] += "."
+			if tpc() - self.my_state_start > TIME_TO_START:
 				if self.first_run:
 					self.get_videos(True)
 					self.first_run = None
@@ -382,17 +392,17 @@ class Application(tk.Frame):
 
 				if self.videos:
 					self.my_state = PLAYING
-					self.my_state_start = time.perf_counter()
+					self.my_state_start = tpc()
 					self.sort_videos()
 					self.start_video()
 				else:
 					self.my_state = STOPPED
-					self.my_state_start = time.perf_counter()
+					self.my_state_start = tpc()
 					self.clear_lb_videos()
 
 		elif self.my_state == STOPPED:
 			snd_play_async("C:\\slair\\share\\sounds\\click-6.wav")
-			state_duration = time.perf_counter() - self.my_state_start
+			state_duration = tpc() - self.my_state_start
 
 			self.lVideoTitle["text"] = "выход через %.1f" \
 				% (TIME_TO_EXIT - state_duration)
