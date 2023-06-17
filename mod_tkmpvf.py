@@ -16,7 +16,7 @@ from transliterate import translit  # , get_available_language_codes
 #~ get_available_language_codes()	# без этого заменяются языки
 import translit_pikabu_lp		# noqa добавляем свой язык
 from num2t4ru import num2text		# , num2text_VP
-from saymod import say_async		# , get_narrators
+from saymod import say_async, say		# , get_narrators
 import cv2
 import psutil
 from saymod import snd_play_async
@@ -462,7 +462,7 @@ class Application(tk.Frame):
 			suffix = random.choice(ann_suffixes)
 			numsuf = num2text(count_videos, (suffix, "m"))  # .split()
 			narrator = random.choice(narrators)
-			say_async(numsuf, narrator=narrator)
+			say(numsuf, narrator=narrator)
 
 		dp("> checking for deleted videos")
 		for i, video_struct in enumerate(self.videos):
@@ -580,7 +580,7 @@ class Application(tk.Frame):
 		if announce:
 			narrator = random.choice(narrators)
 			total_duration_str = td2words(timedelta(seconds=total_duration))
-			say_async(total_duration_str, narrator=narrator)
+			say(total_duration_str, narrator=narrator)
 
 	def set_sort(self, _sort_by):
 		if self.sort_by == _sort_by + "_desc":
