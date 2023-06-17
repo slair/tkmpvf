@@ -263,6 +263,34 @@ def duration_fmt(duration):
 	return res
 
 
+def td2words(td_object):
+	if not isinstance(td_object, timedelta):
+		return td_object
+
+	seconds = int(td_object.total_seconds())
+	if seconds < 0:
+		seconds = abs(seconds)
+	periods = [
+		(("год", "года", "лет"), 60 * 60 * 24 * 365, "m"),
+		(("месяц", "месяца", "месяцев"), 60 * 60 * 24 * 30, "m"),
+		(("день", "дня", "дней"), 60 * 60 * 24, "m"),
+		(("час", "часа", "часов"), 60 * 60, "m"),
+		(("минута", "минуты", "минут"), 60, "f"),
+		(("секунда", "секунды", "секунд"), 1, "f")
+	]
+
+	strings = []
+	for period_name, period_seconds, gender in periods:
+		if seconds >= period_seconds:
+			period_value, seconds = divmod(seconds, period_seconds)
+			period_value_str = num2text(period_value, (period_name, gender))
+			strings.append("%s" % period_value_str)
+	if strings:
+		return " ".join(strings)
+	else:
+		return "Сейчас!"
+
+
 #~ @asnc
 def do_command_bg(cmd):
 	proc = subprocess.Popen(cmd, shell=False, stdin=subprocess.PIPE
@@ -384,17 +412,14 @@ class Application(tk.Frame):
 		elif self.my_state == VIDEO_RENAMED:
 			#~ self.lVideoTitle["text"] += "."
 			if tpc() - self.my_state_start > TIME_TO_START:
-				if self.first_run:
-					self.get_videos(True)
-					self.first_run = None
-				else:
-					self.get_videos()
+				self.get_videos(self.first_run)
 
 				if self.videos:
 					self.my_state = PLAYING
 					self.my_state_start = tpc()
-					self.sort_videos()
+					self.sort_videos(self.first_run)
 					self.start_video()
+					self.first_run = None
 				else:
 					self.my_state = STOPPED
 					self.my_state_start = tpc()
@@ -466,7 +491,7 @@ class Application(tk.Frame):
 		self.lbVideosSizes.delete(0, tk.END)
 		self.lbVideosTitles.delete(0, tk.END)
 
-	def sort_videos(self):
+	def sort_videos(self, announce=None):
 		if not self.videos:
 			dp("! empty self.videos")
 			return
@@ -551,6 +576,11 @@ class Application(tk.Frame):
 
 		self.master.title(self._base_title + " - Всего: "
 			+ duration_fmt((total_duration, None)))
+
+		if announce:
+			narrator = random.choice(narrators)
+			total_duration_str = td2words(timedelta(seconds=total_duration))
+			say_async(total_duration_str, narrator=narrator)
 
 	def set_sort(self, _sort_by):
 		if self.sort_by == _sort_by + "_desc":
