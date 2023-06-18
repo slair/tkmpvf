@@ -333,7 +333,7 @@ class Application(tk.Frame):
 		#~ for item in self.videos[:5]:print(item)
 		self.fp_video, title, fsize, duration = self.videos.pop(0)
 		p = do_command_bg(play_cmd_tpl % self.fp_video)
-		self.sort_videos()
+		self.sort_videos(self.first_run)
 		self.player_pid = p.pid
 		#~ print(self.player_pid)
 		self.lVideoTitle["text"] = title
@@ -417,9 +417,10 @@ class Application(tk.Frame):
 				if self.videos:
 					self.my_state = PLAYING
 					self.my_state_start = tpc()
-					self.sort_videos(self.first_run)
+					if self.first_run:
+						self.sort_videos(self.first_run)
+						self.first_run = None
 					self.start_video()
-					self.first_run = None
 				else:
 					self.my_state = STOPPED
 					self.my_state_start = tpc()
@@ -492,6 +493,8 @@ class Application(tk.Frame):
 		self.lbVideosTitles.delete(0, tk.END)
 
 	def sort_videos(self, announce=None):
+		self.clear_lb_videos()
+
 		if not self.videos:
 			dp("! empty self.videos")
 			return
@@ -537,8 +540,6 @@ class Application(tk.Frame):
 
 		else:
 			print("! unknown self.sort_by=%r" % self.sort_by)
-
-		self.clear_lb_videos()
 
 		idx = 0
 		max_len_fsize = 0
