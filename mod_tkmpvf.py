@@ -530,7 +530,7 @@ class Application(tk.Frame):
 						self.splash.l_progress["text"] = "%s %%" \
 							% self.splash.pb["value"]
 						self.splash.update()
-					time.sleep(1)
+					#~ time.sleep(1)
 					self.videos.append((fn, get_video_title(fn), fsize
 						, get_duration(fn)))
 
