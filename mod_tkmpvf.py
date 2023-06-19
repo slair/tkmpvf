@@ -9,6 +9,7 @@ import tempfile
 import time
 import re
 import subprocess
+import traceback
 import tkinter as tk
 from tkinter import ttk
 from datetime import datetime, timedelta
@@ -87,6 +88,19 @@ my_folder = os.path.dirname(my_file_name)
 my_name = os.path.splitext(os.path.basename(my_file_name))[0]
 
 #~ log|
+
+
+def my_tk_excepthook(excType, excValue, ltraceback):
+	traceback.print_tb(ltraceback)
+	print(excValue)
+	pid_fp = os.path.join(os.environ.get("temp"),
+		os.path.basename(__file__) + ".pid")
+	print("\ndeleting %r" % pid_fp)
+	os.unlink(pid_fp)
+
+
+sys.excepthook = my_tk_excepthook
+tk.Tk.report_callback_exception = my_tk_excepthook
 
 
 def dp(*args):
@@ -315,6 +329,7 @@ class Splash(tk.Frame):
 		self.pb = ttk.Progressbar(self.master, orient=tk.HORIZONTAL, length=100
 			, mode="determinate")
 		self.pb.pack(side="top", fill="x", expand=False)
+		self.pb.configure(width=500)
 
 		self.l_progress = tk.Label(self.master, text="<progress>")
 		self.l_progress.pack(side="top", fill=tk.BOTH, expand=True)
@@ -527,7 +542,7 @@ class Application(tk.Frame):
 					if announce:
 						self.splash.l_fn["text"] = fn
 						self.splash.pb["value"] = fn_count / fn_total * 100.0
-						self.splash.l_progress["text"] = "%s %%" \
+						self.splash.l_progress["text"] = "%.2f %%" \
 							% self.splash.pb["value"]
 						self.splash.update()
 					#~ time.sleep(1)
