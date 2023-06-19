@@ -329,7 +329,7 @@ class Splash(tk.Frame):
 		self.pb = ttk.Progressbar(self.master, orient=tk.HORIZONTAL, length=100
 			, mode="determinate")
 		self.pb.pack(side="top", fill="x", expand=False)
-		self.pb.configure(width=500)
+		#~ self.pb.configure(width=500)
 
 		self.l_progress = tk.Label(self.master, text="<progress>")
 		self.l_progress.pack(side="top", fill=tk.BOTH, expand=True)
