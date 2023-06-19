@@ -10,6 +10,7 @@ import time
 import re
 import subprocess
 import tkinter as tk
+from tkinter import ttk
 from datetime import datetime, timedelta
 
 from transliterate import translit  # , get_available_language_codes
@@ -298,6 +299,34 @@ def do_command_bg(cmd):
 	return proc
 
 
+class Splash(tk.Frame):
+	window_width = 512
+	window_height = 80
+
+	def __init__(self, master=None):
+		super().__init__(master)
+		self.master = master
+		self.pack(side="top", fill=tk.BOTH, expand=True)
+		self.master.title("Загрузка...")
+
+		self.l_fn = tk.Label(self.master, text="<filename>")
+		self.l_fn.pack(side="top", fill=tk.BOTH, expand=True)
+
+		self.pb = ttk.Progressbar(self.master, orient=tk.HORIZONTAL, length=100
+			, mode="determinate")
+		self.pb.pack(side="top", fill="x", expand=False)
+
+		self.l_progress = tk.Label(self.master, text="<progress>")
+		self.l_progress.pack(side="top", fill=tk.BOTH, expand=True)
+
+		xpos = (self.master.winfo_screenwidth() - self.window_width) // 2
+		ypos = (self.master.winfo_screenheight() - self.window_height) // 2
+		self.master.geometry("%sx%s+%s+%s" % (
+			self.window_width, self.window_height, xpos, ypos))
+		#~ self.pb.start()
+		#~ self.update()
+
+
 class Application(tk.Frame):
 	my_state = None
 	player_pid = None
@@ -320,6 +349,8 @@ class Application(tk.Frame):
 		self.master.bind("<KeyPress>", self.on_keypress)
 		self.bind("<KeyPress>", self.on_keypress)
 		self.master.focus()
+
+		self.master.withdraw()
 
 		self.my_state = VIDEO_RENAMED
 		self.my_state_start = 1
@@ -420,6 +451,8 @@ class Application(tk.Frame):
 					if self.first_run:
 						self.sort_videos(self.first_run)
 						self.first_run = None
+						self.splash.master.destroy()
+						self.master.deiconify()
 					self.start_video()
 				else:
 					self.my_state = STOPPED
@@ -459,10 +492,14 @@ class Application(tk.Frame):
 		_ += glob.glob(opj(folder, "*.dat"))
 
 		if announce:
+			self.splash = Splash(tk.Tk())
 			count_videos = len(_)
 			suffix = random.choice(ann_suffixes)
 			numsuf = num2text(count_videos, (suffix, "m"))  # .split()
 			narrator = random.choice(narrators)
+			self.splash.l_fn["text"] = ""
+			self.splash.l_progress["text"] = ""
+			self.splash.update()
 			say(numsuf, narrator=narrator)
 
 		dp("> checking for deleted videos")
@@ -472,7 +509,10 @@ class Application(tk.Frame):
 				del self.videos[i]
 
 		dp("> checking for added videos")
+		fn_count = 0
+		fn_total = len(_)
 		for fn in _:
+			fn_count += 1
 			if not any(e[0] == fn for e in self.videos):
 				dp("! adding", fn)
 				fsize = os.stat(fn).st_size
@@ -484,6 +524,13 @@ class Application(tk.Frame):
 							+ "\nПустой файл! Не могу удалить!"
 							, fsize, (0.0, 0)))
 				else:
+					if announce:
+						self.splash.l_fn["text"] = fn
+						self.splash.pb["value"] = fn_count / fn_total * 100.0
+						self.splash.l_progress["text"] = "%s %%" \
+							% self.splash.pb["value"]
+						self.splash.update()
+					time.sleep(1)
 					self.videos.append((fn, get_video_title(fn), fsize
 						, get_duration(fn)))
 
