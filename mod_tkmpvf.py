@@ -315,7 +315,7 @@ def do_command_bg(cmd):
 
 class Splash(tk.Frame):
 	window_width = 512
-	window_height = 80
+	window_height = 100
 
 	def __init__(self, master=None):
 		super().__init__(master)
@@ -323,16 +323,17 @@ class Splash(tk.Frame):
 		self.pack(side="top", fill=tk.BOTH, expand=True)
 		self.master.title("Загрузка...")
 
-		self.l_fn = tk.Label(self.master, text="<filename>")
+		self.l_fn = tk.Label(self.master, text="<filename>", height=3)
+		self.l_fn.bind('<Configure>', lambda e: self.l_fn.config(
+			wraplength=self.l_fn.winfo_width()))
 		self.l_fn.pack(side="top", fill=tk.BOTH, expand=True)
+
+		self.l_progress = tk.Label(self.master, text="<progress>")
+		self.l_progress.pack(side="bottom", fill=tk.BOTH, expand=True)
 
 		self.pb = ttk.Progressbar(self.master, orient=tk.HORIZONTAL, length=100
 			, mode="determinate")
-		self.pb.pack(side="top", fill="x", expand=False)
-		#~ self.pb.configure(width=500)
-
-		self.l_progress = tk.Label(self.master, text="<progress>")
-		self.l_progress.pack(side="top", fill=tk.BOTH, expand=True)
+		self.pb.pack(side="bottom", fill="x", expand=False)
 
 		xpos = (self.master.winfo_screenwidth() - self.window_width) // 2
 		ypos = (self.master.winfo_screenheight() - self.window_height) // 2
