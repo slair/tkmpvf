@@ -541,7 +541,7 @@ class Application(tk.Frame):
 							, fsize, (0.0, 0)))
 				else:
 					if announce:
-						self.splash.l_fn["text"] = fn
+						self.splash.l_fn["text"] = fn[2:]
 						self.splash.pb["value"] = fn_count / fn_total * 100.0
 						self.splash.l_progress["text"] = "%.2f %%" \
 							% self.splash.pb["value"]
