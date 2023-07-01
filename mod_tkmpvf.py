@@ -18,10 +18,21 @@ from transliterate import translit  # , get_available_language_codes
 #~ get_available_language_codes()	# без этого заменяются языки
 import translit_pikabu_lp		# noqa добавляем свой язык
 from num2t4ru import num2text		# , num2text_VP
-from saymod import say_async, say		# , get_narrators
+
+try:
+	from saymod import say_async, say, snd_play_async		# , get_narrators
+except ModuleNotFoundError:
+	def say(*args, **kwargs):
+		print("! say(", *args, ")")
+
+	def snd_play_async(*args, **kwargs):
+		print("! snd_play_async(", *args, ")")
+
+	def say_async(*args, **kwargs):
+		print("! say_async(", *args, ")")
+
 import cv2
 import psutil
-from saymod import snd_play_async
 
 #~ video_folder = r"C:\slair\to-delete\tg all"
 video_folder = r"."
@@ -90,13 +101,22 @@ my_name = os.path.splitext(os.path.basename(my_file_name))[0]
 #~ log|
 
 
-def my_tk_excepthook(excType, excValue, ltraceback):
-	traceback.print_tb(ltraceback)
-	print(excValue)
+#~ def my_tk_excepthook(excType, excValue, ltraceback, *args):
+def my_tk_excepthook(*args):
+	print(args, "\n")
+	for item in args:
+		print(type(item))
+		if isinstance(item, traceback.TracebackException1):
+			traceback.print_tb(item)
+		else:
+			print("!", item)
+	#~ traceback.print_tb(ltraceback)
+	#~ print(excValue)
 	pid_fp = os.path.join(os.environ.get("temp"),
 		os.path.basename(__file__) + ".pid")
 	print("\ndeleting %r" % pid_fp)
 	os.unlink(pid_fp)
+	sys.exit()
 
 
 sys.excepthook = my_tk_excepthook
@@ -518,19 +538,19 @@ class Application(tk.Frame):
 			self.splash.update()
 			say(numsuf, narrator=narrator)
 
-		dp("> checking for deleted videos")
+		#~ dp("> checking for deleted videos")
 		for i, video_struct in enumerate(self.videos):
 			if video_struct[0] not in _:
 				dp("! deleting", i, video_struct)
 				del self.videos[i]
 
-		dp("> checking for added videos")
+		#~ dp("> checking for added videos")
 		fn_count = 0
 		fn_total = len(_)
 		for fn in _:
 			fn_count += 1
 			if not any(e[0] == fn for e in self.videos):
-				dp("! adding", fn)
+				#~ dp("! adding", fn)
 				fsize = os.stat(fn).st_size
 				if fsize == 0:
 					try:
@@ -763,7 +783,7 @@ def check_for_running(end=False):
 			os.unlink(pid_fp)
 		else:
 			say_async("Уже запущено!")
-			sys.exit(0)
+			sys.exit()
 	else:
 		pid = os.getpid()
 		with open(pid_fp, "w") as f:
