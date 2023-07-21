@@ -726,7 +726,8 @@ class Application(tk.Frame):
 		self.df.pack(side="left", fill=None, expand=False)
 
 		self.bVideoDuration = tk.Button(self.df, text=sDURATION
-			, relief="flat", command=self.set_sort_duration)
+			#~ , relief="flat"
+			, command=self.set_sort_duration)
 		self.bVideoDuration.pack(side="top", fill="x", expand=False)
 
 		self.lbVideosDurations = tk.Listbox(self.df, activestyle="none"
@@ -739,7 +740,8 @@ class Application(tk.Frame):
 		self.sf = tk.Frame(self.lf)
 		self.sf.pack(side="left", fill="x", expand=False)
 
-		self.bVideoSize = tk.Button(self.sf, text=sFSIZE, relief="flat"
+		self.bVideoSize = tk.Button(self.sf, text=sFSIZE
+			#~ , relief="flat"
 			, command=self.set_sort_fsize)
 		self.bVideoSize.pack(side="top", fill="x", expand=False)
 
@@ -755,12 +757,12 @@ class Application(tk.Frame):
 		self.fTitleButtons.pack(side="top", fill="x", expand=True)
 
 		self.bVideoTitle = tk.Button(self.fTitleButtons, text=sTITLE
-			, relief="flat"
+			#~ , relief="flat"  # , cursor="target"
 			, command=self.set_sort_title)
 		self.bVideoTitle.pack(side="left", fill="x", expand=True)
 
 		self.bVideoFilename = tk.Button(self.fTitleButtons, text=sFN
-			, relief="flat"
+			#~ , relief="flat"
 			, command=self.set_sort_fn)
 		self.bVideoFilename.pack(side="left", fill="x", expand=False)
 
