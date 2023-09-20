@@ -41,9 +41,9 @@ player_binary = "mpv.exe"
 play_cmd_tpl = " ".join((
 	player_binary,
 	"-fs",
-	"--fs-screen=0",
+	"--fs-screen=1",
 	"--softvol-max=500",
-	"--brightness=10",
+	"--brightness=0",
 	"--",
 	'"%s"',
 ))
@@ -341,7 +341,8 @@ class Splash(tk.Frame):
 		super().__init__(master)
 		self.master = master
 		self.pack(side="top", fill=tk.BOTH, expand=True)
-		self.master.title("Загрузка...")
+		self._title = "Загрузка... "
+		self.master.title(self._title)
 
 		self.l_fn = tk.Label(self.master, text="<filename>", height=3)
 		self.l_fn.bind('<Configure>', lambda e: self.l_fn.config(
@@ -547,6 +548,7 @@ class Application(tk.Frame):
 		#~ dp("> checking for added videos")
 		fn_count = 0
 		fn_total = len(_)
+		_duration = 0
 		for fn in _:
 			fn_count += 1
 			if not any(e[0] == fn for e in self.videos):
@@ -560,15 +562,23 @@ class Application(tk.Frame):
 							+ "\nПустой файл! Не могу удалить!"
 							, fsize, (0.0, 0)))
 				else:
+					fn_duration = get_duration(fn)
+					self.videos.append((fn, get_video_title(fn), fsize
+						, fn_duration))
+
+					_duration += fn_duration[0]
+
 					if announce:
 						self.splash.l_fn["text"] = fn[2:]
 						self.splash.pb["value"] = fn_count / fn_total * 100.0
+
 						self.splash.l_progress["text"] = "%.2f %%" \
 							% self.splash.pb["value"]
+
+						self.splash.master.title(
+							self.splash._title + duration_fmt((_duration,)))
+
 						self.splash.update()
-					#~ time.sleep(1)
-					self.videos.append((fn, get_video_title(fn), fsize
-						, get_duration(fn)))
 
 	def clear_lb_videos(self):
 		self.lbVideosDurations.delete(0, tk.END)
