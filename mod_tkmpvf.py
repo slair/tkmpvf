@@ -9,6 +9,7 @@ import tempfile
 import time
 import re
 import subprocess
+import types
 import traceback
 import tkinter as tk
 from tkinter import ttk
@@ -104,12 +105,17 @@ my_name = os.path.splitext(os.path.basename(my_file_name))[0]
 #~ def my_tk_excepthook(excType, excValue, ltraceback, *args):
 def my_tk_excepthook(*args):
 	print(args, "\n")
+	tb_filename = os.path.join(os.environ.get("temp"),
+		os.path.basename(__file__) + ".tb")
 	for item in args:
-		print(type(item))
-		if isinstance(item, traceback.TracebackException1):
+		#~ print(type(item))
+		print("\n\n\n", file=open(tb_filename, "a"))
+		if isinstance(item, types.TracebackType):
 			traceback.print_tb(item)
+			traceback.print_tb(item, file=open(tb_filename, "a"))
 		else:
 			print("!", item)
+			print("!", item, file=open(tb_filename, "a"))
 	#~ traceback.print_tb(ltraceback)
 	#~ print(excValue)
 	pid_fp = os.path.join(os.environ.get("temp"),
@@ -175,9 +181,16 @@ def get_duration(filename):
 
 	duration = video.get(cv2.CAP_PROP_POS_MSEC)
 	frame_count = video.get(cv2.CAP_PROP_FRAME_COUNT)
-	if duration == 0:
+	if duration <= 0:
+		#~ print("! duration = %r" % duration)
 		fps = video.get(cv2.CAP_PROP_FPS)
 		duration = frame_count / fps
+		#~ print("! duration(frame_count / fps) = %r / %r = %r" % (
+			#~ frame_count, fps, duration))
+
+	if duration <= 0:
+		print("! Bad duration=%r video=%r" % (duration, filename))
+		duration = 0
 
 	return duration, frame_count
 
@@ -283,8 +296,14 @@ narrators = (
 
 
 def duration_fmt(duration):
+	#~ print(duration[0])
 	dur_sec = duration[0]
+
+	#~ try:
 	res = str(timedelta(seconds=dur_sec))
+	#~ except OverflowError as e:
+		#~ print("dur_sec = %r" % dur_sec)
+		#~ sys.exit()
 
 	if "." in res:
 		res = res.split(".", maxsplit=1)[0]
@@ -832,4 +851,5 @@ def main():
 
 
 if __name__ == '__main__':
+	os.chdir(r"C:\slair\to-delete\tg all")
 	main()
