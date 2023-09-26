@@ -360,7 +360,7 @@ class Splash(tk.Frame):
 		super().__init__(master)
 		self.master = master
 		self.pack(side="top", fill=tk.BOTH, expand=True)
-		self._title = "Загрузка... "
+		self._title = "Загрузка...    "
 		self.master.title(self._title)
 
 		self.l_fn = tk.Label(self.master, text="<filename>", height=3)
@@ -568,6 +568,7 @@ class Application(tk.Frame):
 		fn_count = 0
 		fn_total = len(_)
 		_duration = 0
+		_fsize = 0
 		for fn in _:
 			fn_count += 1
 			if not any(e[0] == fn for e in self.videos):
@@ -586,6 +587,7 @@ class Application(tk.Frame):
 						, fn_duration))
 
 					_duration += fn_duration[0]
+					_fsize += fsize
 
 					if announce:
 						self.splash.l_fn["text"] = fn[2:]
@@ -595,7 +597,8 @@ class Application(tk.Frame):
 							% self.splash.pb["value"]
 
 						self.splash.master.title(
-							self.splash._title + duration_fmt((_duration,)))
+							self.splash._title + duration_fmt((_duration,))
+							+ "    " + sizeof_fmt(_fsize))
 
 						self.splash.update()
 
