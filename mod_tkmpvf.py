@@ -660,9 +660,11 @@ class Application(tk.Frame):
 		max_len_fsize = 0
 		max_len_duration = 0
 		total_duration = 0
+		total_fsize = 0
 		for item in self.videos:
 			fn, title, fsize, duration = item
 			total_duration += duration[0]
+			total_fsize += fsize
 			sduration = duration_fmt(duration)
 			sfsize = sizeof_fmt(fsize)
 			self.lbVideosDurations.insert(tk.END, sduration)
@@ -691,7 +693,8 @@ class Application(tk.Frame):
 		self.lbVideosSizes["width"] = max_len_fsize + 1
 
 		self.master.title(self._base_title + " - Всего: "
-			+ duration_fmt((total_duration, None)))
+			+ duration_fmt((total_duration, None))
+			+ "    " + sizeof_fmt(total_fsize))
 
 		if announce:
 			narrator = random.choice(narrators)
