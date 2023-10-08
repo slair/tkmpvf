@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-
 import os
 import sys
 import random
@@ -556,7 +555,7 @@ class Application(tk.Frame):
 			self.splash.l_fn["text"] = ""
 			self.splash.l_progress["text"] = ""
 			self.splash.update()
-			say(numsuf, narrator=narrator)
+			say_async(numsuf, narrator=narrator)
 
 		#~ dp("> checking for deleted videos")
 		for i, video_struct in enumerate(self.videos):
@@ -723,6 +722,10 @@ class Application(tk.Frame):
 		self.set_sort("title")
 
 	def create_widgets(self):
+		# todo: Выбор монитора для фулскрина
+		# todo: Сохранение настроек
+		# todo: Загрузка настроек
+
 		self.uf = tk.Frame(self)
 		self.uf.pack(side="top", fill="x", expand=False)
 
