@@ -14,10 +14,25 @@ import tkinter as tk
 from tkinter import ttk
 from datetime import datetime, timedelta
 
-from transliterate import translit  # , get_available_language_codes
-#~ get_available_language_codes()	# без этого заменяются языки
-import translit_pikabu_lp		# noqa добавляем свой язык
-from num2t4ru import num2text		# , num2text_VP
+import cv2
+import psutil
+
+#~ # pylint: disable=E0611
+from transliterate import translit	 # , get_available_language_codes
+#~ get_available_language_codes()	 # без этого заменяются языки
+import translit_pikabu_lp			 # noqa добавляем свой язык
+from num2t4ru import num2text		 # , num2text_VP
+#~ # pylint: disable=
+
+WIN32 = sys.platform == "win32"
+LINUX = sys.platform == "linux"
+TMPDIR = tempfile.gettempdir()
+
+ahk = None
+if WIN32:
+	from ahk import AHK
+	from ahk.window import Window
+	ahk = AHK()
 
 try:
 	from saymod import say_async, say, snd_play_async		# , get_narrators
@@ -30,9 +45,6 @@ except ModuleNotFoundError:
 
 	def say_async(*args, **kwargs):
 		print("! say_async(", *args, ")")
-
-import cv2
-import psutil
 
 #~ video_folder = r"C:\slair\to-delete\tg all"
 video_folder = r"."
@@ -87,10 +99,6 @@ PARTSEP = "·"
 
 opj = os.path.join
 tpc = time.perf_counter
-
-WIN32 = sys.platform == "win32"
-LINUX = sys.platform == "linux"
-tmpdir = tempfile.gettempdir()
 
 my_file_name = os.path.abspath(__file__)
 if os.path.islink(my_file_name):
@@ -392,6 +400,7 @@ class Application(tk.Frame):
 	sort_by = None
 	videos = []
 	first_run = True
+	skipped = set()
 
 	def __init__(self, master=None, sort_by="fsize_desc"):
 		super().__init__(master)
@@ -404,6 +413,7 @@ class Application(tk.Frame):
 		self.master.bind("<KeyPress>", self.on_keypress)
 		self.bind("<KeyPress>", self.on_keypress)
 		self.master.focus()
+		self.b_skip.focus()
 
 		self.master.withdraw()
 
@@ -417,7 +427,13 @@ class Application(tk.Frame):
 	def start_video(self):
 		#~ print("! start_video", id(self.videos))
 		#~ for item in self.videos[:5]:print(item)
-		self.fp_video, title, fsize, duration = self.videos.pop(0)
+
+		self.fp_video = None
+		while not self.fp_video and self.videos:
+			self.fp_video, title, fsize, duration = self.videos.pop(0)
+			if self.fp_video in self.skipped:
+				self.fp_video = None
+
 		p = do_command_bg(play_cmd_tpl % self.fp_video)
 		self.sort_videos(self.first_run)
 		self.player_pid = p.pid
@@ -432,23 +448,34 @@ class Application(tk.Frame):
 			self.lStatus["text"] = "Последнее video"
 		#~ print("! start_video", id(self.videos))
 
+	def bring_to_front(self):
+		self.master.state("normal")
+		self.master.focus_force()
+		self.b_skip.focus()
+
 	def on_every_second(self):
 		now = datetime.now()
 		self.lClock["text"] = now.strftime("%H:%M:%S")
 
 		if self.player_pid:
+			self.b_pause["state"] = "normal"
+			self.b_skip["state"] = "normal"
 			if not psutil.pid_exists(self.player_pid):
-				self.master.state("normal")
-				self.master.focus_force()
 				self.player_pid = None
+				self.b_pause["state"] = "disabled"
+				self.b_skip["state"] = "disabled"
 				self.my_state = PLAY_FINISHED
 				self.my_state_start = tpc()
 				self._points_added = 0
+				self.bring_to_front()
 
 		if self.my_state == PLAY_FINISHED:
 			if tpc() - self.my_state_start > (TIME_TO_RENAME + 1.0)\
 				and self._points_added >= TIME_TO_RENAME:
-				if os.path.exists(self.fp_video):
+
+				if self.fp_video and self.fp_video not in self.skipped \
+					and os.path.exists(self.fp_video):
+
 					rename_status = "<переименовано>"
 					color_fg_renamed = COLOR_RENAMED_FG_NORM
 					color_bg_renamed = COLOR_RENAMED_BG_NORM
@@ -486,10 +513,12 @@ class Application(tk.Frame):
 					self.lVideoTitle["bg"] = color_bg_renamed
 					self.my_state = VIDEO_RENAMED
 					self.my_state_start = tpc()
-					#~ self._points_added = TIME_TO_RENAME * 2
-
 					self.master.after(1000, self.on_every_second)
 					return
+
+				else:
+					self.my_state = VIDEO_RENAMED
+					self.my_state_start = tpc()
 
 			if self._points_added <= TIME_TO_RENAME:
 				self.lVideoTitle["text"] += "."
@@ -528,10 +557,22 @@ class Application(tk.Frame):
 
 		self.master.after(1000, self.on_every_second)
 
+	def send_key_to_player(self, key):
+		if ahk and self.player_pid:
+			self.win_player = Window.from_pid(ahk
+				, pid=str(self.player_pid))
+			if self.win_player:
+				self.win_player.send(key)
+				return True
+		return False
+
 	def on_keypress(self, e):
-		print(e)
 		if e.keysym == "Escape":
+			self.send_key_to_player(chr(27))
 			self.master.destroy()
+
+		else:
+			print(e)
 
 	def get_videos(self, announce=None):
 		folder = self.video_folder
@@ -569,6 +610,9 @@ class Application(tk.Frame):
 		_duration = 0
 		_fsize = 0
 		for fn in _:
+			if fn in self.skipped:
+				continue
+
 			fn_count += 1
 			if not any(e[0] == fn for e in self.videos):
 				#~ dp("! adding", fn)
@@ -721,12 +765,25 @@ class Application(tk.Frame):
 	def set_sort_title(self):
 		self.set_sort("title")
 
+	def pause_video(self):
+		if ahk and self.player_pid:
+			self.win_player = Window.from_pid(ahk, pid=str(self.player_pid))
+			if self.win_player:
+				self.win_player.send("p")
+				# todo: change text on b_pause
+
+	def skip_video(self):
+		#~ print(self.fp_video)
+		self.skipped.add(self.fp_video)
+		#~ print(self.skipped)
+		self.send_key_to_player(chr(27))
+
 	def create_widgets(self):
 		# todo: Выбор монитора для фулскрина
 		# todo: Сохранение настроек
 		# todo: Загрузка настроек
 
-		self.uf = tk.Frame(self)
+		self.uf = tk.Frame(self, relief="groove", bd=2)
 		self.uf.pack(side="top", fill="x", expand=False)
 
 		self.lClock = tk.Label(self.uf, text="<lClock>"
@@ -744,6 +801,17 @@ class Application(tk.Frame):
 
 		self.mf = tk.Frame(self)
 		self.mf.pack(side="top", fill="x", expand=False)
+
+		self.f_video = tk.Frame(self.mf)
+		self.f_video.pack(side="top", fill="x", expand=False)
+
+		self.b_pause = tk.Button(self.f_video, text=" Пауза "
+			, command=self.pause_video)
+		self.b_pause.pack(side="left", fill="y", expand=False, pady=4, padx=4)
+
+		self.b_skip = tk.Button(self.f_video, text=" Пропустить "
+			, command=self.skip_video)
+		self.b_skip.pack(side="left", fill="y", expand=False, pady=4, padx=4)
 
 		self.lVideoTitle = tk.Label(self.mf, text="<lVideoTitle>\n2nd line"
 			, relief="groove", bd=2, font=("Impact", 48)
