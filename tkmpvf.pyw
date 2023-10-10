@@ -1043,3 +1043,5 @@ def main():
 
 
 if __name__ == '__main__':
+	#~ os.chdir(r"C:\slair\to-delete\tg all")
+	main()
