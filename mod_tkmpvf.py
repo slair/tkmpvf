@@ -7,8 +7,10 @@ import glob
 import tempfile
 import time
 import re
+import logging
 import subprocess
 import types
+import configparser
 import traceback
 import tkinter as tk
 from tkinter import ttk
@@ -99,14 +101,73 @@ PARTSEP = "·"
 
 opj = os.path.join
 tpc = time.perf_counter
+config = configparser.ConfigParser()
 
-my_file_name = os.path.abspath(__file__)
-if os.path.islink(my_file_name):
-	my_file_name = os.readlink(my_file_name)
-my_folder = os.path.dirname(my_file_name)
-my_name = os.path.splitext(os.path.basename(my_file_name))[0]
+MY_FILE_NAME = os.path.abspath(__file__)
+if os.path.islink(MY_FILE_NAME):
+	MY_FILE_NAME = os.readlink(MY_FILE_NAME)
+MY_FOLDER = os.path.dirname(MY_FILE_NAME)
+MY_NAME = os.path.splitext(os.path.basename(MY_FILE_NAME))[0]
 
-#~ log|
+BASELOGFORMAT = "%(message)s"
+BASEDTFORMAT = "%d.%m.%y %H:%M:%S"
+FLN = "[%(levelname)9s %(asctime)s] %(funcName)s %(filename)s:%(lineno)d "
+FLNC = "%(filename)s:%(lineno)d:%(levelname)9s %(asctime)s %(funcName)s "
+logger = logging.getLogger(MY_NAME)
+logger.setLevel(logging.DEBUG)
+logd = logger.debug
+logi = logger.info
+logw = logger.warning
+loge = logger.error
+logc = logger.critical
+
+console_output_handler = logging.StreamHandler(sys.stderr)
+formatter = logging.Formatter(FLNC + BASELOGFORMAT, BASEDTFORMAT)
+console_output_handler.setFormatter(formatter)
+logger.addHandler(console_output_handler)
+
+LOG_FILE_NAME = opj(TMPDIR, MY_NAME + ".log")
+print("LOG_FILE_NAME = %r" % LOG_FILE_NAME)
+
+fh = logging.FileHandler(LOG_FILE_NAME, encoding="utf-8")
+formatter = logging.Formatter(FLN + BASELOGFORMAT, BASEDTFORMAT)
+fh.setFormatter(formatter)
+logger.addHandler(fh)
+
+if "HOME" in os.environ:
+	ENV_HOME = os.environ["HOME"]
+elif "USERPROFILE" in os.environ:
+	logw("No HOME environment variable, using USERPROFILE")
+	ENV_HOME = os.environ["USERPROFILE"]
+else:
+	loge("No HOME or USERPROFILE environment variable")
+	ENV_HOME = ""
+
+if "XDG_DATA_HOME" in os.environ:
+	XDG_DATA_HOME = os.environ["XDG_DATA_HOME"]
+elif "APPDATA" in os.environ:
+	XDG_DATA_HOME = os.environ["APPDATA"]
+elif ENV_HOME:
+	XDG_DATA_HOME = opj(ENV_HOME, opj(".local", "share"))
+
+MY_XDG_DATA_HOME = opj(XDG_DATA_HOME, MY_NAME)
+if not os.path.exists(MY_XDG_DATA_HOME):
+	logi("Create folder %r", MY_XDG_DATA_HOME)
+	os.makedirs(MY_XDG_DATA_HOME)
+
+if "XDG_CONFIG_HOME" in os.environ:
+	XDG_CONFIG_HOME = os.environ["XDG_CONFIG_HOME"]
+elif "LOCALAPPDATA" in os.environ:
+	XDG_CONFIG_HOME = os.environ["LOCALAPPDATA"]
+elif ENV_HOME:
+	XDG_CONFIG_HOME = opj(ENV_HOME, ".config")
+
+MY_XDG_CONFIG_HOME = opj(XDG_CONFIG_HOME, MY_NAME)
+if not os.path.exists(MY_XDG_CONFIG_HOME):
+	logi("Create folder %r", MY_XDG_CONFIG_HOME)
+	os.makedirs(MY_XDG_CONFIG_HOME)
+
+CONFIG_FILE_PATH = opj(MY_XDG_CONFIG_HOME, MY_NAME + ".ini")
 
 
 #~ def my_tk_excepthook(excType, excValue, ltraceback, *args):
@@ -123,8 +184,8 @@ def my_tk_excepthook(*args):
 		else:
 			print("!", item)
 			print("!", item, file=open(tb_filename, "a"))
-	#~ traceback.print_tb(ltraceback)
-	#~ print(excValue)
+
+	save_config()
 	pid_fp = os.path.join(os.environ.get("temp"),
 		os.path.basename(__file__) + ".pid")
 	print("\ndeleting %r" % pid_fp)
@@ -134,6 +195,20 @@ def my_tk_excepthook(*args):
 
 sys.excepthook = my_tk_excepthook
 tk.Tk.report_callback_exception = my_tk_excepthook
+
+
+def load_config():
+	if os.path.exists(CONFIG_FILE_PATH):
+		logi("Reading %r", CONFIG_FILE_PATH)
+		config.read(CONFIG_FILE_PATH)
+	else:
+		logw("File %r not found", CONFIG_FILE_PATH)
+
+
+def save_config():
+	with open(CONFIG_FILE_PATH, "w") as f:
+		logi("Writing %r", CONFIG_FILE_PATH)
+		config.write(f)
 
 
 def dp(*args):
@@ -905,6 +980,8 @@ def main():
 
 	check_for_running()
 
+	load_config()
+
 	root = tk.Tk()
 	#~ print(root["bg"])
 	#~ sys.exit(0)
@@ -923,6 +1000,8 @@ def main():
 	app.mainloop()
 
 	#~ logi("Finished")
+
+	save_config()
 
 	check_for_running(True)
 
