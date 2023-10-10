@@ -1000,6 +1000,8 @@ def check_for_running(end=False):
 		else:
 			say_async("Уже запущено!", narrator=random.choice(narrators))
 			#~ sys.exit()
+			if os.path.exists(pid_fp):
+				os.unlink(pid_fp)
 
 	else:
 		pid = os.getpid()

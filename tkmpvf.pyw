@@ -991,4 +991,55 @@ class Application(tk.Frame):
 
 def check_for_running(end=False):
 	pid_fp = os.path.join(TMPDIR, os.path.basename(__file__) + ".pid")
-	#~ pr
+	#~ print(pid_fp)
+
+	if os.path.exists(pid_fp):
+		if end:
+			if os.path.exists(pid_fp):
+				os.unlink(pid_fp)
+		else:
+			say_async("Уже запущено!", narrator=random.choice(narrators))
+			#~ sys.exit()
+			if os.path.exists(pid_fp):
+				os.unlink(pid_fp)
+
+	else:
+		pid = os.getpid()
+		with open(pid_fp, "w") as f:
+			f.write("%d" % pid)
+
+
+def main():
+	#~ logi("Started")
+	#~ for var, value in globals().items():
+		#~ logd("%16s = %s", var, value)
+
+	check_for_running()
+
+	load_config()
+
+	root = tk.Tk()
+	#~ print(root["bg"])
+	#~ sys.exit(0)
+
+	root.geometry("1024x512+" + str(1366 - 1024 - 7)
+		+ "+" + str(720 - 512 - 31))
+
+	scriptpath = os.path.dirname(os.path.realpath(__file__))
+	icon = tk.PhotoImage(file=os.path.join(scriptpath, "icon.png"))
+	root.iconphoto(True, icon)
+
+	if len(sys.argv) > 1:
+		app = Application(root, sys.argv[1][1:])
+	else:
+		app = Application(root)
+	app.mainloop()
+
+	#~ logi("Finished")
+
+	save_config()
+
+	check_for_running(True)
+
+
+if __name__ == '__main__':
