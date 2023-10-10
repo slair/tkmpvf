@@ -9,9 +9,9 @@ import time
 import re
 import logging
 import subprocess
-import types
+#~ import types
 import configparser
-import traceback
+#~ import traceback
 import tkinter as tk
 from tkinter import ttk
 from datetime import datetime, timedelta
@@ -64,6 +64,8 @@ play_cmd_tpl = " ".join((
 
 _DEBUG = True
 
+FNSEP = "|"
+
 sDURATION = "Время"
 sDURATION_DESC = "Время ↑"
 sDURATION_ASC = "Время ↓"
@@ -102,6 +104,8 @@ PARTSEP = "·"
 opj = os.path.join
 tpc = time.perf_counter
 config = configparser.ConfigParser()
+config["global"] = {}
+config.my_changed = False
 
 MY_FILE_NAME = os.path.abspath(__file__)
 if os.path.islink(MY_FILE_NAME):
@@ -172,24 +176,15 @@ CONFIG_FILE_PATH = opj(MY_XDG_CONFIG_HOME, MY_NAME + ".ini")
 
 #~ def my_tk_excepthook(excType, excValue, ltraceback, *args):
 def my_tk_excepthook(*args):
-	print(args, "\n")
-	tb_filename = os.path.join(os.environ.get("temp"),
-		os.path.basename(__file__) + ".tb")
-	for item in args:
-		#~ print(type(item))
-		print("\n\n\n", file=open(tb_filename, "a"))
-		if isinstance(item, types.TracebackType):
-			traceback.print_tb(item)
-			traceback.print_tb(item, file=open(tb_filename, "a"))
-		else:
-			print("!", item)
-			print("!", item, file=open(tb_filename, "a"))
+	logc("args= %r", args, exc_info=args)
 
 	save_config()
-	pid_fp = os.path.join(os.environ.get("temp"),
-		os.path.basename(__file__) + ".pid")
-	print("\ndeleting %r" % pid_fp)
-	os.unlink(pid_fp)
+
+	pid_fp = os.path.join(os.environ.get("temp"), os.path.basename(__file__)
+		+ ".pid")
+	if os.path.exists(pid_fp):
+		logi("Deleting %r" % pid_fp)
+		os.unlink(pid_fp)
 	sys.exit()
 
 
@@ -203,12 +198,15 @@ def load_config():
 		config.read(CONFIG_FILE_PATH)
 	else:
 		logw("File %r not found", CONFIG_FILE_PATH)
+	config.my_changed = False
 
 
 def save_config():
-	with open(CONFIG_FILE_PATH, "w") as f:
-		logi("Writing %r", CONFIG_FILE_PATH)
-		config.write(f)
+	if config.my_changed:
+		with open(CONFIG_FILE_PATH, "w") as f:
+			logi("Writing %r", CONFIG_FILE_PATH)
+			config.write(f)
+		config.my_changed = False
 
 
 def dp(*args):
@@ -475,6 +473,7 @@ class Application(tk.Frame):
 	sort_by = None
 	videos = []
 	first_run = True
+
 	skipped = set()
 
 	def __init__(self, master=None, sort_by="fsize_desc"):
@@ -494,6 +493,10 @@ class Application(tk.Frame):
 
 		self.my_state = VIDEO_RENAMED
 		self.my_state_start = 1
+
+		if "global" in config and "skipped" in config["global"]:
+			self.skipped = set(config["global"]["skipped"].split(FNSEP))
+		logd("self.skipped= %r", self.skipped)
 
 		self.on_every_second()
 		#~ self.master.state('zoomed')
@@ -850,6 +853,8 @@ class Application(tk.Frame):
 	def skip_video(self):
 		#~ print(self.fp_video)
 		self.skipped.add(self.fp_video)
+		config["global"]["skipped"] = FNSEP.join(self.skipped)
+		config.my_changed = True
 		#~ print(self.skipped)
 		self.send_key_to_player(chr(27))
 
