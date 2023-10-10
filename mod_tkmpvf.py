@@ -685,7 +685,7 @@ class Application(tk.Frame):
 
 	def get_videos(self, announce=None):
 		folder = self.video_folder
-
+		logd("os.getcwd()= %r", os.getcwd())
 		#~ self.videos.clear()
 
 		_ = glob.glob(opj(folder, "*.mp4"))
@@ -697,15 +697,20 @@ class Application(tk.Frame):
 		_ += glob.glob(opj(folder, "*.dat"))
 
 		if announce:
-			self.splash = Splash(tk.Tk())
 			count_videos = len(_)
-			suffix = random.choice(ann_suffixes)
-			numsuf = num2text(count_videos, (suffix, "m"))  # .split()
-			narrator = random.choice(narrators)
-			self.splash.l_fn["text"] = ""
-			self.splash.l_progress["text"] = ""
-			self.splash.update()
-			say_async(numsuf, narrator=narrator)
+			if count_videos > 0:
+				self.splash = Splash(tk.Tk())
+				suffix = random.choice(ann_suffixes)
+				numsuf = num2text(count_videos, (suffix, "m"))  # .split()
+				narrator = random.choice(narrators)
+				self.splash.l_fn["text"] = ""
+				self.splash.l_progress["text"] = ""
+				self.splash.update()
+				say_async(numsuf, narrator=narrator)
+			else:
+				say_async("А здесь нет вид^осов"
+					, narrator=random.choice(narrators))
+				self.bring_to_front()
 
 		#~ dp("> checking for deleted videos")
 		for i, video_struct in enumerate(self.videos):
