@@ -710,7 +710,7 @@ class Application(tk.Frame):
 			else:
 				say_async("А здесь нет вид^осов"
 					, narrator=random.choice(narrators))
-				self.bring_to_front()
+				#~ self.bring_to_front()
 
 		#~ dp("> checking for deleted videos")
 		for i, video_struct in enumerate(self.videos):
