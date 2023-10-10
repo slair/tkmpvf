@@ -36,18 +36,6 @@ if WIN32:
 	from ahk.window import Window
 	ahk = AHK()
 
-try:
-	from saymod import say_async, say, snd_play_async		# , get_narrators
-except ModuleNotFoundError:
-	def say(*args, **kwargs):
-		print("! say(", *args, ")")
-
-	def snd_play_async(*args, **kwargs):
-		print("! snd_play_async(", *args, ")")
-
-	def say_async(*args, **kwargs):
-		print("! say_async(", *args, ")")
-
 #~ video_folder = r"C:\slair\to-delete\tg all"
 video_folder = r"."
 
@@ -113,6 +101,21 @@ if os.path.islink(MY_FILE_NAME):
 	MY_FILE_NAME = os.readlink(MY_FILE_NAME)
 MY_FOLDER = os.path.dirname(MY_FILE_NAME)
 MY_NAME = os.path.splitext(os.path.basename(MY_FILE_NAME))[0]
+
+
+try:
+	from saymod import say_async, say, snd_play_async, saymod_setup_log
+	saymod_setup_log(MY_NAME)
+except ModuleNotFoundError:
+	def say(*args, **kwargs):
+		print("! say(", *args, ")")
+
+	def snd_play_async(*args, **kwargs):
+		print("! snd_play_async(", *args, ")")
+
+	def say_async(*args, **kwargs):
+		print("! say_async(", *args, ")")
+
 
 BASELOGFORMAT = "%(message)s"
 BASEDTFORMAT = "%d.%m.%y %H:%M:%S"
