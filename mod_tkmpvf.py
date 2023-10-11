@@ -499,8 +499,13 @@ class Application(tk.Frame):
 		self.my_state_start = 1
 
 		if "global" in config and "skipped" in config["global"]:
-			self.skipped = set(config["global"]["skipped"].split(FNSEP))
-		logd("self.skipped= %r", self.skipped)
+			skipped_items = config["global"]["skipped"].split(FNSEP)
+			#~ logd("skipped_items= %r", skipped_items)
+			#~ logd("any(skipped_items)= %r", any(skipped_items))
+			if any(skipped_items):
+				self.prop_skipped = set(skipped_items)
+			else:
+				self.prop_skipped = set()
 
 		self.on_every_second()
 		#~ self.master.state('zoomed')
@@ -513,7 +518,7 @@ class Application(tk.Frame):
 		self.fp_video = None
 		while not self.fp_video and self.videos:
 			self.fp_video, title, fsize, duration = self.videos.pop(0)
-			if self.fp_video in self.skipped:
+			if self.fp_video in self.prop_skipped:
 				self.fp_video = None
 
 		p = do_command_bg(play_cmd_tpl % self.fp_video)
@@ -582,7 +587,7 @@ class Application(tk.Frame):
 			if tpc() - self.my_state_start > (TIME_TO_RENAME + 1.0)\
 				and self._points_added >= TIME_TO_RENAME:
 
-				if self.fp_video and self.fp_video not in self.skipped \
+				if self.fp_video and self.fp_video not in self.prop_skipped \
 					and os.path.exists(self.fp_video):
 
 					rename_status = "<переименовано>"
@@ -724,7 +729,7 @@ class Application(tk.Frame):
 		_duration = 0
 		_fsize = 0
 		for fn in _:
-			if fn in self.skipped:
+			if fn in self.prop_skipped:
 				continue
 
 			fn_count += 1
@@ -887,12 +892,14 @@ class Application(tk.Frame):
 				# todo: change text on b_pause
 
 	def skip_video(self):
-		#~ print(self.fp_video)
-		self.skipped.add(self.fp_video)
-		config["global"]["skipped"] = FNSEP.join(self.skipped)
-		config.my_changed = True
-		#~ print(self.skipped)
+		_set = self.prop_skipped
+		_set.add(self.fp_video)
+		self.prop_skipped = _set
+
 		self.send_key_to_player(chr(27))
+
+	def clear_skipped(self):
+		self.prop_skipped = set()
 
 	def create_widgets(self):
 		# todo: Выбор монитора для фулскрина
@@ -918,7 +925,7 @@ class Application(tk.Frame):
 		self.mf = tk.Frame(self)
 		self.mf.pack(side="top", fill="x", expand=False)
 
-		self.f_video = tk.Frame(self.mf)
+		self.f_video = tk.Frame(self.mf)  # фрейм для кнопок к текущему видео
 		self.f_video.pack(side="top", fill="x", expand=False)
 
 		self.b_pause = tk.Button(self.f_video, text=" Пауза "
@@ -928,6 +935,13 @@ class Application(tk.Frame):
 		self.b_skip = tk.Button(self.f_video, text=" Пропустить "
 			, command=self.skip_video)
 		self.b_skip.pack(side="left", fill="y", expand=False, pady=4, padx=4)
+
+		self.tpl_clear_skipped = " Очистить %d пропущенных "
+		self.b_clear_skipped = tk.Button(self.f_video
+			, text=self.tpl_clear_skipped % len(self.prop_skipped)
+			, command=self.clear_skipped)
+		self.b_clear_skipped.pack(side="right", fill="y", expand=False
+			, pady=4, padx=4)
 
 		self.lVideoTitle = tk.Label(self.mf, text="<lVideoTitle>\n2nd line"
 			, relief="groove", bd=2, font=("Impact", 48)
@@ -995,6 +1009,21 @@ class Application(tk.Frame):
 
 		for w in all_children(self):
 			w.bind("<KeyPress>", self.on_keypress)
+
+	@property
+	def prop_skipped(self):
+		return self.skipped
+
+	@prop_skipped.setter
+	def prop_skipped(self, val):
+		self.skipped = val
+		logd("self.skipped= %r", self.skipped)
+
+		config["global"]["skipped"] = FNSEP.join(self.skipped)
+		config.my_changed = True
+
+		self.b_clear_skipped["text"] \
+			= self.tpl_clear_skipped % len(self.skipped)
 
 
 def check_for_running(end=False):
