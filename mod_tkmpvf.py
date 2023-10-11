@@ -9,9 +9,7 @@ import time
 import re
 import logging
 import subprocess
-#~ import types
 import configparser
-#~ import traceback
 import tkinter as tk
 from tkinter import ttk
 from datetime import datetime, timedelta
@@ -39,9 +37,9 @@ if WIN32:
 #~ video_folder = r"C:\slair\to-delete\tg all"
 video_folder = r"."
 
-player_binary = "mpv.exe"
-play_cmd_tpl = " ".join((
-	player_binary,
+PLAYER_BINARY = "mpv.exe"
+TPL_PLAY_CMD = " ".join((
+	PLAYER_BINARY,
 	"-fs",
 	"--fs-screen=1",
 	"--softvol-max=500",
@@ -95,6 +93,7 @@ tpc = time.perf_counter
 config = configparser.ConfigParser()
 config["global"] = {}
 config.my_changed = False
+pid_fd = None
 
 MY_FILE_NAME = os.path.abspath(__file__)
 if os.path.islink(MY_FILE_NAME):
@@ -512,19 +511,15 @@ class Application(tk.Frame):
 		#~ self.master.state("iconic")
 
 	def start_video(self):
-		#~ print("! start_video", id(self.videos))
-		#~ for item in self.videos[:5]:print(item)
-
 		self.fp_video = None
 		while not self.fp_video and self.videos:
 			self.fp_video, title, fsize, duration = self.videos.pop(0)
 			if self.fp_video in self.prop_skipped:
 				self.fp_video = None
 
-		p = do_command_bg(play_cmd_tpl % self.fp_video)
+		p = do_command_bg(TPL_PLAY_CMD % self.fp_video)
 		self.sort_videos(self.first_run)
 		self.player_pid = p.pid
-		#~ print(self.player_pid)
 		self.lVideoTitle["text"] = title
 		self.lVideoTitle["fg"] = COLOR_FG_TITLE
 		self.lVideoTitle["bg"] = COLOR_BG_TITLE
@@ -533,7 +528,6 @@ class Application(tk.Frame):
 			self.lStatus["text"] = "Осталось %s %s" % (count_videos, "video")
 		else:
 			self.lStatus["text"] = "Последнее video"
-		#~ print("! start_video", id(self.videos))
 
 	def bring_to_front(self):
 		self.master.state("normal")
@@ -542,24 +536,17 @@ class Application(tk.Frame):
 
 	def change_label_height(self, label, min_height, max_height):
 		label_height = label.winfo_height()	 # 326
-		label_font = label["font"]				 # Impact 48
-		label_font_name, label_font_size \
-			= label_font.rsplit(maxsplit=1)
+		label_font = label["font"]			 # Impact 48
+		label_font_name, label_font_size = label_font.rsplit(maxsplit=1)
 
 		label_font_size = int(label_font_size)
 
 		if label_height > max_height:
-			#~ logd("label_height= %r", label_height)
-			#~ logd("label_font_size= %r", label_font_size)
-
 			label_font_size -= FS_CHANGE_STEP
 			label["font"] = (label_font_name
 				, label_font_size)
 
 		elif label_height < min_height:
-			#~ logd("label_height= %r", label_height)
-			#~ logd("label_font_size= %r", label_font_size)
-
 			label_font_size += FS_CHANGE_STEP
 			label["font"] = (label_font_name
 				, label_font_size)
@@ -639,7 +626,6 @@ class Application(tk.Frame):
 				self._points_added += 1
 
 		elif self.my_state == VIDEO_RENAMED:
-			#~ self.lVideoTitle["text"] += "."
 			if tpc() - self.my_state_start > TIME_TO_START:
 				self.get_videos(self.first_run)
 
@@ -658,7 +644,7 @@ class Application(tk.Frame):
 					self.clear_lb_videos()
 
 		elif self.my_state == STOPPED:
-			snd_play_async("C:\\slair\\share\\sounds\\click-6.wav")
+			snd_play_async(opj(ENV_HOME, "share", "sounds", "click-6.wav"))
 			state_duration = tpc() - self.my_state_start
 
 			self.lVideoTitle["text"] = "выход через %.1f" \
@@ -666,7 +652,8 @@ class Application(tk.Frame):
 
 			self.lStatus["text"] = "Нет video"
 			if state_duration > TIME_TO_EXIT:
-				snd_play_async("C:\\slair\\share\\sounds\\drum.wav", ep=True)
+				snd_play_async(opj(ENV_HOME, "share", "sounds", "drum.wav")
+					, ep=True)
 				self.master.destroy()
 
 		self.master.after(1000, self.on_every_second)
@@ -1027,23 +1014,23 @@ class Application(tk.Frame):
 
 
 def check_for_running(end=False):
+	global pid_fd
 	pid_fp = os.path.join(TMPDIR, os.path.basename(__file__) + ".pid")
-	#~ print(pid_fp)
 
 	if os.path.exists(pid_fp):
 		if end:
-			if os.path.exists(pid_fp):
+			if os.path.exists(pid_fp) and pid_fd:
+				pid_fd.close()
 				os.unlink(pid_fp)
 		else:
 			say_async("Уже запущено!", narrator=random.choice(narrators))
-			#~ sys.exit()
 			if os.path.exists(pid_fp):
-				os.unlink(pid_fp)
+				os.unlink(pid_fp)		# здесь должно падать
 
 	else:
 		pid = os.getpid()
-		with open(pid_fp, "w") as f:
-			f.write("%d" % pid)
+		pid_fd = open(pid_fp, "w")
+		pid_fd.write("%d" % pid)		# оставляем открытым, чтобы не потёрли
 
 
 def main():
