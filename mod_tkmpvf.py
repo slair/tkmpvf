@@ -184,8 +184,6 @@ CONFIG_FILE_PATH = opj(MY_XDG_CONFIG_HOME, MY_NAME + ".ini")
 def my_tk_excepthook(*args):
 	logc("args= %r", args, exc_info=args)
 
-	save_config()
-
 	pid_fp = os.path.join(TMPDIR, os.path.basename(__file__) + ".pid")
 	if os.path.exists(pid_fp):
 		if pid_fd:
@@ -470,12 +468,13 @@ class Splash(tk.Frame):
 
 
 def EXIT(rc=0):
+	save_config()
 	# wait for all threads to complete
 	threads = None
 	while not threads or len(threads) > 1:
 		threads = threading.enumerate()
 		#~ logd("%r", " ".join(t.name for t in threads))
-	logi("Exiting rc=%r", rc)
+	logi("Exiting rc=%r\n\n", rc)
 	sys.exit(rc)
 
 
@@ -511,13 +510,16 @@ class Application(tk.Frame):
 		self.my_state = VIDEO_RENAMED
 		self.my_state_start = 1
 
-		self.prop_skipped = set()
 		if "global" in config and "skipped" in config["global"]:
 			skipped_items = config["global"]["skipped"].split(FNSEP)
 			#~ logd("skipped_items= %r", skipped_items)
 			#~ logd("any(skipped_items)= %r", any(skipped_items))
 			if any(skipped_items):
 				self.prop_skipped = set(skipped_items)
+		else:
+			self.prop_skipped = set()
+
+		logi("len(self.prop_skipped)=%r", len(self.prop_skipped))
 
 		self.on_every_second()
 		#~ self.master.state('zoomed')
@@ -1017,7 +1019,7 @@ class Application(tk.Frame):
 	@prop_skipped.setter
 	def prop_skipped(self, val):
 		self.skipped = val
-		logd("self.skipped= %r", self.skipped)
+		#~ logd("self.skipped= %r", self.skipped)
 
 		config["global"]["skipped"] = FNSEP.join(self.skipped)
 		config.my_changed = True
@@ -1082,8 +1084,6 @@ def main():
 	app.mainloop()
 
 	#~ logi("Finished")
-
-	save_config()
 
 	check_for_running(True)
 
