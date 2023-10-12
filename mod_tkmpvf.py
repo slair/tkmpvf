@@ -13,6 +13,7 @@ import configparser
 import tkinter as tk
 from tkinter import ttk
 from datetime import datetime, timedelta
+import threading
 
 import cv2
 import psutil
@@ -28,6 +29,8 @@ WIN32 = sys.platform == "win32"
 LINUX = sys.platform == "linux"
 TMPDIR = tempfile.gettempdir()
 
+# todo: убрать ahk, трэй бесится и слишком накладно ради одного
+# send_key_to_player
 ahk = None
 if WIN32:
 	from ahk import AHK
@@ -193,8 +196,7 @@ def my_tk_excepthook(*args):
 		except PermissionError as e:
 			loge("Deleting %r", pid_fp, exc_info=e)
 
-	logi("Exiting rc=0")
-	sys.exit()
+	EXIT()
 
 
 sys.excepthook = my_tk_excepthook
@@ -204,7 +206,7 @@ tk.Tk.report_callback_exception = my_tk_excepthook
 def load_config():
 	if os.path.exists(CONFIG_FILE_PATH):
 		logi("Reading %r", CONFIG_FILE_PATH)
-		config.read(CONFIG_FILE_PATH)
+		config.read(CONFIG_FILE_PATH, encoding="utf-8")
 	else:
 		logw("File %r not found", CONFIG_FILE_PATH)
 	config.my_changed = False
@@ -212,7 +214,7 @@ def load_config():
 
 def save_config():
 	if config.my_changed:
-		with open(CONFIG_FILE_PATH, "w") as f:
+		with open(CONFIG_FILE_PATH, "w", encoding="utf-8") as f:
 			logi("Writing %r", CONFIG_FILE_PATH)
 			config.write(f)
 		config.my_changed = False
@@ -385,14 +387,9 @@ narrators = (
 
 
 def duration_fmt(duration):
-	#~ print(duration[0])
 	dur_sec = duration[0]
 
-	#~ try:
 	res = str(timedelta(seconds=dur_sec))
-	#~ except OverflowError as e:
-		#~ print("dur_sec = %r" % dur_sec)
-		#~ sys.exit()
 
 	if "." in res:
 		res = res.split(".", maxsplit=1)[0]
@@ -472,6 +469,16 @@ class Splash(tk.Frame):
 		#~ self.update()
 
 
+def EXIT(rc=0):
+	# wait for all threads to complete
+	threads = None
+	while not threads or len(threads) > 1:
+		threads = threading.enumerate()
+		#~ logd("%r", " ".join(t.name for t in threads))
+	logi("Exiting rc=%r", rc)
+	sys.exit(rc)
+
+
 class Application(tk.Frame):
 	my_state = None
 	player_pid = None
@@ -504,14 +511,13 @@ class Application(tk.Frame):
 		self.my_state = VIDEO_RENAMED
 		self.my_state_start = 1
 
+		self.prop_skipped = set()
 		if "global" in config and "skipped" in config["global"]:
 			skipped_items = config["global"]["skipped"].split(FNSEP)
 			#~ logd("skipped_items= %r", skipped_items)
 			#~ logd("any(skipped_items)= %r", any(skipped_items))
 			if any(skipped_items):
 				self.prop_skipped = set(skipped_items)
-			else:
-				self.prop_skipped = set()
 
 		self.on_every_second()
 		#~ self.master.state('zoomed')
@@ -684,7 +690,7 @@ class Application(tk.Frame):
 
 	def get_videos(self, announce=None):
 		folder = self.video_folder
-		logd("os.getcwd()= %r", os.getcwd())
+		#~ logd("os.getcwd()= %r", os.getcwd())
 		#~ self.videos.clear()
 
 		_ = glob.glob(opj(folder, "*.mp4"))
@@ -1019,6 +1025,11 @@ class Application(tk.Frame):
 		self.b_clear_skipped["text"] \
 			= self.tpl_clear_skipped % len(self.skipped)
 
+		if self.skipped:
+			self.b_clear_skipped["state"] = "normal"
+		else:
+			self.b_clear_skipped["state"] = "disabled"
+
 
 def check_for_running(end=False):
 	global pid_fd
@@ -1036,8 +1047,7 @@ def check_for_running(end=False):
 			except PermissionError:
 				say_async("Уже запущено!"
 					, narrator=random.choice(narrators))
-				logi("Exiting rc=32")
-				sys.exit(32)
+				EXIT(32)
 
 	else:
 		if not end:
@@ -1047,7 +1057,6 @@ def check_for_running(end=False):
 
 
 def main():
-	logi("Starting")
 	#~ for var, value in globals().items():
 		#~ logd("%16s = %s", var, value)
 
@@ -1078,9 +1087,9 @@ def main():
 
 	check_for_running(True)
 
-	logi("Exiting rc=0")
-
 
 if __name__ == '__main__':
 	#~ os.chdir(r"C:\slair\to-delete\tg all")
+	logi("Starting")
 	main()
+	EXIT()
