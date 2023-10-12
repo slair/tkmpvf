@@ -185,8 +185,15 @@ def my_tk_excepthook(*args):
 
 	pid_fp = os.path.join(TMPDIR, os.path.basename(__file__) + ".pid")
 	if os.path.exists(pid_fp):
-		logi("Deleting %r" % pid_fp)
-		os.unlink(pid_fp)
+		if pid_fd:
+			pid_fd.close()
+		try:
+			os.unlink(pid_fp)
+			logi("Deleting %r", pid_fp)
+		except PermissionError as e:
+			loge("Deleting %r", pid_fp, exc_info=e)
+
+	logi("Exiting rc=0")
 	sys.exit()
 
 
@@ -1019,22 +1026,28 @@ def check_for_running(end=False):
 
 	if os.path.exists(pid_fp):
 		if end:
-			if os.path.exists(pid_fp) and pid_fd:
+			if pid_fd:
 				pid_fd.close()
 				os.unlink(pid_fp)
+				pid_fd = None
 		else:
-			say_async("Уже запущено!", narrator=random.choice(narrators))
-			if os.path.exists(pid_fp):
+			try:
 				os.unlink(pid_fp)		# здесь должно падать
+			except PermissionError:
+				say_async("Уже запущено!"
+					, narrator=random.choice(narrators))
+				logi("Exiting rc=32")
+				sys.exit(32)
 
 	else:
-		pid = os.getpid()
-		pid_fd = open(pid_fp, "w")
-		pid_fd.write("%d" % pid)		# оставляем открытым, чтобы не потёрли
+		if not end:
+			pid = os.getpid()
+			pid_fd = open(pid_fp, "w")
+			pid_fd.write("%d" % pid)	 # оставляем открытым, чтобы не потёрли
 
 
 def main():
-	#~ logi("Started")
+	logi("Starting")
 	#~ for var, value in globals().items():
 		#~ logd("%16s = %s", var, value)
 
@@ -1064,6 +1077,8 @@ def main():
 	save_config()
 
 	check_for_running(True)
+
+	logi("Exiting rc=0")
 
 
 if __name__ == '__main__':
