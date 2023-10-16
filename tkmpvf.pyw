@@ -9,12 +9,11 @@ import time
 import re
 import logging
 import subprocess
-#~ import types
 import configparser
-#~ import traceback
 import tkinter as tk
 from tkinter import ttk
 from datetime import datetime, timedelta
+import threading
 
 import cv2
 import psutil
@@ -30,30 +29,20 @@ WIN32 = sys.platform == "win32"
 LINUX = sys.platform == "linux"
 TMPDIR = tempfile.gettempdir()
 
+# todo: убрать ahk, трэй бесится и слишком накладно ради одного
+# send_key_to_player
 ahk = None
 if WIN32:
 	from ahk import AHK
 	from ahk.window import Window
 	ahk = AHK()
 
-try:
-	from saymod import say_async, say, snd_play_async		# , get_narrators
-except ModuleNotFoundError:
-	def say(*args, **kwargs):
-		print("! say(", *args, ")")
-
-	def snd_play_async(*args, **kwargs):
-		print("! snd_play_async(", *args, ")")
-
-	def say_async(*args, **kwargs):
-		print("! say_async(", *args, ")")
-
 #~ video_folder = r"C:\slair\to-delete\tg all"
 video_folder = r"."
 
-player_binary = "mpv.exe"
-play_cmd_tpl = " ".join((
-	player_binary,
+PLAYER_BINARY = "mpv.exe"
+TPL_PLAY_CMD = " ".join((
+	PLAYER_BINARY,
 	"-fs",
 	"--fs-screen=1",
 	"--softvol-max=500",
@@ -107,12 +96,28 @@ tpc = time.perf_counter
 config = configparser.ConfigParser()
 config["global"] = {}
 config.my_changed = False
+pid_fd = None
 
 MY_FILE_NAME = os.path.abspath(__file__)
 if os.path.islink(MY_FILE_NAME):
 	MY_FILE_NAME = os.readlink(MY_FILE_NAME)
 MY_FOLDER = os.path.dirname(MY_FILE_NAME)
 MY_NAME = os.path.splitext(os.path.basename(MY_FILE_NAME))[0]
+
+
+try:
+	from saymod import say_async, say, snd_play_async, saymod_setup_log
+	saymod_setup_log(MY_NAME)
+except ModuleNotFoundError:
+	def say(*args, **kwargs):
+		print("! say(", *args, ")")
+
+	def snd_play_async(*args, **kwargs):
+		print("! snd_play_async(", *args, ")")
+
+	def say_async(*args, **kwargs):
+		print("! say_async(", *args, ")")
+
 
 BASELOGFORMAT = "%(message)s"
 BASEDTFORMAT = "%d.%m.%y %H:%M:%S"
@@ -179,13 +184,17 @@ CONFIG_FILE_PATH = opj(MY_XDG_CONFIG_HOME, MY_NAME + ".ini")
 def my_tk_excepthook(*args):
 	logc("args= %r", args, exc_info=args)
 
-	save_config()
-
 	pid_fp = os.path.join(TMPDIR, os.path.basename(__file__) + ".pid")
 	if os.path.exists(pid_fp):
-		logi("Deleting %r" % pid_fp)
-		os.unlink(pid_fp)
-	sys.exit()
+		if pid_fd:
+			pid_fd.close()
+		try:
+			os.unlink(pid_fp)
+			logi("Deleting %r", pid_fp)
+		except PermissionError as e:
+			loge("Deleting %r", pid_fp, exc_info=e)
+
+	EXIT()
 
 
 sys.excepthook = my_tk_excepthook
@@ -195,7 +204,7 @@ tk.Tk.report_callback_exception = my_tk_excepthook
 def load_config():
 	if os.path.exists(CONFIG_FILE_PATH):
 		logi("Reading %r", CONFIG_FILE_PATH)
-		config.read(CONFIG_FILE_PATH)
+		config.read(CONFIG_FILE_PATH, encoding="utf-8")
 	else:
 		logw("File %r not found", CONFIG_FILE_PATH)
 	config.my_changed = False
@@ -203,7 +212,7 @@ def load_config():
 
 def save_config():
 	if config.my_changed:
-		with open(CONFIG_FILE_PATH, "w") as f:
+		with open(CONFIG_FILE_PATH, "w", encoding="utf-8") as f:
 			logi("Writing %r", CONFIG_FILE_PATH)
 			config.write(f)
 		config.my_changed = False
@@ -376,14 +385,9 @@ narrators = (
 
 
 def duration_fmt(duration):
-	#~ print(duration[0])
 	dur_sec = duration[0]
 
-	#~ try:
 	res = str(timedelta(seconds=dur_sec))
-	#~ except OverflowError as e:
-		#~ print("dur_sec = %r" % dur_sec)
-		#~ sys.exit()
 
 	if "." in res:
 		res = res.split(".", maxsplit=1)[0]
@@ -463,6 +467,17 @@ class Splash(tk.Frame):
 		#~ self.update()
 
 
+def EXIT(rc=0):
+	save_config()
+	# wait for all threads to complete
+	threads = None
+	while not threads or len(threads) > 1:
+		threads = threading.enumerate()
+		#~ logd("%r", " ".join(t.name for t in threads))
+	logi("Exiting rc=%r\n\n", rc)
+	sys.exit(rc)
+
+
 class Application(tk.Frame):
 	my_state = None
 	player_pid = None
@@ -496,27 +511,30 @@ class Application(tk.Frame):
 		self.my_state_start = 1
 
 		if "global" in config and "skipped" in config["global"]:
-			self.skipped = set(config["global"]["skipped"].split(FNSEP))
-		logd("self.skipped= %r", self.skipped)
+			skipped_items = config["global"]["skipped"].split(FNSEP)
+			#~ logd("skipped_items= %r", skipped_items)
+			#~ logd("any(skipped_items)= %r", any(skipped_items))
+			if any(skipped_items):
+				self.prop_skipped = set(skipped_items)
+		else:
+			self.prop_skipped = set()
+
+		logi("len(self.prop_skipped)=%r", len(self.prop_skipped))
 
 		self.on_every_second()
 		#~ self.master.state('zoomed')
 		#~ self.master.state("iconic")
 
 	def start_video(self):
-		#~ print("! start_video", id(self.videos))
-		#~ for item in self.videos[:5]:print(item)
-
 		self.fp_video = None
 		while not self.fp_video and self.videos:
 			self.fp_video, title, fsize, duration = self.videos.pop(0)
-			if self.fp_video in self.skipped:
+			if self.fp_video in self.prop_skipped:
 				self.fp_video = None
 
-		p = do_command_bg(play_cmd_tpl % self.fp_video)
+		p = do_command_bg(TPL_PLAY_CMD % self.fp_video)
 		self.sort_videos(self.first_run)
 		self.player_pid = p.pid
-		#~ print(self.player_pid)
 		self.lVideoTitle["text"] = title
 		self.lVideoTitle["fg"] = COLOR_FG_TITLE
 		self.lVideoTitle["bg"] = COLOR_BG_TITLE
@@ -525,7 +543,6 @@ class Application(tk.Frame):
 			self.lStatus["text"] = "Осталось %s %s" % (count_videos, "video")
 		else:
 			self.lStatus["text"] = "Последнее video"
-		#~ print("! start_video", id(self.videos))
 
 	def bring_to_front(self):
 		self.master.state("normal")
@@ -534,24 +551,17 @@ class Application(tk.Frame):
 
 	def change_label_height(self, label, min_height, max_height):
 		label_height = label.winfo_height()	 # 326
-		label_font = label["font"]				 # Impact 48
-		label_font_name, label_font_size \
-			= label_font.rsplit(maxsplit=1)
+		label_font = label["font"]			 # Impact 48
+		label_font_name, label_font_size = label_font.rsplit(maxsplit=1)
 
 		label_font_size = int(label_font_size)
 
 		if label_height > max_height:
-			#~ logd("label_height= %r", label_height)
-			#~ logd("label_font_size= %r", label_font_size)
-
 			label_font_size -= FS_CHANGE_STEP
 			label["font"] = (label_font_name
 				, label_font_size)
 
 		elif label_height < min_height:
-			#~ logd("label_height= %r", label_height)
-			#~ logd("label_font_size= %r", label_font_size)
-
 			label_font_size += FS_CHANGE_STEP
 			label["font"] = (label_font_name
 				, label_font_size)
@@ -579,7 +589,7 @@ class Application(tk.Frame):
 			if tpc() - self.my_state_start > (TIME_TO_RENAME + 1.0)\
 				and self._points_added >= TIME_TO_RENAME:
 
-				if self.fp_video and self.fp_video not in self.skipped \
+				if self.fp_video and self.fp_video not in self.prop_skipped \
 					and os.path.exists(self.fp_video):
 
 					rename_status = "<переименовано>"
@@ -631,7 +641,6 @@ class Application(tk.Frame):
 				self._points_added += 1
 
 		elif self.my_state == VIDEO_RENAMED:
-			#~ self.lVideoTitle["text"] += "."
 			if tpc() - self.my_state_start > TIME_TO_START:
 				self.get_videos(self.first_run)
 
@@ -650,7 +659,7 @@ class Application(tk.Frame):
 					self.clear_lb_videos()
 
 		elif self.my_state == STOPPED:
-			snd_play_async("C:\\slair\\share\\sounds\\click-6.wav")
+			snd_play_async(opj(ENV_HOME, "share", "sounds", "click-6.wav"))
 			state_duration = tpc() - self.my_state_start
 
 			self.lVideoTitle["text"] = "выход через %.1f" \
@@ -658,7 +667,8 @@ class Application(tk.Frame):
 
 			self.lStatus["text"] = "Нет video"
 			if state_duration > TIME_TO_EXIT:
-				snd_play_async("C:\\slair\\share\\sounds\\drum.wav", ep=True)
+				snd_play_async(opj(ENV_HOME, "share", "sounds", "drum.wav")
+					, ep=True)
 				self.master.destroy()
 
 		self.master.after(1000, self.on_every_second)
@@ -682,7 +692,7 @@ class Application(tk.Frame):
 
 	def get_videos(self, announce=None):
 		folder = self.video_folder
-
+		#~ logd("os.getcwd()= %r", os.getcwd())
 		#~ self.videos.clear()
 
 		_ = glob.glob(opj(folder, "*.mp4"))
@@ -694,15 +704,20 @@ class Application(tk.Frame):
 		_ += glob.glob(opj(folder, "*.dat"))
 
 		if announce:
-			self.splash = Splash(tk.Tk())
 			count_videos = len(_)
-			suffix = random.choice(ann_suffixes)
-			numsuf = num2text(count_videos, (suffix, "m"))  # .split()
-			narrator = random.choice(narrators)
-			self.splash.l_fn["text"] = ""
-			self.splash.l_progress["text"] = ""
-			self.splash.update()
-			say_async(numsuf, narrator=narrator)
+			if count_videos > 0:
+				self.splash = Splash(tk.Tk())
+				suffix = random.choice(ann_suffixes)
+				numsuf = num2text(count_videos, (suffix, "m"))  # .split()
+				narrator = random.choice(narrators)
+				self.splash.l_fn["text"] = ""
+				self.splash.l_progress["text"] = ""
+				self.splash.update()
+				say_async(numsuf, narrator=narrator)
+			else:
+				say_async("А здесь нет вид^осов"
+					, narrator=random.choice(narrators))
+				#~ self.bring_to_front()
 
 		#~ dp("> checking for deleted videos")
 		for i, video_struct in enumerate(self.videos):
@@ -716,7 +731,7 @@ class Application(tk.Frame):
 		_duration = 0
 		_fsize = 0
 		for fn in _:
-			if fn in self.skipped:
+			if fn in self.prop_skipped:
 				continue
 
 			fn_count += 1
@@ -879,12 +894,14 @@ class Application(tk.Frame):
 				# todo: change text on b_pause
 
 	def skip_video(self):
-		#~ print(self.fp_video)
-		self.skipped.add(self.fp_video)
-		config["global"]["skipped"] = FNSEP.join(self.skipped)
-		config.my_changed = True
-		#~ print(self.skipped)
+		_set = self.prop_skipped
+		_set.add(self.fp_video)
+		self.prop_skipped = _set
+
 		self.send_key_to_player(chr(27))
+
+	def clear_skipped(self):
+		self.prop_skipped = set()
 
 	def create_widgets(self):
 		# todo: Выбор монитора для фулскрина
@@ -910,7 +927,7 @@ class Application(tk.Frame):
 		self.mf = tk.Frame(self)
 		self.mf.pack(side="top", fill="x", expand=False)
 
-		self.f_video = tk.Frame(self.mf)
+		self.f_video = tk.Frame(self.mf)  # фрейм для кнопок к текущему видео
 		self.f_video.pack(side="top", fill="x", expand=False)
 
 		self.b_pause = tk.Button(self.f_video, text=" Пауза "
@@ -920,6 +937,13 @@ class Application(tk.Frame):
 		self.b_skip = tk.Button(self.f_video, text=" Пропустить "
 			, command=self.skip_video)
 		self.b_skip.pack(side="left", fill="y", expand=False, pady=4, padx=4)
+
+		self.tpl_clear_skipped = " Очистить %d пропущенных "
+		self.b_clear_skipped = tk.Button(self.f_video
+			, text=self.tpl_clear_skipped % len(self.prop_skipped)
+			, command=self.clear_skipped)
+		self.b_clear_skipped.pack(side="right", fill="y", expand=False
+			, pady=4, padx=4)
 
 		self.lVideoTitle = tk.Label(self.mf, text="<lVideoTitle>\n2nd line"
 			, relief="groove", bd=2, font=("Impact", 48)
@@ -988,29 +1012,53 @@ class Application(tk.Frame):
 		for w in all_children(self):
 			w.bind("<KeyPress>", self.on_keypress)
 
+	@property
+	def prop_skipped(self):
+		return self.skipped
+
+	@prop_skipped.setter
+	def prop_skipped(self, val):
+		self.skipped = val
+		#~ logd("self.skipped= %r", self.skipped)
+
+		config["global"]["skipped"] = FNSEP.join(self.skipped)
+		config.my_changed = True
+
+		self.b_clear_skipped["text"] \
+			= self.tpl_clear_skipped % len(self.skipped)
+
+		if self.skipped:
+			self.b_clear_skipped["state"] = "normal"
+		else:
+			self.b_clear_skipped["state"] = "disabled"
+
 
 def check_for_running(end=False):
+	global pid_fd
 	pid_fp = os.path.join(TMPDIR, os.path.basename(__file__) + ".pid")
-	#~ print(pid_fp)
 
 	if os.path.exists(pid_fp):
 		if end:
-			if os.path.exists(pid_fp):
+			if pid_fd:
+				pid_fd.close()
 				os.unlink(pid_fp)
+				pid_fd = None
 		else:
-			say_async("Уже запущено!", narrator=random.choice(narrators))
-			#~ sys.exit()
-			if os.path.exists(pid_fp):
-				os.unlink(pid_fp)
+			try:
+				os.unlink(pid_fp)		# здесь должно падать
+			except PermissionError:
+				say_async("Уже запущено!"
+					, narrator=random.choice(narrators))
+				EXIT(32)
 
 	else:
-		pid = os.getpid()
-		with open(pid_fp, "w") as f:
-			f.write("%d" % pid)
+		if not end:
+			pid = os.getpid()
+			pid_fd = open(pid_fp, "w")
+			pid_fd.write("%d" % pid)	 # оставляем открытым, чтобы не потёрли
 
 
 def main():
-	#~ logi("Started")
 	#~ for var, value in globals().items():
 		#~ logd("%16s = %s", var, value)
 
@@ -1037,11 +1085,11 @@ def main():
 
 	#~ logi("Finished")
 
-	save_config()
-
 	check_for_running(True)
 
 
 if __name__ == '__main__':
 	#~ os.chdir(r"C:\slair\to-delete\tg all")
+	logi("Starting")
 	main()
+	EXIT()
