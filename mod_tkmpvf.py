@@ -891,7 +891,6 @@ class Application(tk.Frame):
 			self.win_player = Window.from_pid(ahk, pid=str(self.player_pid))
 			if self.win_player:
 				self.win_player.send("p")
-				# todo: change text on b_pause
 
 	def skip_video(self):
 		_set = self.prop_skipped
@@ -901,6 +900,7 @@ class Application(tk.Frame):
 		self.send_key_to_player(chr(27))
 
 	def clear_skipped(self):
+		# todo: Переспросить
 		self.prop_skipped = set()
 
 	def create_widgets(self):
