@@ -740,7 +740,7 @@ class Application(tk.Frame):
 				narrator = random.choice(narrators)
 				self.splash.l_fn["text"] = ""
 				self.splash.l_progress["text"] = ""
-				self.splash.update()
+				self.update_splash()
 				say_async(numsuf, narrator=narrator)
 			else:
 				say_async("А здесь нет вид^осов"
@@ -792,7 +792,7 @@ class Application(tk.Frame):
 							self.splash._title + duration_fmt((_duration,))
 							+ "    " + sizeof_fmt(_fsize))
 
-						self.splash.update()
+						self.update_splash()
 
 					if not self.splash.working:
 						self.master.destroy()
@@ -858,6 +858,8 @@ class Application(tk.Frame):
 		total_duration = 0
 		total_fsize = 0
 		for item in self.videos:
+			self.update_splash()
+
 			fn, title, fsize, duration = item
 			total_duration += duration[0]
 			total_fsize += fsize
@@ -895,7 +897,12 @@ class Application(tk.Frame):
 		if announce:
 			narrator = random.choice(narrators)
 			total_duration_str = td2words(timedelta(seconds=total_duration))
+			self.update_splash()
 			say(total_duration_str, narrator=narrator)
+
+	def update_splash(self):
+		if self.splash.working:
+			self.splash.update()
 
 	def set_sort(self, _sort_by):
 		if self.sort_by == _sort_by + "_desc":

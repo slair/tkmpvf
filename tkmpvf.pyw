@@ -10,8 +10,9 @@ import re
 import logging
 import subprocess
 import configparser
+import gettext
 import tkinter as tk
-from tkinter import ttk
+from tkinter import ttk, messagebox
 from datetime import datetime, timedelta
 import threading
 
@@ -24,6 +25,8 @@ from transliterate import translit	 # , get_available_language_codes
 import translit_pikabu_lp			 # noqa добавляем свой язык
 from num2t4ru import num2text		 # , num2text_VP
 #~ # pylint: disable=
+
+_ = gettext.gettext
 
 WIN32 = sys.platform == "win32"
 LINUX = sys.platform == "linux"
@@ -439,6 +442,7 @@ def do_command_bg(cmd):
 class Splash(tk.Frame):
 	window_width = 512
 	window_height = 100
+	working = True
 
 	def __init__(self, master=None):
 		super().__init__(master)
@@ -446,6 +450,9 @@ class Splash(tk.Frame):
 		self.pack(side="top", fill=tk.BOTH, expand=True)
 		self._title = "Загрузка...    "
 		self.master.title(self._title)
+
+		self.master.bind("<KeyPress>", self.on_keypress)
+		self.bind("<KeyPress>", self.on_keypress)
 
 		self.l_fn = tk.Label(self.master, text="<filename>", height=3)
 		self.l_fn.bind('<Configure>', lambda e: self.l_fn.config(
@@ -465,6 +472,15 @@ class Splash(tk.Frame):
 			self.window_width, self.window_height, xpos, ypos))
 		#~ self.pb.start()
 		#~ self.update()
+
+	def on_keypress(self, e):
+		if e.keysym == "Escape":
+			#~ self.send_key_to_player(chr(27))
+			self.working = False
+			self.master.destroy()
+
+		else:
+			print(e)
 
 
 def EXIT(rc=0):
@@ -499,9 +515,12 @@ class Application(tk.Frame):
 		self._base_title = "tkmpvf - %s" % os.getcwd()
 		self.master.title(self._base_title)
 		self.pack(side="top", fill="both", expand=True)
+
 		self.create_widgets()
+
 		self.master.bind("<KeyPress>", self.on_keypress)
 		self.bind("<KeyPress>", self.on_keypress)
+		self.master.protocol("WM_DELETE_WINDOW", self.on_close_master)
 		self.master.focus()
 		self.b_skip.focus()
 
@@ -524,6 +543,17 @@ class Application(tk.Frame):
 		self.on_every_second()
 		#~ self.master.state('zoomed')
 		#~ self.master.state("iconic")
+
+	def geometry_to_config(self):
+		config["global"]["geometry"] = self.master.geometry()
+		config.my_changed = True
+
+	def on_close_master(self, *args, **kwargs):
+		#~ logd("*args=%r", args)
+		#~ logd("**kwargs=%r", kwargs)
+		self.geometry_to_config()
+		self.send_key_to_player(chr(27))
+		self.master.destroy()
 
 	def start_video(self):
 		self.fp_video = None
@@ -684,9 +714,7 @@ class Application(tk.Frame):
 
 	def on_keypress(self, e):
 		if e.keysym == "Escape":
-			self.send_key_to_player(chr(27))
-			self.master.destroy()
-
+			self.on_close_master()
 		else:
 			print(e)
 
@@ -712,7 +740,7 @@ class Application(tk.Frame):
 				narrator = random.choice(narrators)
 				self.splash.l_fn["text"] = ""
 				self.splash.l_progress["text"] = ""
-				self.splash.update()
+				self.update_splash()
 				say_async(numsuf, narrator=narrator)
 			else:
 				say_async("А здесь нет вид^осов"
@@ -753,7 +781,7 @@ class Application(tk.Frame):
 					_duration += fn_duration[0]
 					_fsize += fsize
 
-					if announce:
+					if announce and self.splash.working:
 						self.splash.l_fn["text"] = fn[2:]
 						self.splash.pb["value"] = fn_count / fn_total * 100.0
 
@@ -764,7 +792,11 @@ class Application(tk.Frame):
 							self.splash._title + duration_fmt((_duration,))
 							+ "    " + sizeof_fmt(_fsize))
 
-						self.splash.update()
+						self.update_splash()
+
+					if not self.splash.working:
+						self.master.destroy()
+						EXIT(16)
 
 	def clear_lb_videos(self):
 		self.lbVideosDurations.delete(0, tk.END)
@@ -826,6 +858,8 @@ class Application(tk.Frame):
 		total_duration = 0
 		total_fsize = 0
 		for item in self.videos:
+			self.update_splash()
+
 			fn, title, fsize, duration = item
 			total_duration += duration[0]
 			total_fsize += fsize
@@ -863,7 +897,12 @@ class Application(tk.Frame):
 		if announce:
 			narrator = random.choice(narrators)
 			total_duration_str = td2words(timedelta(seconds=total_duration))
+			self.update_splash()
 			say(total_duration_str, narrator=narrator)
+
+	def update_splash(self):
+		if self.splash.working:
+			self.splash.update()
 
 	def set_sort(self, _sort_by):
 		if self.sort_by == _sort_by + "_desc":
@@ -891,7 +930,6 @@ class Application(tk.Frame):
 			self.win_player = Window.from_pid(ahk, pid=str(self.player_pid))
 			if self.win_player:
 				self.win_player.send("p")
-				# todo: change text on b_pause
 
 	def skip_video(self):
 		_set = self.prop_skipped
@@ -901,12 +939,15 @@ class Application(tk.Frame):
 		self.send_key_to_player(chr(27))
 
 	def clear_skipped(self):
-		self.prop_skipped = set()
+		# done: Переспросить
+		if messagebox.askokcancel(_("Skipped")
+			, _("Do you want to clear skipped?")):
+			self.prop_skipped = set()
 
 	def create_widgets(self):
 		# todo: Выбор монитора для фулскрина
-		# todo: Сохранение настроек
-		# todo: Загрузка настроек
+		# done: Сохранение настроек
+		# done: Загрузка настроек
 
 		self.uf = tk.Frame(self, relief="groove", bd=2)
 		self.uf.pack(side="top", fill="x", expand=False)
@@ -1070,8 +1111,15 @@ def main():
 	#~ print(root["bg"])
 	#~ sys.exit(0)
 
-	root.geometry("1024x512+" + str(1366 - 1024 - 7)
-		+ "+" + str(720 - 512 - 31))
+	geometry = config["global"].get("geometry", None)
+	if geometry:
+		logd('config["global"]["geometry"]=%r', geometry)
+		root.geometry(geometry)
+	else:
+		root.geometry("1024x512+" + str(1366 - 1024 - 7)
+			+ "+" + str(720 - 512 - 31))
+
+	#~ logd("root.geometry()=%r", root.geometry())
 
 	scriptpath = os.path.dirname(os.path.realpath(__file__))
 	icon = tk.PhotoImage(file=os.path.join(scriptpath, "icon.png"))
