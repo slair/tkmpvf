@@ -10,8 +10,9 @@ import re
 import logging
 import subprocess
 import configparser
+import gettext
 import tkinter as tk
-from tkinter import ttk
+from tkinter import ttk, messagebox
 from datetime import datetime, timedelta
 import threading
 
@@ -24,6 +25,8 @@ from transliterate import translit	 # , get_available_language_codes
 import translit_pikabu_lp			 # noqa добавляем свой язык
 from num2t4ru import num2text		 # , num2text_VP
 #~ # pylint: disable=
+
+_ = gettext.gettext
 
 WIN32 = sys.platform == "win32"
 LINUX = sys.platform == "linux"
@@ -512,9 +515,12 @@ class Application(tk.Frame):
 		self._base_title = "tkmpvf - %s" % os.getcwd()
 		self.master.title(self._base_title)
 		self.pack(side="top", fill="both", expand=True)
+
 		self.create_widgets()
+
 		self.master.bind("<KeyPress>", self.on_keypress)
 		self.bind("<KeyPress>", self.on_keypress)
+		self.master.protocol("WM_DELETE_WINDOW", self.on_close_master)
 		self.master.focus()
 		self.b_skip.focus()
 
@@ -537,6 +543,17 @@ class Application(tk.Frame):
 		self.on_every_second()
 		#~ self.master.state('zoomed')
 		#~ self.master.state("iconic")
+
+	def geometry_to_config(self):
+		config["global"]["geometry"] = self.master.geometry()
+		config.my_changed = True
+
+	def on_close_master(self, *args, **kwargs):
+		#~ logd("*args=%r", args)
+		#~ logd("**kwargs=%r", kwargs)
+		self.geometry_to_config()
+		self.send_key_to_player(chr(27))
+		self.master.destroy()
 
 	def start_video(self):
 		self.fp_video = None
@@ -697,9 +714,7 @@ class Application(tk.Frame):
 
 	def on_keypress(self, e):
 		if e.keysym == "Escape":
-			self.send_key_to_player(chr(27))
-			self.master.destroy()
-
+			self.on_close_master()
 		else:
 			print(e)
 
@@ -917,13 +932,15 @@ class Application(tk.Frame):
 		self.send_key_to_player(chr(27))
 
 	def clear_skipped(self):
-		# todo: Переспросить
-		self.prop_skipped = set()
+		# done: Переспросить
+		if messagebox.askokcancel(_("Skipped")
+			, _("Do you want to clear skipped?")):
+			self.prop_skipped = set()
 
 	def create_widgets(self):
 		# todo: Выбор монитора для фулскрина
-		# todo: Сохранение настроек
-		# todo: Загрузка настроек
+		# done: Сохранение настроек
+		# done: Загрузка настроек
 
 		self.uf = tk.Frame(self, relief="groove", bd=2)
 		self.uf.pack(side="top", fill="x", expand=False)
@@ -1087,8 +1104,15 @@ def main():
 	#~ print(root["bg"])
 	#~ sys.exit(0)
 
-	root.geometry("1024x512+" + str(1366 - 1024 - 7)
-		+ "+" + str(720 - 512 - 31))
+	geometry = config["global"].get("geometry", None)
+	if geometry:
+		logd('config["global"]["geometry"]=%r', geometry)
+		root.geometry(geometry)
+	else:
+		root.geometry("1024x512+" + str(1366 - 1024 - 7)
+			+ "+" + str(720 - 512 - 31))
+
+	#~ logd("root.geometry()=%r", root.geometry())
 
 	scriptpath = os.path.dirname(os.path.realpath(__file__))
 	icon = tk.PhotoImage(file=os.path.join(scriptpath, "icon.png"))
