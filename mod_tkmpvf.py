@@ -439,6 +439,7 @@ def do_command_bg(cmd):
 class Splash(tk.Frame):
 	window_width = 512
 	window_height = 100
+	working = True
 
 	def __init__(self, master=None):
 		super().__init__(master)
@@ -446,6 +447,9 @@ class Splash(tk.Frame):
 		self.pack(side="top", fill=tk.BOTH, expand=True)
 		self._title = "Загрузка...    "
 		self.master.title(self._title)
+
+		self.master.bind("<KeyPress>", self.on_keypress)
+		self.bind("<KeyPress>", self.on_keypress)
 
 		self.l_fn = tk.Label(self.master, text="<filename>", height=3)
 		self.l_fn.bind('<Configure>', lambda e: self.l_fn.config(
@@ -465,6 +469,15 @@ class Splash(tk.Frame):
 			self.window_width, self.window_height, xpos, ypos))
 		#~ self.pb.start()
 		#~ self.update()
+
+	def on_keypress(self, e):
+		if e.keysym == "Escape":
+			#~ self.send_key_to_player(chr(27))
+			self.working = False
+			self.master.destroy()
+
+		else:
+			print(e)
 
 
 def EXIT(rc=0):
@@ -753,7 +766,7 @@ class Application(tk.Frame):
 					_duration += fn_duration[0]
 					_fsize += fsize
 
-					if announce:
+					if announce and self.splash.working:
 						self.splash.l_fn["text"] = fn[2:]
 						self.splash.pb["value"] = fn_count / fn_total * 100.0
 
@@ -765,6 +778,10 @@ class Application(tk.Frame):
 							+ "    " + sizeof_fmt(_fsize))
 
 						self.splash.update()
+
+					if not self.splash.working:
+						self.master.destroy()
+						EXIT(16)
 
 	def clear_lb_videos(self):
 		self.lbVideosDurations.delete(0, tk.END)
