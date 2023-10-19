@@ -10,6 +10,7 @@ import re
 import logging
 import subprocess
 import configparser
+import shutil
 import gettext
 import tkinter as tk
 from tkinter import ttk, messagebox
@@ -32,8 +33,28 @@ WIN32 = sys.platform == "win32"
 LINUX = sys.platform == "linux"
 TMPDIR = tempfile.gettempdir()
 
-# todo: убрать ahk, трэй бесится и слишком накладно ради одного
-# send_key_to_player
+if WIN32:
+	import win32api
+
+	def enum_display_monitors():
+		res = []
+		for mon in win32api.EnumDisplayMonitors():
+			width = mon[2][2] - mon[2][0]
+			height = mon[2][3] - mon[2][1]
+			if mon[2][0] < 0:
+				#~ res.append("left", width, height)
+				res.append("%rx%r" % (width, height))
+			elif mon[2][0] >= 0:
+				#~ res.append("right", width, height)
+				res.append("%rx%r" % (width, height))
+		return res
+
+PLAYER = "mpv"
+
+if WIN32:
+	PLAYER += ".exe"
+
+# todo: убрать ahk, трэй бесится, слишком дорого ради одного send_key_to_player
 ahk = None
 if WIN32:
 	from ahk import AHK
@@ -43,11 +64,11 @@ if WIN32:
 #~ video_folder = r"C:\slair\to-delete\tg all"
 video_folder = r"."
 
-PLAYER_BINARY = "mpv.exe"
+PLAYER_BINARY = shutil.which(PLAYER)
 TPL_PLAY_CMD = " ".join((
 	PLAYER_BINARY,
-	"-fs",
-	"--fs-screen=1",
+	"%s",						# "-fs",
+	"--fs-screen=%s",
 	"--softvol-max=500",
 	"--brightness=0",
 	"--",
@@ -219,6 +240,20 @@ def save_config():
 			logi("Writing %r", CONFIG_FILE_PATH)
 			config.write(f)
 		config.my_changed = False
+
+
+def change_config(section, option, value):
+	if not isinstance(value, str):
+		value = str(value)
+
+	old_value = config[section].get(option)
+	if old_value != value:
+		logd("Change [%r][%r] from %r to %r"
+			, section, option, old_value, value)
+
+		config[section][option] = value
+		config.my_changed = True
+	return config.my_changed
 
 
 def dp(*args):
@@ -475,7 +510,6 @@ class Splash(tk.Frame):
 
 	def on_keypress(self, e):
 		if e.keysym == "Escape":
-			#~ self.send_key_to_player(chr(27))
 			self.working = False
 			self.master.destroy()
 
@@ -510,11 +544,13 @@ class Application(tk.Frame):
 
 	def __init__(self, master=None, sort_by="fsize_desc"):
 		super().__init__(master)
+		#~ logd("sort_by=%r", sort_by)
 		self.sort_by = sort_by
 		self.master = master
 		self._base_title = "tkmpvf - %s" % os.getcwd()
 		self.master.title(self._base_title)
 		self.pack(side="top", fill="both", expand=True)
+		self.display_names = enum_display_monitors()
 
 		self.create_widgets()
 
@@ -540,19 +576,20 @@ class Application(tk.Frame):
 
 		logi("len(self.prop_skipped)=%r", len(self.prop_skipped))
 
+		logd("Starts in %r, self.sort_by=%r", os.getcwd(), self.sort_by)
+
 		self.on_every_second()
 		#~ self.master.state('zoomed')
 		#~ self.master.state("iconic")
 
 	def geometry_to_config(self):
-		config["global"]["geometry"] = self.master.geometry()
-		config.my_changed = True
+		change_config("global", "geometry", self.master.geometry())
 
 	def on_close_master(self, *args, **kwargs):
 		#~ logd("*args=%r", args)
 		#~ logd("**kwargs=%r", kwargs)
 		self.geometry_to_config()
-		self.send_key_to_player(chr(27))
+		self.stop_player()
 		self.master.destroy()
 
 	def start_video(self):
@@ -562,7 +599,11 @@ class Application(tk.Frame):
 			if self.fp_video in self.prop_skipped:
 				self.fp_video = None
 
-		p = do_command_bg(TPL_PLAY_CMD % self.fp_video)
+		p = do_command_bg(TPL_PLAY_CMD % (
+			"-fs" if self.i_fullscreen.get() == 1 else ""
+			, self.display_names.index(self.sv_player_display.get())
+			, self.fp_video))
+
 		self.sort_videos(self.first_run)
 		self.player_pid = p.pid
 		self.lVideoTitle["text"] = title
@@ -597,13 +638,22 @@ class Application(tk.Frame):
 				, label_font_size)
 
 	def on_every_second(self):
+		#~ logd("self.my_state=%r, duration=%r"
+			#~ , self.my_state, tpc()-self.my_state_start)
+
 		now = datetime.now()
 		self.lClock["text"] = now.strftime("%H:%M:%S")
+
+		old_title = self.master.title()
+		if old_title[-1] != "*" and config.my_changed:
+			self.master.title(old_title + " *")
+		elif old_title[-1] == "*" and not config.my_changed:
+			self.master.title(old_title[:-2])
 
 		self.change_label_height(self.lVideoTitle
 			, min_height=100, max_height=200)
 
-		if self.player_pid:
+		if self.player_pid and self.my_state == PLAYING:
 			self.b_pause["state"] = "normal"
 			self.b_skip["state"] = "normal"
 			if not psutil.pid_exists(self.player_pid):
@@ -675,14 +725,15 @@ class Application(tk.Frame):
 				self.get_videos(self.first_run)
 
 				if self.videos:
-					self.my_state = PLAYING
-					self.my_state_start = tpc()
+					self.sort_videos(self.first_run)
 					if self.first_run:
-						self.sort_videos(self.first_run)
 						self.first_run = None
+						self.splash.working = None
 						self.splash.master.destroy()
 						self.master.deiconify()
 					self.start_video()
+					self.my_state = PLAYING
+					self.my_state_start = tpc()
 				else:
 					self.my_state = STOPPED
 					self.my_state_start = tpc()
@@ -704,10 +755,15 @@ class Application(tk.Frame):
 		self.master.after(1000, self.on_every_second)
 
 	def send_key_to_player(self, key):
+		#~ logd("ahk=%r, self.player_pid=%r", ahk, self.player_pid)
 		if ahk and self.player_pid:
-			self.win_player = Window.from_pid(ahk
-				, pid=str(self.player_pid))
+			ahk_pid = 'ahk_pid %s' % self.player_pid
+			self.win_player = ahk.win_get(title=ahk_pid)
+			#~ logd("ahk_pid=%r, self.win_player=%r", ahk_pid, self.win_player)
+			#~ self.win_player = Window.from_pid(ahk
+				#~ , pid=str(self.player_pid))
 			if self.win_player:
+				logd("Send %r to %r", key, self.win_player)
 				self.win_player.send(key)
 				return True
 		return False
@@ -794,7 +850,7 @@ class Application(tk.Frame):
 
 						self.update_splash()
 
-					if not self.splash.working:
+					if not self.splash.working and self.first_run:
 						self.master.destroy()
 						EXIT(16)
 
@@ -890,9 +946,12 @@ class Application(tk.Frame):
 		self.lbVideosDurations["width"] = max_len_duration
 		self.lbVideosSizes["width"] = max_len_fsize + 1
 
-		self.master.title(self._base_title + " - Всего: "
-			+ duration_fmt((total_duration, None))
-			+ "    " + sizeof_fmt(total_fsize))
+		new_title = self._base_title + " - Всего: " \
+			+ duration_fmt((total_duration, None)) \
+			+ "    " + sizeof_fmt(total_fsize) \
+			+ (" *" if config.my_changed else "")
+		#~ logd("self.master.title(%r)", new_title)
+		self.master.title(new_title)
 
 		if announce:
 			narrator = random.choice(narrators)
@@ -902,7 +961,12 @@ class Application(tk.Frame):
 
 	def update_splash(self):
 		if self.splash.working:
-			self.splash.update()
+			try:
+				self.splash.update()
+			except tk.TclError as e:		# noqa: F841
+				#~ logd("Не успели :(", exc_info=e)
+				logd("Не успели :(")
+				pass
 
 	def set_sort(self, _sort_by):
 		if self.sort_by == _sort_by + "_desc":
@@ -935,8 +999,7 @@ class Application(tk.Frame):
 		_set = self.prop_skipped
 		_set.add(self.fp_video)
 		self.prop_skipped = _set
-
-		self.send_key_to_player(chr(27))
+		self.stop_player()
 
 	def clear_skipped(self):
 		# done: Переспросить
@@ -978,6 +1041,23 @@ class Application(tk.Frame):
 		self.b_skip = tk.Button(self.f_video, text=" Пропустить "
 			, command=self.skip_video)
 		self.b_skip.pack(side="left", fill="y", expand=False, pady=4, padx=4)
+
+		self.i_fullscreen = tk.IntVar(value=int(
+			config["global"].get("fullscreen", "1")))
+
+		self.cb_fullscreen = tk.Checkbutton(self.f_video, text=_("Fullscreen")
+			, variable=self.i_fullscreen, onvalue=1, offvalue=0
+			, command=self.cb_fullscreen_changed)
+		self.cb_fullscreen.pack(side="left", fill="y", pady=4, padx=4)
+
+		self.sv_player_display = tk.StringVar(
+			value=self.display_names[
+				int(config["global"].get("fs-screen", "0"))])
+
+		self.cb_display = ttk.Combobox(self.f_video, state="readonly"
+			, textvariable=self.sv_player_display, values=self.display_names)
+		self.cb_display.pack(side="left", fill="y", pady=4, padx=4)
+		self.cb_display.bind("<<ComboboxSelected>>", self.display_selected)
 
 		self.tpl_clear_skipped = " Очистить %d пропущенных "
 		self.b_clear_skipped = tk.Button(self.f_video
@@ -1053,6 +1133,28 @@ class Application(tk.Frame):
 		for w in all_children(self):
 			w.bind("<KeyPress>", self.on_keypress)
 
+	def stop_player(self):
+		self.send_key_to_player(chr(27))
+
+	def restart_player(self):
+		self.stop_player()
+		self.my_state = VIDEO_RENAMED
+		self.my_state_start = tpc()
+
+	def cb_fullscreen_changed(self):
+		value = self.i_fullscreen.get()
+		config_changed = change_config("global", "fullscreen"
+			, str(value))
+		if config_changed:
+			self.restart_player()
+
+	def display_selected(self, event):
+		selection = self.cb_display.get()
+		config_changed = change_config("global", "fs-screen"
+			, self.display_names.index(selection))
+		if config_changed:
+			self.restart_player()
+
 	@property
 	def prop_skipped(self):
 		return self.skipped
@@ -1062,8 +1164,7 @@ class Application(tk.Frame):
 		self.skipped = val
 		#~ logd("self.skipped= %r", self.skipped)
 
-		config["global"]["skipped"] = FNSEP.join(self.skipped)
-		config.my_changed = True
+		change_config("global", "skipped", FNSEP.join(sorted(self.skipped)))
 
 		self.b_clear_skipped["text"] \
 			= self.tpl_clear_skipped % len(self.skipped)
@@ -1108,12 +1209,14 @@ def main():
 	load_config()
 
 	root = tk.Tk()
+	sw, sh = root.winfo_screenwidth(), root.winfo_screenheight()
+	logd("screen=%rx%r", sw, sh)
 	#~ print(root["bg"])
 	#~ sys.exit(0)
 
 	geometry = config["global"].get("geometry", None)
 	if geometry:
-		logd('config["global"]["geometry"]=%r', geometry)
+		#~ logd('config["global"]["geometry"]=%r', geometry)
 		root.geometry(geometry)
 	else:
 		root.geometry("1024x512+" + str(1366 - 1024 - 7)
@@ -1125,7 +1228,7 @@ def main():
 	icon = tk.PhotoImage(file=os.path.join(scriptpath, "icon.png"))
 	root.iconphoto(True, icon)
 
-	if len(sys.argv) > 1:
+	if len(sys.argv) > 1 and sys.argv[1][1] == "-":
 		app = Application(root, sys.argv[1][1:])
 	else:
 		app = Application(root)
@@ -1137,7 +1240,9 @@ def main():
 
 
 if __name__ == '__main__':
-	#~ os.chdir(r"C:\slair\to-delete\tg all")
+	if len(sys.argv) > 1:
+		folder = sys.argv[1]
+		os.chdir(folder)
 	logi("Starting")
 	main()
 	EXIT()
