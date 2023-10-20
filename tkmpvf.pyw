@@ -1004,6 +1004,7 @@ class Application(tk.Frame):
 				self.win_player.send("p")
 
 	def skip_video(self):
+		# done: Переспросить перед добавлением видоса в пропущенные
 		if messagebox.askokcancel(_("Skipped")
 			, _("Do you want add current video into skipped?")):
 			_set = self.prop_skipped
@@ -1013,7 +1014,7 @@ class Application(tk.Frame):
 			self.restart_player()
 
 	def clear_skipped(self):
-		# done: Переспросить
+		# done: Переспросить перед очисткой пропущенных видосов
 		if messagebox.askokcancel(_("Skipped")
 			, _("Do you want to clear skipped?")):
 			self.prop_skipped = set()
@@ -1214,32 +1215,23 @@ def check_for_running(end=False):
 
 
 def main():
-	#~ for var, value in globals().items():
-		#~ logd("%16s = %s", var, value)
-
-	check_for_running()
-
 	# done: Загрузка настроек
 	load_config()
 
 	root = tk.Tk()
-	sw, sh = root.winfo_screenwidth(), root.winfo_screenheight()
-	logd("screen=%rx%r", sw, sh)
-	#~ print(root["bg"])
-	#~ sys.exit(0)
+
+	#~ sw, sh = root.winfo_screenwidth(), root.winfo_screenheight()
+	#~ logd("screen=%rx%r", sw, sh)
 
 	geometry = config["global"].get("geometry", None)
 	if geometry:
-		#~ logd('config["global"]["geometry"]=%r', geometry)
 		root.geometry(geometry)
 	else:
 		root.geometry("1024x512+" + str(1366 - 1024 - 7)
 			+ "+" + str(720 - 512 - 31))
 
-	#~ logd("root.geometry()=%r", root.geometry())
-
-	scriptpath = os.path.dirname(os.path.realpath(__file__))
-	icon = tk.PhotoImage(file=os.path.join(scriptpath, "icon.png"))
+	SCRIPTPATH = os.path.dirname(os.path.realpath(__file__))
+	icon = tk.PhotoImage(file=os.path.join(SCRIPTPATH, "icon.png"))
 	root.iconphoto(True, icon)
 
 	if len(sys.argv) > 1 and sys.argv[1][1] == "-":
@@ -1248,16 +1240,15 @@ def main():
 		app = Application(root)
 	app.mainloop()
 
-	#~ logi("Finished")
-
-	check_for_running(True)
-
 
 if __name__ == '__main__':
 	if len(sys.argv) > 1:
 		folder = sys.argv[1]
 		if folder[0] != "-":
 			os.chdir(folder)
-	logi("Starting")
+
+	logi("Starting in %r", os.getcwd())
+	check_for_running()
 	main()
+	check_for_running(True)
 	EXIT()
