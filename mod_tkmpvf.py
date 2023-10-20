@@ -818,7 +818,9 @@ class Application(tk.Frame):
 			if fn in self.prop_skipped:
 				continue
 
+			# считаем без self.prop_skipped, градусник не доходит до 100%
 			fn_count += 1
+
 			if not any(e[0] == fn for e in self.videos):
 				#~ dp("! adding", fn)
 				fsize = os.stat(fn).st_size
@@ -838,8 +840,13 @@ class Application(tk.Frame):
 					_fsize += fsize
 
 					if announce and self.splash.working:
-						self.splash.l_fn["text"] = fn[2:]
-						self.splash.pb["value"] = fn_count / fn_total * 100.0
+						#~ logd("fn=%r", fn)
+						if fn[0] == ".":
+							self.splash.l_fn["text"] = fn[2:]
+						perc = fn_count / fn_total * 100.0
+						self.splash.pb["value"] = perc
+						#~ logd("fn_count=%r, fn_total=%r, perc=%r"
+							#~ , fn_count, fn_total, perc)
 
 						self.splash.l_progress["text"] = "%.2f %%" \
 							% self.splash.pb["value"]
@@ -914,8 +921,6 @@ class Application(tk.Frame):
 		total_duration = 0
 		total_fsize = 0
 		for item in self.videos:
-			self.update_splash()
-
 			fn, title, fsize, duration = item
 			total_duration += duration[0]
 			total_fsize += fsize
@@ -942,6 +947,8 @@ class Application(tk.Frame):
 				max_len_fsize = len(sfsize)
 			if max_len_duration < len(sduration):
 				max_len_duration = len(sduration)
+
+			self.update_splash()
 
 		self.lbVideosDurations["width"] = max_len_duration
 		self.lbVideosSizes["width"] = max_len_fsize + 1
@@ -1242,7 +1249,8 @@ def main():
 if __name__ == '__main__':
 	if len(sys.argv) > 1:
 		folder = sys.argv[1]
-		os.chdir(folder)
+		if folder[0] != "-":
+			os.chdir(folder)
 	logi("Starting")
 	main()
 	EXIT()
