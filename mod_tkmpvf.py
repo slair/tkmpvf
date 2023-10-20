@@ -518,6 +518,7 @@ class Splash(tk.Frame):
 
 
 def EXIT(rc=0):
+	# done: Сохранение настроек
 	save_config()
 	# wait for all threads to complete
 	threads = None
@@ -1003,22 +1004,22 @@ class Application(tk.Frame):
 				self.win_player.send("p")
 
 	def skip_video(self):
-		_set = self.prop_skipped
-		_set.add(self.fp_video)
-		self.prop_skipped = _set
-		self.stop_player()
+		if messagebox.askokcancel(_("Skipped")
+			, _("Do you want add current video into skipped?")):
+			_set = self.prop_skipped
+			_set.add(self.fp_video)
+			self.prop_skipped = _set
+			#~ self.stop_player()
+			self.restart_player()
 
 	def clear_skipped(self):
 		# done: Переспросить
 		if messagebox.askokcancel(_("Skipped")
 			, _("Do you want to clear skipped?")):
 			self.prop_skipped = set()
+			self.restart_player()
 
 	def create_widgets(self):
-		# todo: Выбор монитора для фулскрина
-		# done: Сохранение настроек
-		# done: Загрузка настроек
-
 		self.uf = tk.Frame(self, relief="groove", bd=2)
 		self.uf.pack(side="top", fill="x", expand=False)
 
@@ -1061,6 +1062,7 @@ class Application(tk.Frame):
 			value=self.display_names[
 				int(config["global"].get("fs-screen", "0"))])
 
+		# done: Выбор монитора для фулскрина
 		self.cb_display = ttk.Combobox(self.f_video, state="readonly"
 			, textvariable=self.sv_player_display, values=self.display_names)
 		self.cb_display.pack(side="left", fill="y", pady=4, padx=4)
@@ -1153,7 +1155,11 @@ class Application(tk.Frame):
 		config_changed = change_config("global", "fullscreen"
 			, str(value))
 		if config_changed:
-			self.restart_player()
+			#~ self.restart_player()
+			if value:
+				self.send_key_to_player("F")
+			else:
+				self.send_key_to_player("G")
 
 	def display_selected(self, event):
 		selection = self.cb_display.get()
@@ -1213,6 +1219,7 @@ def main():
 
 	check_for_running()
 
+	# done: Загрузка настроек
 	load_config()
 
 	root = tk.Tk()

@@ -518,6 +518,7 @@ class Splash(tk.Frame):
 
 
 def EXIT(rc=0):
+	# done: Сохранение настроек
 	save_config()
 	# wait for all threads to complete
 	threads = None
@@ -818,7 +819,9 @@ class Application(tk.Frame):
 			if fn in self.prop_skipped:
 				continue
 
+			# считаем без self.prop_skipped, градусник не доходит до 100%
 			fn_count += 1
+
 			if not any(e[0] == fn for e in self.videos):
 				#~ dp("! adding", fn)
 				fsize = os.stat(fn).st_size
@@ -838,8 +841,13 @@ class Application(tk.Frame):
 					_fsize += fsize
 
 					if announce and self.splash.working:
-						self.splash.l_fn["text"] = fn[2:]
-						self.splash.pb["value"] = fn_count / fn_total * 100.0
+						#~ logd("fn=%r", fn)
+						if fn[0] == ".":
+							self.splash.l_fn["text"] = fn[2:]
+						perc = fn_count / fn_total * 100.0
+						self.splash.pb["value"] = perc
+						#~ logd("fn_count=%r, fn_total=%r, perc=%r"
+							#~ , fn_count, fn_total, perc)
 
 						self.splash.l_progress["text"] = "%.2f %%" \
 							% self.splash.pb["value"]
@@ -914,8 +922,6 @@ class Application(tk.Frame):
 		total_duration = 0
 		total_fsize = 0
 		for item in self.videos:
-			self.update_splash()
-
 			fn, title, fsize, duration = item
 			total_duration += duration[0]
 			total_fsize += fsize
@@ -942,6 +948,8 @@ class Application(tk.Frame):
 				max_len_fsize = len(sfsize)
 			if max_len_duration < len(sduration):
 				max_len_duration = len(sduration)
+
+			self.update_splash()
 
 		self.lbVideosDurations["width"] = max_len_duration
 		self.lbVideosSizes["width"] = max_len_fsize + 1
@@ -996,22 +1004,22 @@ class Application(tk.Frame):
 				self.win_player.send("p")
 
 	def skip_video(self):
-		_set = self.prop_skipped
-		_set.add(self.fp_video)
-		self.prop_skipped = _set
-		self.stop_player()
+		if messagebox.askokcancel(_("Skipped")
+			, _("Do you want add current video into skipped?")):
+			_set = self.prop_skipped
+			_set.add(self.fp_video)
+			self.prop_skipped = _set
+			#~ self.stop_player()
+			self.restart_player()
 
 	def clear_skipped(self):
 		# done: Переспросить
 		if messagebox.askokcancel(_("Skipped")
 			, _("Do you want to clear skipped?")):
 			self.prop_skipped = set()
+			self.restart_player()
 
 	def create_widgets(self):
-		# todo: Выбор монитора для фулскрина
-		# done: Сохранение настроек
-		# done: Загрузка настроек
-
 		self.uf = tk.Frame(self, relief="groove", bd=2)
 		self.uf.pack(side="top", fill="x", expand=False)
 
@@ -1054,6 +1062,7 @@ class Application(tk.Frame):
 			value=self.display_names[
 				int(config["global"].get("fs-screen", "0"))])
 
+		# done: Выбор монитора для фулскрина
 		self.cb_display = ttk.Combobox(self.f_video, state="readonly"
 			, textvariable=self.sv_player_display, values=self.display_names)
 		self.cb_display.pack(side="left", fill="y", pady=4, padx=4)
@@ -1146,7 +1155,11 @@ class Application(tk.Frame):
 		config_changed = change_config("global", "fullscreen"
 			, str(value))
 		if config_changed:
-			self.restart_player()
+			#~ self.restart_player()
+			if value:
+				self.send_key_to_player("F")
+			else:
+				self.send_key_to_player("G")
 
 	def display_selected(self, event):
 		selection = self.cb_display.get()
@@ -1206,6 +1219,7 @@ def main():
 
 	check_for_running()
 
+	# done: Загрузка настроек
 	load_config()
 
 	root = tk.Tk()
@@ -1242,7 +1256,8 @@ def main():
 if __name__ == '__main__':
 	if len(sys.argv) > 1:
 		folder = sys.argv[1]
-		os.chdir(folder)
+		if folder[0] != "-":
+			os.chdir(folder)
 	logi("Starting")
 	main()
 	EXIT()
