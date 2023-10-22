@@ -1234,7 +1234,8 @@ def main():
 	icon = tk.PhotoImage(file=os.path.join(SCRIPTPATH, "icon.png"))
 	root.iconphoto(True, icon)
 
-	if len(sys.argv) > 1 and sys.argv[1][1] == "-":
+	logd("sys.argv=%r", sys.argv)
+	if len(sys.argv) > 1 and sys.argv[1][0] == "-":
 		app = Application(root, sys.argv[1][1:])
 	else:
 		app = Application(root)
@@ -1247,7 +1248,7 @@ if __name__ == '__main__':
 		if folder[0] != "-":
 			os.chdir(folder)
 
-	logi("Starting in %r", os.getcwd())
+	logi("Starting in %r in %r", sys.argv, os.getcwd())
 	check_for_running()
 	main()
 	check_for_running(True)
