@@ -1197,10 +1197,12 @@ def check_for_running(end=False):
 		if end:
 			if pid_fd:
 				pid_fd.close()
+				logd("Deleting %r", pid_fp)
 				os.unlink(pid_fp)
 				pid_fd = None
 		else:
 			try:
+				logd("Deleting %r", pid_fp)
 				os.unlink(pid_fp)		# здесь должно падать
 			except PermissionError:
 				say_async("Уже запущено!"
@@ -1210,6 +1212,7 @@ def check_for_running(end=False):
 	else:
 		if not end:
 			pid = os.getpid()
+			logd("Creating %r", pid_fp)
 			pid_fd = open(pid_fp, "w")
 			pid_fd.write("%d" % pid)	 # оставляем открытым, чтобы не потёрли
 
