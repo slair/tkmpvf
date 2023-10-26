@@ -214,9 +214,9 @@ def my_tk_excepthook(*args):
 			pid_fd.close()
 		try:
 			os.unlink(pid_fp)
-			logi("Deleting %r", pid_fp)
+			logd("Deleted %r", pid_fp)
 		except PermissionError as e:
-			loge("Deleting %r", pid_fp, exc_info=e)
+			logw("Deleting %r failed. %r", pid_fp, e)
 
 	EXIT()
 
@@ -1197,14 +1197,18 @@ def check_for_running(end=False):
 		if end:
 			if pid_fd:
 				pid_fd.close()
-				logd("Deleting %r", pid_fp)
-				os.unlink(pid_fp)
+				try:
+					os.unlink(pid_fp)
+					logd("Deleted %r", pid_fp)
+				except PermissionError as e:
+					logw("Deleting %r failed. %r", pid_fp, e)
 				pid_fd = None
 		else:
 			try:
-				logd("Deleting %r", pid_fp)
 				os.unlink(pid_fp)		# здесь должно падать
-			except PermissionError:
+				logd("Deleted %r", pid_fp)
+			except PermissionError as e:
+				logw("Deleting %r failed. %r", pid_fp, e)
 				say_async("Уже запущено!"
 					, narrator=random.choice(narrators))
 				EXIT(32)
