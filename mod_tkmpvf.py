@@ -741,7 +741,7 @@ class Application(tk.Frame):
 					self.clear_lb_videos()
 
 		elif self.my_state == STOPPED:
-			snd_play_async(opj(ENV_HOME, "share", "sounds", "click-6.wav"))
+			snd_play_async(opj(ENV_HOME, "share", "sounds", "click-06.wav"))
 			state_duration = tpc() - self.my_state_start
 
 			self.lVideoTitle["text"] = "выход через %.1f" \
