@@ -973,7 +973,7 @@ class Application(tk.Frame):
 				self.splash.update()
 			except tk.TclError as e:		# noqa: F841
 				#~ logd("Не успели :(", exc_info=e)
-				logd("Не успели :(")
+				#~ logd("Не успели :(")
 				pass
 
 	def set_sort(self, _sort_by):
@@ -1145,6 +1145,12 @@ class Application(tk.Frame):
 
 	def stop_player(self):
 		self.send_key_to_player(chr(27))
+		start_exit = tpc()
+		while self.player_pid and psutil.pid_exists(self.player_pid):
+			exit_duration = tpc() - start_exit
+			logd("Waiting %r for the %r (%r) to die", exit_duration
+				, self.player_pid, PLAYER_BINARY)
+			time.sleep(0.1)
 
 	def restart_player(self):
 		self.stop_player()
