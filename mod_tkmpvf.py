@@ -96,6 +96,7 @@ sTITLE = "Название"
 sTITLE_DESC = "Название ↑"
 sTITLE_ASC = "Название ↓"
 
+MAX_TIME_TO_DIE = 15.0
 TIME_TO_RENAME = 2.0
 TIME_TO_START = 0.0
 TIME_TO_EXIT = 7.0
@@ -542,6 +543,7 @@ class Application(tk.Frame):
 	skipped = set()
 	lStatus_font = ("Impact", 48)
 	lVideoTitle_font = ("Impact", 48)
+	need_to_exit = False
 
 	def __init__(self, master=None, sort_by="fsize_desc"):
 		super().__init__(master)
@@ -586,11 +588,19 @@ class Application(tk.Frame):
 	def geometry_to_config(self):
 		change_config("global", "geometry", self.master.geometry())
 
+	def ask_for_delete(self):
+		seen_files = glob.glob("*.seen")
+		if seen_files and messagebox.askyesnocancel("Просмотренные файлы"
+			, "Удалить просмотренные файлы?"):
+			for item in seen_files:
+				logd("Deleting %r", item)
+				os.unlink(item)
+
 	def on_close_master(self, *args, **kwargs):
-		#~ logd("*args=%r", args)
-		#~ logd("**kwargs=%r", kwargs)
-		self.geometry_to_config()
+		self.need_to_exit = True
 		self.stop_player()
+		self.geometry_to_config()
+		self.ask_for_delete()
 		self.master.destroy()
 
 	def start_video(self):
@@ -617,9 +627,10 @@ class Application(tk.Frame):
 			self.lStatus["text"] = "Последнее video"
 
 	def bring_to_front(self):
-		self.master.state("normal")
-		self.master.focus_force()
-		self.b_skip.focus()
+		if self.i_bring_to_front.get() == 1:
+			self.master.state("normal")
+			self.master.focus_force()
+			self.b_skip.focus()
 
 	def change_label_height(self, label, min_height, max_height):
 		label_height = label.winfo_height()	 # 326
@@ -741,17 +752,19 @@ class Application(tk.Frame):
 					self.clear_lb_videos()
 
 		elif self.my_state == STOPPED:
-			snd_play_async(opj(ENV_HOME, "share", "sounds", "click-06.wav"))
-			state_duration = tpc() - self.my_state_start
+			if not self.need_to_exit:
+				snd_play_async(opj(ENV_HOME, "share", "sounds", "click-06.wav"))
+				state_duration = tpc() - self.my_state_start
 
-			self.lVideoTitle["text"] = "выход через %.1f" \
-				% (TIME_TO_EXIT - state_duration)
+				self.lVideoTitle["text"] = "выход через %.1f" \
+					% (TIME_TO_EXIT - state_duration)
 
-			self.lStatus["text"] = "Нет video"
-			if state_duration > TIME_TO_EXIT:
-				snd_play_async(opj(ENV_HOME, "share", "sounds", "drum.wav")
-					, ep=True)
-				self.master.destroy()
+				self.lStatus["text"] = "Нет video"
+				if state_duration > TIME_TO_EXIT:
+					snd_play_async(opj(ENV_HOME, "share", "sounds", "drum.wav")
+						, ep=True)
+					#~ self.master.destroy()
+					self.on_close_master(self)
 
 		self.master.after(1000, self.on_every_second)
 
@@ -1005,7 +1018,7 @@ class Application(tk.Frame):
 
 	def skip_video(self):
 		# done: Переспросить перед добавлением видоса в пропущенные
-		if messagebox.askokcancel(_("Skipped")
+		if messagebox.askyesno(_("Skipped")
 			, _("Do you want add current video into skipped?")):
 			_set = self.prop_skipped
 			_set.add(self.fp_video)
@@ -1015,7 +1028,7 @@ class Application(tk.Frame):
 
 	def clear_skipped(self):
 		# done: Переспросить перед очисткой пропущенных видосов
-		if messagebox.askokcancel(_("Skipped")
+		if messagebox.askyesno(_("Skipped")
 			, _("Do you want to clear skipped?")):
 			self.prop_skipped = set()
 			self.restart_player()
@@ -1068,6 +1081,15 @@ class Application(tk.Frame):
 			, textvariable=self.sv_player_display, values=self.display_names)
 		self.cb_display.pack(side="left", fill="y", pady=4, padx=4)
 		self.cb_display.bind("<<ComboboxSelected>>", self.display_selected)
+
+		self.i_bring_to_front = tk.IntVar(value=int(
+			config["global"].get("bring_to_front", "1")))
+
+		self.cb_bring_to_front = tk.Checkbutton(self.f_video
+			, text=_("Bring to front after playing")
+			, variable=self.i_bring_to_front, onvalue=1, offvalue=0
+			, command=self.cb_bring_to_front_changed)
+		self.cb_bring_to_front.pack(side="left", fill="y", pady=4, padx=4)
 
 		self.tpl_clear_skipped = " Очистить %d пропущенных "
 		self.b_clear_skipped = tk.Button(self.f_video
@@ -1144,6 +1166,8 @@ class Application(tk.Frame):
 			w.bind("<KeyPress>", self.on_keypress)
 
 	def stop_player(self):
+		self.my_state = STOPPED
+		self.my_state_start = tpc()
 		self.send_key_to_player(chr(27))
 		start_exit = tpc()
 		while self.player_pid and psutil.pid_exists(self.player_pid):
@@ -1151,6 +1175,10 @@ class Application(tk.Frame):
 			logd("Waiting %r for the %r (%r) to die", exit_duration
 				, self.player_pid, PLAYER_BINARY)
 			time.sleep(0.1)
+			if exit_duration > MAX_TIME_TO_DIE:
+				logd("Killing %r (%r)", self.player_pid, PLAYER_BINARY)
+				os.kill(self.player_pid)
+				start_exit = tpc()
 
 	def restart_player(self):
 		self.stop_player()
@@ -1167,6 +1195,10 @@ class Application(tk.Frame):
 				self.send_key_to_player("F")
 			else:
 				self.send_key_to_player("G")
+
+	def cb_bring_to_front_changed(self):
+		value = self.i_bring_to_front.get()
+		change_config("global", "bring_to_front", str(value))
 
 	def display_selected(self, event):
 		selection = self.cb_display.get()
