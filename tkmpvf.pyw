@@ -1250,3 +1250,51 @@ def check_for_running(end=False):
 				say_async("Уже запущено!"
 					, narrator=random.choice(narrators))
 				EXIT(32)
+
+	else:
+		if not end:
+			pid = os.getpid()
+			logd("Creating %r", pid_fp)
+			pid_fd = open(pid_fp, "w")
+			pid_fd.write("%d" % pid)	 # оставляем открытым, чтобы не потёрли
+
+
+def main():
+	# done: Загрузка настроек
+	load_config()
+
+	root = tk.Tk()
+
+	#~ sw, sh = root.winfo_screenwidth(), root.winfo_screenheight()
+	#~ logd("screen=%rx%r", sw, sh)
+
+	geometry = config["global"].get("geometry", None)
+	if geometry:
+		root.geometry(geometry)
+	else:
+		root.geometry("1024x512+" + str(1366 - 1024 - 7)
+			+ "+" + str(720 - 512 - 31))
+
+	SCRIPTPATH = os.path.dirname(os.path.realpath(__file__))
+	icon = tk.PhotoImage(file=os.path.join(SCRIPTPATH, "icon.png"))
+	root.iconphoto(True, icon)
+
+	#~ logd("sys.argv=%r", sys.argv)
+	if len(sys.argv) > 1 and sys.argv[1][0] == "-":
+		app = Application(root, sys.argv[1][1:])
+	else:
+		app = Application(root)
+	app.mainloop()
+
+
+if __name__ == '__main__':
+	if len(sys.argv) > 1:
+		folder = sys.argv[1]
+		if folder[0] != "-":
+			os.chdir(folder)
+
+	logi("Starting %r in %r", " ".join(sys.argv), os.getcwd())
+	check_for_running()
+	main()
+	check_for_running(True)
+	EXIT()
