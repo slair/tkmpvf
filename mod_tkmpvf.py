@@ -204,6 +204,10 @@ if not os.path.exists(MY_XDG_CONFIG_HOME):
 
 CONFIG_FILE_PATH = opj(MY_XDG_CONFIG_HOME, MY_NAME + ".ini")
 
+SND_FOLDER = opj(ENV_HOME, "share", "sounds")
+SND_CLICK = opj(SND_FOLDER, "click-06.wav")
+SND_DRUM = opj(SND_FOLDER, "drum.wav")
+
 
 #~ def my_tk_excepthook(excType, excValue, ltraceback, *args):
 def my_tk_excepthook(*args):
@@ -753,7 +757,7 @@ class Application(tk.Frame):
 
 		elif self.my_state == STOPPED:
 			if not self.need_to_exit:
-				snd_play_async(opj(ENV_HOME, "share", "sounds", "click-06.wav"))
+				snd_play_async(SND_CLICK)
 				state_duration = tpc() - self.my_state_start
 
 				self.lVideoTitle["text"] = "выход через %.1f" \
@@ -761,10 +765,9 @@ class Application(tk.Frame):
 
 				self.lStatus["text"] = "Нет video"
 				if state_duration > TIME_TO_EXIT:
-					snd_play_async(opj(ENV_HOME, "share", "sounds", "drum.wav")
-						, ep=True)
+					snd_play_async(SND_DRUM, ep=True)
 					#~ self.master.destroy()
-					self.on_close_master(self)
+					self.on_close_master()
 
 		self.master.after(1000, self.on_every_second)
 
