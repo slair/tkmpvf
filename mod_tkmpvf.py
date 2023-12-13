@@ -20,12 +20,12 @@ import threading
 import cv2
 import psutil
 
-#~ # pylint: disable=E0611
+#~ # pylint:disable=E0611
 from transliterate import translit	 # , get_available_language_codes
 #~ get_available_language_codes()	 # без этого заменяются языки
 import translit_pikabu_lp			 # noqa добавляем свой язык
 from num2t4ru import num2text		 # , num2text_VP
-#~ # pylint: disable=
+#~ # pylint:disable=
 
 _ = gettext.gettext
 
@@ -309,13 +309,13 @@ def sizeof_fmt(num):
 
 
 def get_duration(filename):
-	video = cv2.VideoCapture(filename)
+	video = cv2.VideoCapture(filename)  # pylint:disable=E1101
 
-	duration = video.get(cv2.CAP_PROP_POS_MSEC)
-	frame_count = video.get(cv2.CAP_PROP_FRAME_COUNT)
+	duration = video.get(cv2.CAP_PROP_POS_MSEC)  # pylint:disable=E1101
+	frame_count = video.get(cv2.CAP_PROP_FRAME_COUNT)  # pylint:disable=E1101
 	if duration <= 0:
 		#~ print("! duration = %r" % duration)
-		fps = video.get(cv2.CAP_PROP_FPS)
+		fps = video.get(cv2.CAP_PROP_FPS)  # pylint:disable=E1101
 		duration = frame_count / fps
 		#~ print("! duration(frame_count / fps) = %r / %r = %r" % (
 			#~ frame_count, fps, duration))
