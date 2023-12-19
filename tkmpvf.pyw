@@ -20,12 +20,12 @@ import threading
 import cv2
 import psutil
 
-#~ # pylint: disable=E0611
+#~ # pylint:disable=E0611
 from transliterate import translit	 # , get_available_language_codes
 #~ get_available_language_codes()	 # без этого заменяются языки
 import translit_pikabu_lp			 # noqa добавляем свой язык
 from num2t4ru import num2text		 # , num2text_VP
-#~ # pylint: disable=
+#~ # pylint:disable=
 
 _ = gettext.gettext
 
@@ -204,6 +204,10 @@ if not os.path.exists(MY_XDG_CONFIG_HOME):
 
 CONFIG_FILE_PATH = opj(MY_XDG_CONFIG_HOME, MY_NAME + ".ini")
 
+SND_FOLDER = opj(ENV_HOME, "share", "sounds")
+SND_CLICK = opj(SND_FOLDER, "click-06.wav")
+SND_DRUM = opj(SND_FOLDER, "drum.wav")
+
 
 #~ def my_tk_excepthook(excType, excValue, ltraceback, *args):
 def my_tk_excepthook(*args):
@@ -305,13 +309,13 @@ def sizeof_fmt(num):
 
 
 def get_duration(filename):
-	video = cv2.VideoCapture(filename)
+	video = cv2.VideoCapture(filename)  # pylint:disable=E1101
 
-	duration = video.get(cv2.CAP_PROP_POS_MSEC)
-	frame_count = video.get(cv2.CAP_PROP_FRAME_COUNT)
+	duration = video.get(cv2.CAP_PROP_POS_MSEC)  # pylint:disable=E1101
+	frame_count = video.get(cv2.CAP_PROP_FRAME_COUNT)  # pylint:disable=E1101
 	if duration <= 0:
 		#~ print("! duration = %r" % duration)
-		fps = video.get(cv2.CAP_PROP_FPS)
+		fps = video.get(cv2.CAP_PROP_FPS)  # pylint:disable=E1101
 		duration = frame_count / fps
 		#~ print("! duration(frame_count / fps) = %r / %r = %r" % (
 			#~ frame_count, fps, duration))
@@ -526,7 +530,7 @@ def EXIT(rc=0):
 	while not threads or len(threads) > 1:
 		threads = threading.enumerate()
 		#~ logd("%r", " ".join(t.name for t in threads))
-	logi("Exiting rc=%r\n\n", rc)
+	logi("Exiting rc=%r\n\n\n\n\n\n\n\n", rc)
 	sys.exit(rc)
 
 
@@ -753,7 +757,7 @@ class Application(tk.Frame):
 
 		elif self.my_state == STOPPED:
 			if not self.need_to_exit:
-				snd_play_async(opj(ENV_HOME, "share", "sounds", "click-06.wav"))
+				snd_play_async(SND_CLICK)
 				state_duration = tpc() - self.my_state_start
 
 				self.lVideoTitle["text"] = "выход через %.1f" \
@@ -761,10 +765,9 @@ class Application(tk.Frame):
 
 				self.lStatus["text"] = "Нет video"
 				if state_duration > TIME_TO_EXIT:
-					snd_play_async(opj(ENV_HOME, "share", "sounds", "drum.wav")
-						, ep=True)
+					snd_play_async(SND_DRUM, ep=True)
 					#~ self.master.destroy()
-					self.on_close_master(self)
+					self.on_close_master()
 
 		self.master.after(1000, self.on_every_second)
 
