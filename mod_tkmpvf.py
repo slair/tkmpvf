@@ -364,6 +364,8 @@ def get_video_title(s):
 		s = s[:-4]
 	elif ls.endswith(".webm"):
 		s = s[:-5]
+	elif ls.endswith(".unknown_video"):
+		s = s[:-14]
 
 	if " - " in s:
 		s = s.replace(" - ", "\n")
@@ -803,6 +805,7 @@ class Application(tk.Frame):
 		_ += glob.glob(opj(folder, "*.m4v"))
 		_ += glob.glob(opj(folder, "*.mov"))
 		_ += glob.glob(opj(folder, "*.dat"))
+		_ += glob.glob(opj(folder, "*.unknown_video"))
 
 		if announce:
 			count_videos = len(_)
