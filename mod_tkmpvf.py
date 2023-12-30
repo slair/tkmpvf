@@ -596,11 +596,15 @@ class Application(tk.Frame):
 
 	def ask_for_delete(self):
 		seen_files = glob.glob("*.seen")
-		if seen_files and messagebox.askyesnocancel("Просмотренные файлы"
-			, "Удалить просмотренные файлы?"):
-			for item in seen_files:
-				logd("Deleting %r", item)
-				os.unlink(item)
+		if seen_files:
+
+			if int(self.i_delseen.get()) == 1 \
+				or messagebox.askyesnocancel("Просмотренные файлы"
+					, "Удалить просмотренные файлы?"):
+
+				for item in seen_files:
+					logd("Deleting %r", item)
+					os.unlink(item)
 
 	def on_close_master(self, *args, **kwargs):
 		self.need_to_exit = True
@@ -742,7 +746,7 @@ class Application(tk.Frame):
 			if tpc() - self.my_state_start > TIME_TO_START:
 				self.get_videos(self.first_run)
 
-				if self.videos:
+				if self.videos and int(self.i_exit.get()) == 0:
 					self.sort_videos(self.first_run)
 					if self.first_run:
 						self.first_run = None
@@ -790,6 +794,10 @@ class Application(tk.Frame):
 	def on_keypress(self, e):
 		if e.keysym == "Escape":
 			self.on_close_master()
+		elif e.keysym == "F10":
+			#~ self.on_close_master()
+			self.i_exit.set(1)
+			self.i_delseen.set(1)
 		else:
 			print(e)
 
@@ -1097,6 +1105,24 @@ class Application(tk.Frame):
 			, command=self.cb_bring_to_front_changed)
 		self.cb_bring_to_front.pack(side="left", fill="y", pady=4, padx=4)
 
+		self.i_exit = tk.IntVar(value=int(
+			config["global"].get("exit_after_play", "0")))
+
+		self.cb_exit = tk.Checkbutton(self.f_video
+			, text=_("Exit")
+			, variable=self.i_exit, onvalue=1, offvalue=0
+			, command=self.cb_exit_changed)
+		self.cb_exit.pack(side="left", fill="y", pady=4, padx=4)
+
+		self.i_delseen = tk.IntVar(value=int(
+			config["global"].get("delete_seen_files", "0")))
+
+		self.cb_delseen = tk.Checkbutton(self.f_video
+			, text=_("Delete seen")
+			, variable=self.i_delseen, onvalue=1, offvalue=0
+			, command=self.cb_delseen_changed)
+		self.cb_delseen.pack(side="left", fill="y", pady=4, padx=4)
+
 		self.tpl_clear_skipped = " Очистить %d пропущенных "
 		self.b_clear_skipped = tk.Button(self.f_video
 			, text=self.tpl_clear_skipped % len(self.prop_skipped)
@@ -1203,8 +1229,18 @@ class Application(tk.Frame):
 				self.send_key_to_player("G")
 
 	def cb_bring_to_front_changed(self):
-		value = self.i_bring_to_front.get()
-		change_config("global", "bring_to_front", str(value))
+		change_config("global", "bring_to_front"
+			, str(self.i_bring_to_front.get()))
+
+	def cb_exit_changed(self):
+		#~ change_config("global", "exit_after_play"
+			#~ , str(self.i_exit.get()))
+		pass
+
+	def cb_delseen_changed(self):
+		#~ change_config("global", "delete_seen_files"
+			#~ , str(self.i_delseen.get()))
+		pass
 
 	def display_selected(self, event):
 		selection = self.cb_display.get()
