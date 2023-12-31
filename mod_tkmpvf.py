@@ -563,8 +563,10 @@ class Application(tk.Frame):
 
 		self.create_widgets()
 
-		self.master.bind("<KeyPress>", self.on_keypress)
-		self.bind("<KeyPress>", self.on_keypress)
+		#~ self.master.bind("<KeyPress>", self.on_keypress)
+		#~ self.bind("<KeyPress>", self.on_keypress)
+		self.master.bind("<KeyRelease>", self.on_keyup)
+		#~ self.bind("<KeyRelease>", self.on_keyup)
 		self.master.protocol("WM_DELETE_WINDOW", self.on_close_master)
 		self.master.focus()
 		self.b_skip.focus()
@@ -635,6 +637,9 @@ class Application(tk.Frame):
 			self.lStatus["text"] = "Осталось %s %s" % (count_videos, "video")
 		else:
 			self.lStatus["text"] = "Последнее video"
+			self.i_exit.set(True)
+			self.i_delseen.set(True)
+
 
 	def bring_to_front(self):
 		if self.i_bring_to_front.get() == 1:
@@ -791,15 +796,16 @@ class Application(tk.Frame):
 				return True
 		return False
 
-	def on_keypress(self, e):
+	def on_keyup(self, e):
 		if e.keysym == "Escape":
 			self.on_close_master()
 		elif e.keysym == "F10":
-			#~ self.on_close_master()
-			self.i_exit.set(1)
-			self.i_delseen.set(1)
+			#~ logd("self.i_exit.get()=%r", self.i_exit.get())
+			self.i_exit.set(not self.i_exit.get())
+			self.i_delseen.set(not self.i_delseen.get())
 		else:
 			print(e)
+		self.master.update()
 
 	def get_videos(self, announce=None):
 		folder = self.video_folder
@@ -1194,8 +1200,9 @@ class Application(tk.Frame):
 			, bg=self._palette["SystemWindow"])
 		self.lbVideosTitles.pack(side="top", fill="both", expand=True, pady=0)
 
-		for w in all_children(self):
-			w.bind("<KeyPress>", self.on_keypress)
+		#~ for w in all_children(self):
+			#~ w.bind("<KeyPress>", self.on_keypress)
+			#~ w.bind("<KeyRelease>", self.on_keyup)
 
 	def stop_player(self):
 		self.my_state = STOPPED
