@@ -749,7 +749,9 @@ class Application(tk.Frame):
 
 		elif self.my_state == VIDEO_RENAMED:
 			if tpc() - self.my_state_start > TIME_TO_START:
-				self.get_videos(self.first_run)
+
+				if int(self.i_exit.get()) == 0:
+					self.get_videos(self.first_run)
 
 				if self.videos and int(self.i_exit.get()) == 0:
 					self.sort_videos(self.first_run)
@@ -764,7 +766,7 @@ class Application(tk.Frame):
 				else:
 					self.my_state = STOPPED
 					self.my_state_start = tpc()
-					self.clear_lb_videos()
+					#~ self.clear_lb_videos()
 
 		elif self.my_state == STOPPED:
 			if not self.need_to_exit:

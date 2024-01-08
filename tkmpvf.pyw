@@ -364,6 +364,8 @@ def get_video_title(s):
 		s = s[:-4]
 	elif ls.endswith(".webm"):
 		s = s[:-5]
+	elif ls.endswith(".unknown_video"):
+		s = s[:-14]
 
 	if " - " in s:
 		s = s.replace(" - ", "\n")
@@ -561,8 +563,10 @@ class Application(tk.Frame):
 
 		self.create_widgets()
 
-		self.master.bind("<KeyPress>", self.on_keypress)
-		self.bind("<KeyPress>", self.on_keypress)
+		#~ self.master.bind("<KeyPress>", self.on_keypress)
+		#~ self.bind("<KeyPress>", self.on_keypress)
+		self.master.bind("<KeyRelease>", self.on_keyup)
+		#~ self.bind("<KeyRelease>", self.on_keyup)
 		self.master.protocol("WM_DELETE_WINDOW", self.on_close_master)
 		self.master.focus()
 		self.b_skip.focus()
@@ -594,11 +598,15 @@ class Application(tk.Frame):
 
 	def ask_for_delete(self):
 		seen_files = glob.glob("*.seen")
-		if seen_files and messagebox.askyesnocancel("Просмотренные файлы"
-			, "Удалить просмотренные файлы?"):
-			for item in seen_files:
-				logd("Deleting %r", item)
-				os.unlink(item)
+		if seen_files:
+
+			if int(self.i_delseen.get()) == 1 \
+				or messagebox.askyesnocancel("Просмотренные файлы"
+					, "Удалить просмотренные файлы?"):
+
+				for item in seen_files:
+					logd("Deleting %r", item)
+					os.unlink(item)
 
 	def on_close_master(self, *args, **kwargs):
 		self.need_to_exit = True
@@ -629,6 +637,9 @@ class Application(tk.Frame):
 			self.lStatus["text"] = "Осталось %s %s" % (count_videos, "video")
 		else:
 			self.lStatus["text"] = "Последнее video"
+			self.i_exit.set(True)
+			self.i_delseen.set(True)
+
 
 	def bring_to_front(self):
 		if self.i_bring_to_front.get() == 1:
@@ -738,9 +749,11 @@ class Application(tk.Frame):
 
 		elif self.my_state == VIDEO_RENAMED:
 			if tpc() - self.my_state_start > TIME_TO_START:
-				self.get_videos(self.first_run)
 
-				if self.videos:
+				if int(self.i_exit.get()) == 0:
+					self.get_videos(self.first_run)
+
+				if self.videos and int(self.i_exit.get()) == 0:
 					self.sort_videos(self.first_run)
 					if self.first_run:
 						self.first_run = None
@@ -753,7 +766,7 @@ class Application(tk.Frame):
 				else:
 					self.my_state = STOPPED
 					self.my_state_start = tpc()
-					self.clear_lb_videos()
+					#~ self.clear_lb_videos()
 
 		elif self.my_state == STOPPED:
 			if not self.need_to_exit:
@@ -785,11 +798,16 @@ class Application(tk.Frame):
 				return True
 		return False
 
-	def on_keypress(self, e):
+	def on_keyup(self, e):
 		if e.keysym == "Escape":
 			self.on_close_master()
+		elif e.keysym == "F10":
+			#~ logd("self.i_exit.get()=%r", self.i_exit.get())
+			self.i_exit.set(not self.i_exit.get())
+			self.i_delseen.set(not self.i_delseen.get())
 		else:
 			print(e)
+		self.master.update()
 
 	def get_videos(self, announce=None):
 		folder = self.video_folder
@@ -803,6 +821,7 @@ class Application(tk.Frame):
 		_ += glob.glob(opj(folder, "*.m4v"))
 		_ += glob.glob(opj(folder, "*.mov"))
 		_ += glob.glob(opj(folder, "*.dat"))
+		_ += glob.glob(opj(folder, "*.unknown_video"))
 
 		if announce:
 			count_videos = len(_)
@@ -1094,6 +1113,24 @@ class Application(tk.Frame):
 			, command=self.cb_bring_to_front_changed)
 		self.cb_bring_to_front.pack(side="left", fill="y", pady=4, padx=4)
 
+		self.i_exit = tk.IntVar(value=int(
+			config["global"].get("exit_after_play", "0")))
+
+		self.cb_exit = tk.Checkbutton(self.f_video
+			, text=_("Exit")
+			, variable=self.i_exit, onvalue=1, offvalue=0
+			, command=self.cb_exit_changed)
+		self.cb_exit.pack(side="left", fill="y", pady=4, padx=4)
+
+		self.i_delseen = tk.IntVar(value=int(
+			config["global"].get("delete_seen_files", "0")))
+
+		self.cb_delseen = tk.Checkbutton(self.f_video
+			, text=_("Delete seen")
+			, variable=self.i_delseen, onvalue=1, offvalue=0
+			, command=self.cb_delseen_changed)
+		self.cb_delseen.pack(side="left", fill="y", pady=4, padx=4)
+
 		self.tpl_clear_skipped = " Очистить %d пропущенных "
 		self.b_clear_skipped = tk.Button(self.f_video
 			, text=self.tpl_clear_skipped % len(self.prop_skipped)
@@ -1165,8 +1202,9 @@ class Application(tk.Frame):
 			, bg=self._palette["SystemWindow"])
 		self.lbVideosTitles.pack(side="top", fill="both", expand=True, pady=0)
 
-		for w in all_children(self):
-			w.bind("<KeyPress>", self.on_keypress)
+		#~ for w in all_children(self):
+			#~ w.bind("<KeyPress>", self.on_keypress)
+			#~ w.bind("<KeyRelease>", self.on_keyup)
 
 	def stop_player(self):
 		self.my_state = STOPPED
@@ -1200,8 +1238,18 @@ class Application(tk.Frame):
 				self.send_key_to_player("G")
 
 	def cb_bring_to_front_changed(self):
-		value = self.i_bring_to_front.get()
-		change_config("global", "bring_to_front", str(value))
+		change_config("global", "bring_to_front"
+			, str(self.i_bring_to_front.get()))
+
+	def cb_exit_changed(self):
+		#~ change_config("global", "exit_after_play"
+			#~ , str(self.i_exit.get()))
+		pass
+
+	def cb_delseen_changed(self):
+		#~ change_config("global", "delete_seen_files"
+			#~ , str(self.i_delseen.get()))
+		pass
 
 	def display_selected(self, event):
 		selection = self.cb_display.get()
@@ -1298,6 +1346,3 @@ if __name__ == '__main__':
 
 	logi("Starting %r in %r", " ".join(sys.argv), os.getcwd())
 	check_for_running()
-	main()
-	check_for_running(True)
-	EXIT()
