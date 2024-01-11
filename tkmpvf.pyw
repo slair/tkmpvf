@@ -1347,4 +1347,8 @@ if __name__ == '__main__':
 		if folder[0] != "-":
 			os.chdir(folder)
 
-	logi("Starting %r in %r", " ".join(sy
+	logi("Starting %r in %r", " ".join(sys.argv), os.getcwd())
+	check_for_running()
+	main()
+	check_for_running(True)
+	EXIT()

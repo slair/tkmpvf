@@ -1,6 +1,7 @@
 *.mp4
 *.seen
 *.vtt
+*.unknown_video
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
