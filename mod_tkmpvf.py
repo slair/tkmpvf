@@ -34,6 +34,11 @@ LINUX = sys.platform == "linux"
 TMPDIR = tempfile.gettempdir()
 
 if WIN32:
+	from ctypes import windll
+
+	timeBeginPeriod = windll.winmm.timeBeginPeriod
+	timeBeginPeriod(1)
+
 	import win32api
 
 	def enum_display_monitors():
@@ -96,6 +101,7 @@ sTITLE = "Название"
 sTITLE_DESC = "Название ↑"
 sTITLE_ASC = "Название ↓"
 
+REPINT_MSEC = 1000
 MAX_TIME_TO_DIE = 15.0
 TIME_TO_RENAME = 2.0
 TIME_TO_START = 0.0
@@ -563,11 +569,10 @@ class Application(tk.Frame):
 
 		self.create_widgets()
 
-		#~ self.master.bind("<KeyPress>", self.on_keypress)
-		#~ self.bind("<KeyPress>", self.on_keypress)
 		self.master.bind("<KeyRelease>", self.on_keyup)
-		#~ self.bind("<KeyRelease>", self.on_keyup)
 		self.master.protocol("WM_DELETE_WINDOW", self.on_close_master)
+		self.master.bind('<Enter>', lambda *args: logd("<Enter> args=%r", args))
+		self.master.bind('<Leave>', lambda *args: logd("<Leave> args=%r", args))
 		self.master.focus()
 		self.b_skip.focus()
 
@@ -604,9 +609,12 @@ class Application(tk.Frame):
 				or messagebox.askyesnocancel("Просмотренные файлы"
 					, "Удалить просмотренные файлы?"):
 
+				cwd = os.getcwd()
+				logd("cwd=%r", cwd)
 				for item in seen_files:
-					logd("Deleting %r", item)
-					os.unlink(item)
+					logw("Deleting %r", item)
+					if cwd != 'C:\\slair\\work.local\\tkmpvf':
+						os.unlink(item)
 
 	def on_close_master(self, *args, **kwargs):
 		self.need_to_exit = True
@@ -644,8 +652,7 @@ class Application(tk.Frame):
 	def bring_to_front(self):
 		if self.i_bring_to_front.get() == 1:
 			self.master.state("normal")
-			self.master.focus_force()
-			self.b_skip.focus()
+			self.b_skip.focus_force()
 
 	def change_label_height(self, label, min_height, max_height):
 		label_height = label.winfo_height()	 # 326
@@ -665,8 +672,8 @@ class Application(tk.Frame):
 				, label_font_size)
 
 	def on_every_second(self):
-		#~ logd("self.my_state=%r, duration=%r"
-			#~ , self.my_state, tpc()-self.my_state_start)
+		logd("self.my_state=%r, duration=%r"
+			, self.my_state, tpc()-self.my_state_start)
 
 		now = datetime.now()
 		self.lClock["text"] = now.strftime("%H:%M:%S")
@@ -734,14 +741,11 @@ class Application(tk.Frame):
 					self.lVideoTitle["text"] = rename_status
 					self.lVideoTitle["fg"] = color_fg_renamed
 					self.lVideoTitle["bg"] = color_bg_renamed
-					self.my_state = VIDEO_RENAMED
-					self.my_state_start = tpc()
-					self.master.after(1000, self.on_every_second)
-					return
 
-				else:
-					self.my_state = VIDEO_RENAMED
-					self.my_state_start = tpc()
+				self.my_state = VIDEO_RENAMED
+				self.my_state_start = tpc()
+				self.after(REPINT_MSEC, self.on_every_second)
+				return
 
 			if self._points_added <= TIME_TO_RENAME:
 				self.lVideoTitle["text"] += "."
@@ -782,7 +786,7 @@ class Application(tk.Frame):
 					#~ self.master.destroy()
 					self.on_close_master()
 
-		self.master.after(1000, self.on_every_second)
+		self.after(REPINT_MSEC, self.on_every_second)
 
 	def send_key_to_player(self, key):
 		#~ logd("ahk=%r, self.player_pid=%r", ahk, self.player_pid)
@@ -801,13 +805,12 @@ class Application(tk.Frame):
 	def on_keyup(self, e):
 		if e.keysym == "Escape":
 			self.on_close_master()
-		elif e.keysym == "F10":
-			#~ logd("self.i_exit.get()=%r", self.i_exit.get())
+		elif e.keysym == "F12":
 			self.i_exit.set(not self.i_exit.get())
 			self.i_delseen.set(not self.i_delseen.get())
+			logd("self.i_exit.get()=%r", self.i_exit.get())
 		else:
-			print(e)
-		self.master.update()
+			logd("e=%r", e)
 
 	def get_videos(self, announce=None):
 		folder = self.video_folder
