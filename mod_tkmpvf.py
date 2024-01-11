@@ -571,8 +571,10 @@ class Application(tk.Frame):
 
 		self.master.bind("<KeyRelease>", self.on_keyup)
 		self.master.protocol("WM_DELETE_WINDOW", self.on_close_master)
-		self.master.bind('<Enter>', lambda *args: logd("<Enter> args=%r", args))
-		self.master.bind('<Leave>', lambda *args: logd("<Leave> args=%r", args))
+		#~ self.master.bind('<Enter>'
+			#~ , lambda *args: logd("<Enter> args=%r", args))
+		#~ self.master.bind('<Leave>'
+			#~ , lambda *args: logd("<Leave> args=%r", args))
 		self.master.focus()
 		self.b_skip.focus()
 
