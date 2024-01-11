@@ -672,8 +672,8 @@ class Application(tk.Frame):
 				, label_font_size)
 
 	def on_every_second(self):
-		logd("self.my_state=%r, duration=%r"
-			, self.my_state, tpc()-self.my_state_start)
+		#~ logd("self.my_state=%r, duration=%r"
+			#~ , self.my_state, tpc()-self.my_state_start)
 
 		now = datetime.now()
 		self.lClock["text"] = now.strftime("%H:%M:%S")
