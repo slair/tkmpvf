@@ -17,9 +17,12 @@ from tkinter import ttk, messagebox
 from datetime import datetime, timedelta
 import threading
 
-import cv2
 import psutil
 
+#~ from tinytag import TinyTag
+from subprocess import check_output
+
+ope = os.path.exists
 #~ # pylint:disable=E0611
 from transliterate import translit	 # , get_available_language_codes
 #~ get_available_language_codes()	 # без этого заменяются языки
@@ -214,6 +217,71 @@ SND_FOLDER = opj(ENV_HOME, "share", "sounds")
 SND_CLICK = opj(SND_FOLDER, "click-06.wav")
 SND_DRUM = opj(SND_FOLDER, "drum.wav")
 
+dur_cache = dict()  # note: кэш, чтобы не сканировать файлы каждый раз
+dur_cache_changed = False
+DUR_CACHE_FN = "%s-dur-cache.txt" % MY_NAME
+mi_bin = shutil.which("MediaInfo.exe")
+
+
+def save_cache(fp: str, cache: dict, datasep: str = "|"):
+	if not dur_cache_changed:
+		return
+
+	with open(fp, "w", encoding="utf-8", newline="\n") as handle:
+		logi("Dumping %d items to %r", len(cache), fp)
+		#~ json.dump(cache, handle, ensure_ascii=False, indent=4)
+		res = ""
+		for k, v in cache.items():
+			res += "%s%s%s\n" % (k, datasep, v)
+		handle.write(res)
+
+
+def load_cache(fp: str, datasep: str = "|") -> dict:
+	with open(fp, 'r', encoding="utf-8", newline="\n") as handle:
+		#~ res = json.load(handle)
+		res = dict()
+		fc = handle.read()
+		for line in fc.split("\n"):
+			data = line.split(datasep)
+			if data[0]:
+				res[data[0]] = int(data[1])
+		logi("Read %d items from %r", len(res), fp)
+	return res
+
+
+def get_duration(fp) -> int:
+	global dur_cache, dur_cache_changed
+	if ope(fp):
+		fstat = os.stat(fp)
+		cfp = "%s %s %s %s" % (fp, fstat.st_size, fstat.st_ctime
+			, fstat.st_mtime)
+		if cfp in dur_cache:
+			duration = dur_cache[cfp]
+		else:
+			si = subprocess.STARTUPINFO()
+			si.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+			#si.wShowWindow = subprocess.SW_HIDE # default
+			try:
+				duration = int(check_output(
+					f'"{mi_bin}" --Inform="Audio;%Duration%" "{fp}"'
+					, shell=False, startupinfo=si))
+
+				dur_cache[cfp] = duration
+				if not dur_cache_changed:
+					dur_cache_changed = True
+			except Exception as e:
+				loge("", exc_info=e)
+				return -1, 0  # noqa
+
+		return duration / 1000, 0
+
+	return -1, 0
+
+
+DUR_CACHE_FP = opj(TMPDIR, DUR_CACHE_FN)
+if ope(DUR_CACHE_FP):
+	dur_cache = load_cache(DUR_CACHE_FP)
+
 
 #~ def my_tk_excepthook(excType, excValue, ltraceback, *args):
 def my_tk_excepthook(*args):
@@ -314,7 +382,7 @@ def sizeof_fmt(num):
 		num /= 1024.0
 
 
-def get_duration(filename):
+"""def get_duration(filename):
 	video = cv2.VideoCapture(filename)  # pylint:disable=E1101
 
 	duration = video.get(cv2.CAP_PROP_POS_MSEC)  # pylint:disable=E1101
@@ -331,7 +399,7 @@ def get_duration(filename):
 		duration = 0
 
 	return duration, frame_count
-
+"""
 # 1566.9/60 = 26.115
 
 
@@ -649,7 +717,6 @@ class Application(tk.Frame):
 			self.lStatus["text"] = "Последнее video"
 			self.i_exit.set(True)
 			self.i_delseen.set(True)
-
 
 	def bring_to_front(self):
 		if self.i_bring_to_front.get() == 1:
@@ -1352,5 +1419,6 @@ if __name__ == '__main__':
 	logi("Starting %r in %r", " ".join(sys.argv), os.getcwd())
 	check_for_running()
 	main()
+	save_cache(DUR_CACHE_FP, dur_cache)
 	check_for_running(True)
 	EXIT()

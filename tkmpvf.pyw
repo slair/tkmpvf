@@ -17,9 +17,12 @@ from tkinter import ttk, messagebox
 from datetime import datetime, timedelta
 import threading
 
-import cv2
 import psutil
 
+#~ from tinytag import TinyTag
+from subprocess import check_output
+
+ope = os.path.exists
 #~ # pylint:disable=E0611
 from transliterate import translit	 # , get_available_language_codes
 #~ get_available_language_codes()	 # без этого заменяются языки
@@ -214,6 +217,71 @@ SND_FOLDER = opj(ENV_HOME, "share", "sounds")
 SND_CLICK = opj(SND_FOLDER, "click-06.wav")
 SND_DRUM = opj(SND_FOLDER, "drum.wav")
 
+dur_cache = dict()  # note: кэш, чтобы не сканировать файлы каждый раз
+dur_cache_changed = False
+DUR_CACHE_FN = "%s-dur-cache.txt" % MY_NAME
+mi_bin = shutil.which("MediaInfo.exe")
+
+
+def save_cache(fp: str, cache: dict, datasep: str = "|"):
+	if not dur_cache_changed:
+		return
+
+	with open(fp, "w", encoding="utf-8", newline="\n") as handle:
+		logi("Dumping %d items to %r", len(cache), fp)
+		#~ json.dump(cache, handle, ensure_ascii=False, indent=4)
+		res = ""
+		for k, v in cache.items():
+			res += "%s%s%s\n" % (k, datasep, v)
+		handle.write(res)
+
+
+def load_cache(fp: str, datasep: str = "|") -> dict:
+	with open(fp, 'r', encoding="utf-8", newline="\n") as handle:
+		#~ res = json.load(handle)
+		res = dict()
+		fc = handle.read()
+		for line in fc.split("\n"):
+			data = line.split(datasep)
+			if data[0]:
+				res[data[0]] = int(data[1])
+		logi("Read %d items from %r", len(res), fp)
+	return res
+
+
+def get_duration(fp) -> int:
+	global dur_cache, dur_cache_changed
+	if ope(fp):
+		fstat = os.stat(fp)
+		cfp = "%s %s %s %s" % (fp, fstat.st_size, fstat.st_ctime
+			, fstat.st_mtime)
+		if cfp in dur_cache:
+			duration = dur_cache[cfp]
+		else:
+			si = subprocess.STARTUPINFO()
+			si.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+			#si.wShowWindow = subprocess.SW_HIDE # default
+			try:
+				duration = int(check_output(
+					f'"{mi_bin}" --Inform="Audio;%Duration%" "{fp}"'
+					, shell=False, startupinfo=si))
+
+				dur_cache[cfp] = duration
+				if not dur_cache_changed:
+					dur_cache_changed = True
+			except Exception as e:
+				loge("", exc_info=e)
+				return -1, 0  # noqa
+
+		return duration / 1000, 0
+
+	return -1, 0
+
+
+DUR_CACHE_FP = opj(TMPDIR, DUR_CACHE_FN)
+if ope(DUR_CACHE_FP):
+	dur_cache = load_cache(DUR_CACHE_FP)
+
 
 #~ def my_tk_excepthook(excType, excValue, ltraceback, *args):
 def my_tk_excepthook(*args):
@@ -314,7 +382,7 @@ def sizeof_fmt(num):
 		num /= 1024.0
 
 
-def get_duration(filename):
+"""def get_duration(filename):
 	video = cv2.VideoCapture(filename)  # pylint:disable=E1101
 
 	duration = video.get(cv2.CAP_PROP_POS_MSEC)  # pylint:disable=E1101
@@ -331,7 +399,7 @@ def get_duration(filename):
 		duration = 0
 
 	return duration, frame_count
-
+"""
 # 1566.9/60 = 26.115
 
 
@@ -571,8 +639,10 @@ class Application(tk.Frame):
 
 		self.master.bind("<KeyRelease>", self.on_keyup)
 		self.master.protocol("WM_DELETE_WINDOW", self.on_close_master)
-		self.master.bind('<Enter>', lambda *args: logd("<Enter> args=%r", args))
-		self.master.bind('<Leave>', lambda *args: logd("<Leave> args=%r", args))
+		#~ self.master.bind('<Enter>'
+			#~ , lambda *args: logd("<Enter> args=%r", args))
+		#~ self.master.bind('<Leave>'
+			#~ , lambda *args: logd("<Leave> args=%r", args))
 		self.master.focus()
 		self.b_skip.focus()
 
@@ -648,7 +718,6 @@ class Application(tk.Frame):
 			self.i_exit.set(True)
 			self.i_delseen.set(True)
 
-
 	def bring_to_front(self):
 		if self.i_bring_to_front.get() == 1:
 			self.master.state("normal")
@@ -672,8 +741,8 @@ class Application(tk.Frame):
 				, label_font_size)
 
 	def on_every_second(self):
-		logd("self.my_state=%r, duration=%r"
-			, self.my_state, tpc()-self.my_state_start)
+		#~ logd("self.my_state=%r, duration=%r"
+			#~ , self.my_state, tpc()-self.my_state_start)
 
 		now = datetime.now()
 		self.lClock["text"] = now.strftime("%H:%M:%S")
@@ -1299,56 +1368,4 @@ def check_for_running(end=False):
 			try:
 				os.unlink(pid_fp)		# здесь должно падать
 				logd("Deleted %r", pid_fp)
-			except PermissionError as e:
-				logw("Deleting %r failed. %r", pid_fp, e)
-				say_async("Уже запущено!"
-					, narrator=random.choice(narrators))
-				EXIT(32)
-
-	else:
-		if not end:
-			pid = os.getpid()
-			logd("Creating %r", pid_fp)
-			pid_fd = open(pid_fp, "w")
-			pid_fd.write("%d" % pid)	 # оставляем открытым, чтобы не потёрли
-
-
-def main():
-	# done: Загрузка настроек
-	load_config()
-
-	root = tk.Tk()
-
-	#~ sw, sh = root.winfo_screenwidth(), root.winfo_screenheight()
-	#~ logd("screen=%rx%r", sw, sh)
-
-	geometry = config["global"].get("geometry", None)
-	if geometry:
-		root.geometry(geometry)
-	else:
-		root.geometry("1024x512+" + str(1366 - 1024 - 7)
-			+ "+" + str(720 - 512 - 31))
-
-	SCRIPTPATH = os.path.dirname(os.path.realpath(__file__))
-	icon = tk.PhotoImage(file=os.path.join(SCRIPTPATH, "icon.png"))
-	root.iconphoto(True, icon)
-
-	#~ logd("sys.argv=%r", sys.argv)
-	if len(sys.argv) > 1 and sys.argv[1][0] == "-":
-		app = Application(root, sys.argv[1][1:])
-	else:
-		app = Application(root)
-	app.mainloop()
-
-
-if __name__ == '__main__':
-	if len(sys.argv) > 1:
-		folder = sys.argv[1]
-		if folder[0] != "-":
-			os.chdir(folder)
-
-	logi("Starting %r in %r", " ".join(sys.argv), os.getcwd())
-	check_for_running()
-	main()
-	check_for_running(True)
-	EXIT()
+			
