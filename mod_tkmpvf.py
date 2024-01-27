@@ -457,7 +457,13 @@ def get_video_title(s):
 
 	s = s.strip()
 
-	if s.count(PARTSEP) == 2:
+	channel = None
+
+	if s.count(PARTSEP) == 3:
+		dt, channel, title, _ = s.split(PARTSEP)
+		title = re.sub(r'(?<=\d)[_](?=\d)', ":", title)
+
+	elif s.count(PARTSEP) == 2:
 		dt, title, _ = s.split(PARTSEP)
 		title = re.sub(r'(?<=\d)[_](?=\d)', ":", title)
 
@@ -476,6 +482,9 @@ def get_video_title(s):
 	#~ print(title)
 	#~ print(repr(title))
 	#~ print()
+
+	if channel:
+		return channel + "\n" + title
 
 	return title
 
