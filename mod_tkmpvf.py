@@ -83,6 +83,8 @@ TPL_PLAY_CMD = " ".join((
 	'"%s"',
 ))
 
+MAX_DURATION = 1000000000000
+
 _DEBUG = True
 
 FNSEP = "|"				# FileName SEParator in ini file
@@ -266,16 +268,23 @@ def get_duration(fp) -> int:
 					f'"{mi_bin}" --Inform="Audio;%Duration%" "{fp}"'
 					, shell=False, startupinfo=si))
 
+				if duration > MAX_DURATION:
+					logw("Wrong duration=%r, fp=%r changed to %r"
+						, duration, fp, 0)
+					duration = 0
+
 				dur_cache[cfp] = duration
 				if not dur_cache_changed:
 					dur_cache_changed = True
-			except Exception as e:
-				loge("", exc_info=e)
-				return -1, 0  # noqa
+			except ValueError as e:
+				#~ loge("fp=%r", fp, exc_info=e)
+				duration = 0
+				logw("Cant get fp=%r duration, changed to %r"
+					, fp, 0)
 
 		return duration / 1000, 0
 
-	return -1, 0
+	return 0, 0
 
 
 DUR_CACHE_FP = opj(TMPDIR, DUR_CACHE_FN)
@@ -515,7 +524,14 @@ narrators = (
 def duration_fmt(duration):
 	dur_sec = duration[0]
 
-	res = str(timedelta(seconds=dur_sec))
+	#~ if dur_sec > 1000000000000:
+		#~ sys.exit()
+
+	try:
+		res = str(timedelta(seconds=dur_sec))
+	except Exception as e:
+		loge("duration=%r, dur_sec=%r", duration, dur_sec, exc_info=e)
+		return "n/a"
 
 	if "." in res:
 		res = res.split(".", maxsplit=1)[0]
@@ -975,8 +991,11 @@ class Application(tk.Frame):
 						self.update_splash()
 
 					if not self.splash.working and self.first_run:
+						save_cache(DUR_CACHE_FP, dur_cache)
 						self.master.destroy()
 						EXIT(16)
+
+		save_cache(DUR_CACHE_FP, dur_cache)
 
 	def clear_lb_videos(self):
 		self.lbVideosDurations.delete(0, tk.END)
