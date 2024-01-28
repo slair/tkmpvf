@@ -248,7 +248,7 @@ def load_cache(fp: str, datasep: str = "|") -> dict:
 		for line in fc.split("\n"):
 			data = line.split(datasep)
 			if data[0]:
-				res[data[0]] = int(data[1])
+				res[data[0]] = float(data[1])
 		logi("Read %d items from %r", len(res), fp)
 		dur_cache_changed = False
 	return res
