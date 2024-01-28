@@ -83,8 +83,6 @@ TPL_PLAY_CMD = " ".join((
 	'"%s"',
 ))
 
-MAX_DURATION = 1000000000000
-
 _DEBUG = True
 
 FNSEP = "|"				# FileName SEParator in ini file
@@ -222,6 +220,7 @@ SND_DRUM = opj(SND_FOLDER, "drum.wav")
 dur_cache = dict()  # note: кэш, чтобы не сканировать файлы каждый раз
 dur_cache_changed = False
 DUR_CACHE_FN = "%s-dur-cache.txt" % MY_NAME
+MAX_DURATION = 7 * 24 * 60 * 60  # неделя в секундах
 mi_bin = shutil.which("MediaInfo.exe")
 
 
@@ -1428,4 +1427,23 @@ def main():
 
 	SCRIPTPATH = os.path.dirname(os.path.realpath(__file__))
 	icon = tk.PhotoImage(file=os.path.join(SCRIPTPATH, "icon.png"))
-	root.iconphoto(
+	root.iconphoto(True, icon)
+
+	#~ logd("sys.argv=%r", sys.argv)
+	if len(sys.argv) > 1 and sys.argv[1][0] == "-":
+		app = Application(root, sys.argv[1][1:])
+	else:
+		app = Application(root)
+	app.mainloop()
+
+
+if __name__ == '__main__':
+	if len(sys.argv) > 1:
+		folder = sys.argv[1]
+		if folder[0] != "-":
+			os.chdir(folder)
+
+	logi("Starting %r in %r", " ".join(sys.argv), os.getcwd())
+	check_for_running()
+	main()
+	save_cache(DUR_CACHE_FP, dur_ca

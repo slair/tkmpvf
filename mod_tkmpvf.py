@@ -83,8 +83,6 @@ TPL_PLAY_CMD = " ".join((
 	'"%s"',
 ))
 
-MAX_DURATION = 1000000000000
-
 _DEBUG = True
 
 FNSEP = "|"				# FileName SEParator in ini file
@@ -222,6 +220,7 @@ SND_DRUM = opj(SND_FOLDER, "drum.wav")
 dur_cache = dict()  # note: кэш, чтобы не сканировать файлы каждый раз
 dur_cache_changed = False
 DUR_CACHE_FN = "%s-dur-cache.txt" % MY_NAME
+MAX_DURATION = 7 * 24 * 60 * 60  # неделя в секундах
 mi_bin = shutil.which("MediaInfo.exe")
 
 
