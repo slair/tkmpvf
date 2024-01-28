@@ -235,6 +235,7 @@ def save_cache(fp: str, cache: dict, datasep: str = "|"):
 		for k, v in cache.items():
 			res += "%s%s%s\n" % (k, datasep, v)
 		handle.write(res)
+		dur_cache_changed = False
 
 
 def load_cache(fp: str, datasep: str = "|") -> dict:
@@ -247,6 +248,7 @@ def load_cache(fp: str, datasep: str = "|") -> dict:
 			if data[0]:
 				res[data[0]] = int(data[1])
 		logi("Read %d items from %r", len(res), fp)
+		dur_cache_changed = False
 	return res
 
 
@@ -625,7 +627,8 @@ class Splash(tk.Frame):
 def EXIT(rc=0):
 	# done: Сохранение настроек
 	save_config()
-	# wait for all threads to complete
+	save_cache(DUR_CACHE_FP, dur_cache)
+	# note: wait for all threads to complete
 	threads = None
 	while not threads or len(threads) > 1:
 		threads = threading.enumerate()
@@ -990,7 +993,6 @@ class Application(tk.Frame):
 						self.update_splash()
 
 					if not self.splash.working and self.first_run:
-						save_cache(DUR_CACHE_FP, dur_cache)
 						self.master.destroy()
 						EXIT(16)
 
@@ -1446,4 +1448,4 @@ if __name__ == '__main__':
 	logi("Starting %r in %r", " ".join(sys.argv), os.getcwd())
 	check_for_running()
 	main()
-	save_cache(DUR_CACHE_FP, dur_ca
+	check_for_ru
