@@ -271,6 +271,8 @@ def get_duration(fp) -> int:
 					f'"{mi_bin}" --Inform="Audio;%Duration%" "{fp}"'
 					, shell=False, startupinfo=si))
 
+				duration /= 1000
+
 				if duration > MAX_DURATION:
 					logw("Wrong duration=%r, fp=%r changed to %r"
 						, duration, fp, 0)
