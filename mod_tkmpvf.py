@@ -225,6 +225,7 @@ mi_bin = shutil.which("MediaInfo.exe")
 
 
 def save_cache(fp: str, cache: dict, datasep: str = "|"):
+	global dur_cache_changed
 	if not dur_cache_changed:
 		return
 
@@ -239,6 +240,7 @@ def save_cache(fp: str, cache: dict, datasep: str = "|"):
 
 
 def load_cache(fp: str, datasep: str = "|") -> dict:
+	global dur_cache_changed
 	with open(fp, 'r', encoding="utf-8", newline="\n") as handle:
 		#~ res = json.load(handle)
 		res = dict()
