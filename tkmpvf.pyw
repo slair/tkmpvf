@@ -287,7 +287,7 @@ def get_duration(fp) -> int:
 				logw("Cant get fp=%r duration, changed to %r"
 					, fp, 0)
 
-		return duration / 1000, 0
+		return duration, 0
 
 	return 0, 0
 
@@ -1453,4 +1453,5 @@ if __name__ == '__main__':
 	check_for_running()
 	main()
 	check_for_running(True)
-	EXIT(
+	EXIT()
+       
