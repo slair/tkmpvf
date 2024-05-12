@@ -8,7 +8,7 @@ import tempfile
 import time
 import re
 import logging
-import subprocess
+import subprocess  # nosec
 import configparser
 import shutil
 import gettext
@@ -20,7 +20,7 @@ import threading
 import psutil
 
 #~ from tinytag import TinyTag
-from subprocess import check_output
+from subprocess import check_output  # nosec
 
 ope = os.path.exists
 #~ # pylint:disable=E0611
@@ -72,6 +72,9 @@ if WIN32:
 #~ video_folder = r"C:\slair\to-delete\tg all"
 video_folder = r"."
 
+faster_speed = os.getcwd().endswith("1-today")
+#~ sys.exit()
+
 PLAYER_BINARY = shutil.which(PLAYER)
 TPL_PLAY_CMD = " ".join((
 	PLAYER_BINARY,
@@ -79,6 +82,7 @@ TPL_PLAY_CMD = " ".join((
 	"--fs-screen=%s",
 	"--softvol-max=500",
 	"--brightness=0",
+	"--speed=1.33" if faster_speed else "",
 	"--",
 	'"%s"',
 ))
@@ -143,13 +147,13 @@ try:
 	from saymod import say_async, say, snd_play_async, saymod_setup_log
 	saymod_setup_log(MY_NAME)
 except ModuleNotFoundError:
-	def say(*args, **kwargs):
+	def say(*args, **kwargs):  # noqa
 		print("! say(", *args, ")")
 
-	def snd_play_async(*args, **kwargs):
+	def snd_play_async(*args, **kwargs):  # noqa
 		print("! snd_play_async(", *args, ")")
 
-	def say_async(*args, **kwargs):
+	def say_async(*args, **kwargs):  # noqa
 		print("! say_async(", *args, ")")
 
 
@@ -269,7 +273,7 @@ def get_duration(fp) -> int:
 			try:
 				duration = int(check_output(
 					f'"{mi_bin}" --Inform="Audio;%Duration%" "{fp}"'
-					, shell=False, startupinfo=si))
+					, shell=False, startupinfo=si))  # nosec
 
 				duration /= 1000
 
@@ -282,7 +286,7 @@ def get_duration(fp) -> int:
 				if not dur_cache_changed:
 					dur_cache_changed = True
 			except ValueError as e:
-				#~ loge("fp=%r", fp, exc_info=e)
+				loge("fp=%r, e=%r", fp, e)
 				duration = 0
 				logw("Cant get fp=%r duration, changed to %r"
 					, fp, 0)
@@ -580,7 +584,7 @@ def td2words(td_object):
 
 #~ @asnc
 def do_command_bg(cmd):
-	proc = subprocess.Popen(cmd, shell=False, stdin=subprocess.PIPE
+	proc = subprocess.Popen(cmd, shell=False, stdin=subprocess.PIPE  # nosec
 		, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 	return proc
 
@@ -717,7 +721,7 @@ class Application(tk.Frame):
 					if cwd != 'C:\\slair\\work.local\\tkmpvf':
 						os.unlink(item)
 
-	def on_close_master(self, *args, **kwargs):
+	def on_close_master(self, *args, **kwargs):  # noqa
 		self.need_to_exit = True
 		self.stop_player()
 		self.geometry_to_config()
@@ -930,16 +934,16 @@ class Application(tk.Frame):
 			count_videos = len(_)
 			if count_videos > 0:
 				self.splash = Splash(tk.Tk())
-				suffix = random.choice(ann_suffixes)
+				suffix = random.choice(ann_suffixes)  # nosec
 				numsuf = num2text(count_videos, (suffix, "m"))  # .split()
-				narrator = random.choice(narrators)
+				narrator = random.choice(narrators)  # nosec
 				self.splash.l_fn["text"] = ""
 				self.splash.l_progress["text"] = ""
 				self.update_splash()
 				say_async(numsuf, narrator=narrator)
 			else:
 				say_async("А здесь нет вид^осов"
-					, narrator=random.choice(narrators))
+					, narrator=random.choice(narrators))  # nosec
 				#~ self.bring_to_front()
 
 		#~ dp("> checking for deleted videos")
@@ -1102,7 +1106,7 @@ class Application(tk.Frame):
 		self.master.title(new_title)
 
 		if announce:
-			narrator = random.choice(narrators)
+			narrator = random.choice(narrators)  # nosec
 			total_duration_str = td2words(timedelta(seconds=total_duration))
 			self.update_splash()
 			say(total_duration_str, narrator=narrator)
@@ -1356,7 +1360,7 @@ class Application(tk.Frame):
 			#~ , str(self.i_delseen.get()))
 		pass
 
-	def display_selected(self, event):
+	def display_selected(self, event):  # noqa
 		selection = self.cb_display.get()
 		config_changed = change_config("global", "fs-screen"
 			, self.display_names.index(selection))
@@ -1404,7 +1408,7 @@ def check_for_running(end=False):
 			except PermissionError as e:
 				logw("Deleting %r failed. %r", pid_fp, e)
 				say_async("Уже запущено!"
-					, narrator=random.choice(narrators))
+					, narrator=random.choice(narrators))  # nosec
 				EXIT(32)
 
 	else:
