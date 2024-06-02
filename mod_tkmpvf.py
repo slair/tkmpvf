@@ -135,7 +135,10 @@ COLOR_RENAMED_FG_FAILED = "#800000"
 COLOR_RENAMED_BG_FAILED = "#ffff00"
 
 COLOR_FG_TITLE = "#000080"
-COLOR_BG_TITLE = "SystemButtonFace"
+if WIN32:
+	COLOR_BG_TITLE = "SystemButtonFace"
+elif LINUX:
+	COLOR_BG_TITLE = "gray85"
 
 PARTSEP = "·"
 
@@ -235,8 +238,17 @@ dur_cache = dict()  # note: кэш, чтобы не сканировать фа�
 dur_cache_changed = False
 DUR_CACHE_FN = "%s-dur-cache.txt" % MY_NAME
 MAX_DURATION = 7 * 24 * 60 * 60  # неделя в секундах
-mi_bin = shutil.which("MediaInfo.exe")
 
+if WIN32:
+	mi_bin = shutil.which("MediaInfo.exe")
+elif LINUX:
+	mi_bin = shutil.which("mediainfo")
+else:
+	mi_bin = None
+
+if not mi_bin:
+	print("MediaInfo not found!")
+	sys.exit(100)
 
 def save_cache(fp: str, cache: dict, datasep: str = "|"):
 	global dur_cache_changed
@@ -277,13 +289,20 @@ def get_duration(fp) -> int:
 		if cfp in dur_cache:
 			duration = dur_cache[cfp]
 		else:
-			si = subprocess.STARTUPINFO()
-			si.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+			#~ si = subprocess.STARTUPINFO()
+			#~ si.dwFlags |= subprocess.STARTF_USESHOWWINDOW
 			#si.wShowWindow = subprocess.SW_HIDE # default
 			try:
-				duration = int(check_output(
-					f'"{mi_bin}" --Inform="Audio;%Duration%" "{fp}"'
-					, shell=False, startupinfo=si))  # nosec
+				if WIN32:
+					duration = int(check_output(
+						f'"{mi_bin}" --Inform="Audio;%Duration%" "{fp}"'
+						, shell=False))  # nosec
+						#~ , shell=False, startupinfo=si))  # nosec
+				elif LINUX:
+					duration = int(check_output(
+						f'{mi_bin} --Inform="Audio;%Duration%" "{fp}"'
+						, shell=True))  # nosec
+						#~ , shell=False, startupinfo=si))  # nosec
 
 				duration /= 1000
 
@@ -594,7 +613,12 @@ def td2words(td_object):
 
 #~ @asnc
 def do_command_bg(cmd):
-	proc = subprocess.Popen(cmd, shell=False, stdin=subprocess.PIPE  # nosec
+	if WIN32:
+		bshell = False
+	elif LINUX:
+		bshell = True
+
+	proc = subprocess.Popen(cmd, shell=bshell, stdin=subprocess.PIPE  # nosec
 		, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 	return proc
 
