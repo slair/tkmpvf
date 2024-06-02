@@ -57,6 +57,16 @@ if WIN32:
 				res.append("%rx%r" % (width, height))
 		return res
 
+elif LINUX:
+	def enum_display_monitors():
+		res = []
+		res.append("%rx%r" % (1280, 1024))
+		return res
+
+else:
+	print("Unknown platform - %r" % sys.platform)
+	sys.exit(100)
+
 PLAYER = "mpv"
 
 if WIN32:
