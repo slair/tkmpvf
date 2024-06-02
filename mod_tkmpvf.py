@@ -86,16 +86,28 @@ faster_speed = os.getcwd().endswith("1-today")
 #~ sys.exit()
 
 PLAYER_BINARY = shutil.which(PLAYER)
-TPL_PLAY_CMD = " ".join((
-	PLAYER_BINARY,
-	"%s",						# "-fs",
-	"--fs-screen=%s",
-	"--softvol-max=500",
-	"--brightness=0",
-	"--speed=1.33" if faster_speed else "",
-	"--",
-	'"%s"',
-))
+if WIN32:
+	TPL_PLAY_CMD = " ".join((
+		PLAYER_BINARY,
+		"%s",						# "-fs",
+		"--fs-screen=%s",
+		"--softvol-max=500",
+		"--brightness=0",
+		"--speed=1.33" if faster_speed else "",
+		"--",
+		'"%s"',
+	))
+elif LINUX:
+	TPL_PLAY_CMD = " ".join((
+		PLAYER_BINARY,
+		"%s",						# "-fs",
+		"--fs-screen=%s",
+		"--volume-max=500",
+		"--brightness=0",
+		"--speed=1.33" if faster_speed else "",
+		"--",
+		'"%s"',
+	))
 
 _DEBUG = True
 
@@ -298,6 +310,28 @@ def get_duration(fp) -> int:
 					duration = int(check_output(
 						f'"{mi_bin}" --Inform="Audio;%Duration%" "{fp}"'
 						, shell=False))  # nosec
+						#~ , shell=False, startupinfo=si))  # nosec
+
+					duration /= 1000
+
+					if duration > MAX_DURATION:
+						logw("Wrong duration=%r, fp=%r changed to %r"
+							, duration, fp, 0)
+						duration = 0
+
+					dur_cache[cfp] = duration
+					if not dur_cache_changed:
+						dur_cache_changed = True
+				except ValueError as e:
+					loge("fp=%r, e=%r", fp, e)
+					duration = 0
+					logw("Cant get fp=%r duration, changed to %r"
+						, fp, 0)
+			elif LINUX:
+				try:
+					duration = int(check_output(
+						f'"{mi_bin}" --Inform="Audio;%Duration%" "{fp}"'
+						, shell=True))  # nosec
 						#~ , shell=False, startupinfo=si))  # nosec
 
 					duration /= 1000
@@ -611,11 +645,12 @@ def td2words(td_object):
 def do_command_bg(cmd):
 	if WIN32:
 		bshell = False
+		proc = subprocess.Popen(cmd, shell=bshell, stdin=subprocess.PIPE  # nosec
+			, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 	elif LINUX:
 		bshell = True
+		proc = subprocess.Popen(cmd + " &", shell=bshell)  # nosec
 
-	proc = subprocess.Popen(cmd, shell=bshell, stdin=subprocess.PIPE  # nosec
-		, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 	return proc
 
 
