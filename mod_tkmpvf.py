@@ -22,7 +22,6 @@ import psutil
 #~ from tinytag import TinyTag
 from subprocess import check_output  # nosec
 
-ope = os.path.exists
 #~ # pylint:disable=E0611
 from transliterate import translit	 # , get_available_language_codes
 #~ get_available_language_codes()	 # без этого заменяются языки
@@ -30,6 +29,7 @@ import translit_pikabu_lp			 # noqa добавляем свой язык
 from num2t4ru import num2text		 # , num2text_VP
 #~ # pylint:disable=
 
+ope = os.path.exists
 _ = gettext.gettext
 
 WIN32 = sys.platform == "win32"
@@ -250,6 +250,7 @@ if not mi_bin:
 	print("MediaInfo not found!")
 	sys.exit(100)
 
+
 def save_cache(fp: str, cache: dict, datasep: str = "|"):
 	global dur_cache_changed
 	if not dur_cache_changed:
@@ -289,36 +290,31 @@ def get_duration(fp) -> int:
 		if cfp in dur_cache:
 			duration = dur_cache[cfp]
 		else:
-			#~ si = subprocess.STARTUPINFO()
-			#~ si.dwFlags |= subprocess.STARTF_USESHOWWINDOW
-			#si.wShowWindow = subprocess.SW_HIDE # default
-			try:
-				if WIN32:
+			if WIN32:
+				si = subprocess.STARTUPINFO()
+				si.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+				#si.wShowWindow = subprocess.SW_HIDE # default
+				try:
 					duration = int(check_output(
 						f'"{mi_bin}" --Inform="Audio;%Duration%" "{fp}"'
 						, shell=False))  # nosec
 						#~ , shell=False, startupinfo=si))  # nosec
-				elif LINUX:
-					duration = int(check_output(
-						f'{mi_bin} --Inform="Audio;%Duration%" "{fp}"'
-						, shell=True))  # nosec
-						#~ , shell=False, startupinfo=si))  # nosec
 
-				duration /= 1000
+					duration /= 1000
 
-				if duration > MAX_DURATION:
-					logw("Wrong duration=%r, fp=%r changed to %r"
-						, duration, fp, 0)
+					if duration > MAX_DURATION:
+						logw("Wrong duration=%r, fp=%r changed to %r"
+							, duration, fp, 0)
+						duration = 0
+
+					dur_cache[cfp] = duration
+					if not dur_cache_changed:
+						dur_cache_changed = True
+				except ValueError as e:
+					loge("fp=%r, e=%r", fp, e)
 					duration = 0
-
-				dur_cache[cfp] = duration
-				if not dur_cache_changed:
-					dur_cache_changed = True
-			except ValueError as e:
-				loge("fp=%r, e=%r", fp, e)
-				duration = 0
-				logw("Cant get fp=%r duration, changed to %r"
-					, fp, 0)
+					logw("Cant get fp=%r duration, changed to %r"
+						, fp, 0)
 
 		return duration, 0
 
