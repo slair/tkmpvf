@@ -649,7 +649,15 @@ def td2words(td_object):
 		return "Сейчас!"
 
 
-#~ @asnc
+def get_pids_by_fn(fn):
+	res = []
+	proc_iter = psutil.process_iter(attrs=["pid", "name", "cmdline"])  # pylint: disable=
+	for p in proc_iter:
+		if fn in p.info["cmdline"]:
+			res.append(p.pid)
+	return res
+
+
 def do_command_bg(cmd):
 	if WIN32:
 		bshell = False
@@ -657,8 +665,8 @@ def do_command_bg(cmd):
 			, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 	elif LINUX:
 		bshell = True
-		proc = subprocess.Popen(cmd + " &", shell=bshell)  # nosec
-
+		proc = subprocess.Popen(cmd + "> /dev/null 2>&1 &"
+			, shell=bshell)  # nosec  # pylint: disable=
 	return proc
 
 
@@ -815,6 +823,8 @@ class Application(tk.Frame):
 
 		self.sort_videos(self.first_run)
 		self.player_pid = p.pid
+		#~ logd("self.fp_video=%r", self.fp_video)
+		#~ logd("self.player_pid=%r", self.player_pid)
 		self.lVideoTitle["text"] = title
 		self.lVideoTitle["fg"] = COLOR_FG_TITLE
 		self.lVideoTitle["bg"] = COLOR_BG_TITLE
@@ -867,7 +877,8 @@ class Application(tk.Frame):
 		if self.player_pid and self.my_state == PLAYING:
 			self.b_pause["state"] = "normal"
 			self.b_skip["state"] = "normal"
-			if not psutil.pid_exists(self.player_pid):
+			#~ if not psutil.pid_exists(self.player_pid):
+			if not get_pids_by_fn(self.fp_video):
 				self.player_pid = None
 				self.b_pause["state"] = "disabled"
 				self.b_skip["state"] = "disabled"
@@ -1013,7 +1024,7 @@ class Application(tk.Frame):
 				self.splash.l_fn["text"] = ""
 				self.splash.l_progress["text"] = ""
 				self.update_splash()
-				say_async(numsuf, narrator=narrator)
+				say(numsuf, narrator=narrator)
 			else:
 				say_async("А здесь нет вид^осов"
 					, narrator=random.choice(narrators))  # nosec
@@ -1393,7 +1404,8 @@ class Application(tk.Frame):
 		self.my_state_start = tpc()
 		self.send_key_to_player(chr(27))
 		start_exit = tpc()
-		while self.player_pid and psutil.pid_exists(self.player_pid):
+		#~ while self.player_pid and psutil.pid_exists(self.player_pid):
+		while self.player_pid and get_pids_by_fn(self.fp_video):
 			exit_duration = tpc() - start_exit
 			logd("Waiting %r for the %r (%r) to die", exit_duration
 				, self.player_pid, PLAYER_BINARY)
