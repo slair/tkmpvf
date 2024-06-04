@@ -36,6 +36,12 @@ WIN32 = sys.platform == "win32"
 LINUX = sys.platform == "linux"
 TMPDIR = tempfile.gettempdir()
 
+
+def print_unsupported_platform_and_exit(rc=100):
+	print("Unknown platform - %r" % sys.platform)
+	sys.exit(rc)
+
+
 if WIN32:
 	from ctypes import windll
 
@@ -64,8 +70,7 @@ elif LINUX:
 		return res
 
 else:
-	print("Unknown platform - %r" % sys.platform)
-	sys.exit(100)
+	print_unsupported_platform_and_exit()
 
 PLAYER = "mpv"
 
