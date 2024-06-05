@@ -352,6 +352,11 @@ def get_duration(fp) -> int:
 					dur_cache[cfp] = duration
 					if not dur_cache_changed:
 						dur_cache_changed = True
+				except subprocess.CalledProcessError as e:
+					loge("fp=%r, e=%r", fp, e)
+					duration = 0
+					logw("Cant get fp=%r duration, changed to %r"
+						, fp, 0)
 				except ValueError as e:
 					loge("fp=%r, e=%r", fp, e)
 					duration = 0
@@ -653,7 +658,7 @@ def get_pids_by_fn(fn):
 	res = []
 	proc_iter = psutil.process_iter(attrs=["pid", "name", "cmdline"])  # pylint: disable=
 	for p in proc_iter:
-		if fn in p.info["cmdline"]:
+		if p.info["cmdline"] and fn in p.info["cmdline"]:
 			res.append(p.pid)
 	return res
 
