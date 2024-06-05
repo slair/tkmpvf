@@ -317,8 +317,7 @@ def get_duration(fp) -> int:
 				try:
 					duration = int(check_output(
 						f'"{mi_bin}" --Inform="Audio;%Duration%" "{fp}"'
-						, shell=False))  # nosec
-						#~ , shell=False, startupinfo=si))  # nosec
+						, shell=False, startupinfo=si))  # nosec
 
 					duration /= 1000
 
