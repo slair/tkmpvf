@@ -700,10 +700,8 @@ class Splash(tk.Frame):
 			, expand=True, padx=4, pady=4, ipadx=4, ipady=4)
 
 		self.pb = ttk.Progressbar(self.master, orient=tk.HORIZONTAL
-			, length=100
-			, mode="determinate")
-		self.pb.pack(side="bottom", fill="x", expand=False, padx=4, pady=4
-			, ipadx=4, ipady=4)
+			, length=100, mode="determinate")
+		self.pb.pack(side="bottom", fill="x", expand=False, padx=4)
 
 		xpos = (self.master.winfo_screenwidth() - self.window_width) // 2
 		ypos = (self.master.winfo_screenheight() - self.window_height) // 2
