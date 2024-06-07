@@ -111,7 +111,7 @@ elif LINUX:
 		"--brightness=0",
 		"--speed=1.33" if faster_speed else "",
 		"--",
-		'"%s"',
+		"'%s'",
 	))
 
 _DEBUG = True
@@ -337,7 +337,7 @@ def get_duration(fp) -> int:
 			elif LINUX:
 				try:
 					duration = int(check_output(
-						f'"{mi_bin}" --Inform="Audio;%Duration%" "{fp}"'
+						f'"{mi_bin}" --Inform="Audio;%Duration%" \'{fp}\''
 						, shell=True))  # nosec
 						#~ , shell=False, startupinfo=si))  # nosec
 
@@ -832,10 +832,12 @@ class Application(tk.Frame):
 			if self.fp_video in self.prop_skipped:
 				self.fp_video = None
 
-		p = do_command_bg(TPL_PLAY_CMD % (
+		_cmd = TPL_PLAY_CMD % (
 			"-fs" if self.i_fullscreen.get() == 1 else ""
 			, self.display_names.index(self.sv_player_display.get())
-			, self.fp_video))
+			, self.fp_video)
+		logc("_cmd=%r", _cmd)
+		p = do_command_bg(_cmd)
 
 		self.sort_videos(self.first_run)
 		self.player_pid = p.pid
