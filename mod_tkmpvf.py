@@ -692,16 +692,18 @@ class Splash(tk.Frame):
 		self.l_fn = tk.Label(self.master, text="<filename>", height=3)
 		self.l_fn.bind('<Configure>', lambda e: self.l_fn.config(
 			wraplength=self.l_fn.winfo_width()))
-		self.l_fn.pack(side="top", fill=tk.BOTH, expand=True)
+		self.l_fn.pack(side="top", fill=tk.BOTH, expand=True
+			, padx=4, pady=4, ipadx=4, ipady=4)
 
 		self.l_progress = tk.Label(self.master, text="<progress>")
 		self.l_progress.pack(side="bottom", fill=tk.BOTH
-			, expand=True, padx=4, pady=4)
+			, expand=True, padx=4, pady=4, ipadx=4, ipady=4)
 
 		self.pb = ttk.Progressbar(self.master, orient=tk.HORIZONTAL
 			, length=100
 			, mode="determinate")
-		self.pb.pack(side="bottom", fill="x", expand=False, padx=4, pady=4)
+		self.pb.pack(side="bottom", fill="x", expand=False, padx=4, pady=4
+			, ipadx=4, ipady=4)
 
 		xpos = (self.master.winfo_screenwidth() - self.window_width) // 2
 		ypos = (self.master.winfo_screenheight() - self.window_height) // 2
