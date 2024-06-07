@@ -676,7 +676,7 @@ def do_command_bg(cmd):
 
 class Splash(tk.Frame):
 	window_width = 512
-	window_height = 100
+	window_height = 128
 	working = True
 
 	def __init__(self, master=None):
@@ -693,11 +693,11 @@ class Splash(tk.Frame):
 		self.l_fn.bind('<Configure>', lambda e: self.l_fn.config(
 			wraplength=self.l_fn.winfo_width()))
 		self.l_fn.pack(side="top", fill=tk.BOTH, expand=True
-			, padx=4, pady=4, ipadx=4, ipady=4)
+			, ipadx=4, ipady=2)
 
 		self.l_progress = tk.Label(self.master, text="<progress>")
 		self.l_progress.pack(side="bottom", fill=tk.BOTH
-			, expand=True, padx=4, pady=4, ipadx=4, ipady=4)
+			, expand=True, ipadx=4, ipady=2)
 
 		self.pb = ttk.Progressbar(self.master, orient=tk.HORIZONTAL
 			, length=100, mode="determinate")
