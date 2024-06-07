@@ -695,11 +695,13 @@ class Splash(tk.Frame):
 		self.l_fn.pack(side="top", fill=tk.BOTH, expand=True)
 
 		self.l_progress = tk.Label(self.master, text="<progress>")
-		self.l_progress.pack(side="bottom", fill=tk.BOTH, expand=True)
+		self.l_progress.pack(side="bottom", fill=tk.BOTH
+			, expand=True, padx=4, pady=4)
 
-		self.pb = ttk.Progressbar(self.master, orient=tk.HORIZONTAL, length=100
+		self.pb = ttk.Progressbar(self.master, orient=tk.HORIZONTAL
+			, length=100
 			, mode="determinate")
-		self.pb.pack(side="bottom", fill="x", expand=False)
+		self.pb.pack(side="bottom", fill="x", expand=False, padx=4, pady=4)
 
 		xpos = (self.master.winfo_screenwidth() - self.window_width) // 2
 		ypos = (self.master.winfo_screenheight() - self.window_height) // 2
@@ -728,6 +730,16 @@ def EXIT(rc=0):
 		#~ logd("%r", " ".join(t.name for t in threads))
 	logi("Exiting rc=%r\n\n\n\n\n\n\n\n", rc)
 	sys.exit(rc)
+
+
+def get_random_color():
+	if _DEBUG:
+		r = random.randint(0, 255) // 16 * 16  # nosec
+		g = random.randint(0, 255) // 16 * 16  # nosec
+		b = random.randint(0, 255) // 16 * 16  # nosec
+		return "#%02x%02x%02x" % (r, g, b)
+	else:
+		return None
 
 
 class Application(tk.Frame):
@@ -1267,7 +1279,8 @@ class Application(tk.Frame):
 			, lambda e: self.lStatus.config(
 				wraplength=self.lStatus.winfo_width()))
 
-		self.lStatus.pack(side="right", fill="both", expand=True)
+		self.lStatus.pack(side="left", fill="both", expand=True
+			, padx=8, pady=8)
 
 		self.mf = tk.Frame(self)
 		self.mf.pack(side="top", fill="x", expand=False)
@@ -1288,8 +1301,10 @@ class Application(tk.Frame):
 
 		self.cb_fullscreen = tk.Checkbutton(self.f_video, text=_("Fullscreen")
 			, variable=self.i_fullscreen, onvalue=1, offvalue=0
+			, bd=1, relief="raised"
 			, command=self.cb_fullscreen_changed)
-		self.cb_fullscreen.pack(side="left", fill="y", pady=4, padx=4)
+		self.cb_fullscreen.pack(side="left", fill="y", padx=4, pady=4
+			, ipady=4, ipadx=4)
 
 		self.sv_player_display = tk.StringVar(
 			value=self.display_names[
@@ -1307,8 +1322,10 @@ class Application(tk.Frame):
 		self.cb_bring_to_front = tk.Checkbutton(self.f_video
 			, text=_("Bring to front after playing")
 			, variable=self.i_bring_to_front, onvalue=1, offvalue=0
+			, bd=1, relief="raised"
 			, command=self.cb_bring_to_front_changed)
-		self.cb_bring_to_front.pack(side="left", fill="y", pady=4, padx=4)
+		self.cb_bring_to_front.pack(side="left", fill="y", pady=4, padx=4
+			, ipady=4, ipadx=4)
 
 		self.i_exit = tk.IntVar(value=int(
 			config["global"].get("exit_after_play", "0")))
@@ -1316,8 +1333,10 @@ class Application(tk.Frame):
 		self.cb_exit = tk.Checkbutton(self.f_video
 			, text=_("Exit")
 			, variable=self.i_exit, onvalue=1, offvalue=0
+			, bd=1, relief="raised"
 			, command=self.cb_exit_changed)
-		self.cb_exit.pack(side="left", fill="y", pady=4, padx=4)
+		self.cb_exit.pack(side="left", fill="y", pady=4, padx=4
+			, ipady=4, ipadx=4)
 
 		self.i_delseen = tk.IntVar(value=int(
 			config["global"].get("delete_seen_files", "0")))
@@ -1325,8 +1344,10 @@ class Application(tk.Frame):
 		self.cb_delseen = tk.Checkbutton(self.f_video
 			, text=_("Delete seen")
 			, variable=self.i_delseen, onvalue=1, offvalue=0
+			, bd=1, relief="raised"
 			, command=self.cb_delseen_changed)
-		self.cb_delseen.pack(side="left", fill="y", pady=4, padx=4)
+		self.cb_delseen.pack(side="left", fill="y", pady=4, padx=4
+			, ipady=4, ipadx=4)
 
 		self.tpl_clear_skipped = " Очистить %d пропущенных "
 		self.b_clear_skipped = tk.Button(self.f_video
@@ -1343,16 +1364,17 @@ class Application(tk.Frame):
 			, lambda e: self.lVideoTitle.config(
 				wraplength=self.lVideoTitle.winfo_width()))
 
-		self.lVideoTitle.pack(side="top", fill="x", expand=True)
+		self.lVideoTitle.pack(side="top", fill="x", expand=True
+			, ipadx=8, ipady=8)
 
-		self.lf = tk.Frame(self)
+		self.lf = tk.Frame(self, bg=get_random_color())
 		self.lf.pack(side="top", fill="both", expand=True)
 
 		#~ self.tFont = ("Liberation Sans Narrow", 24)
 		self.tFont = ("Ubuntu Condensed", 24)
 
-		self.df = tk.Frame(self.lf, bg="#800000")
-		self.df.pack(side="left", fill=None, expand=False)
+		self.df = tk.Frame(self.lf, bg=get_random_color())
+		self.df.pack(side="left", fill="y", expand=False)
 
 		self.bVideoDuration = tk.Button(self.df, text=sDURATION
 			#~ , relief="flat"
@@ -1366,8 +1388,8 @@ class Application(tk.Frame):
 		self.lbVideosDurations.pack(side="top", fill="both", expand=True
 			, pady=0)
 
-		self.sf = tk.Frame(self.lf)
-		self.sf.pack(side="left", fill="x", expand=False)
+		self.sf = tk.Frame(self.lf, bg=get_random_color())
+		self.sf.pack(side="left", fill="both", expand=False)
 
 		self.bVideoSize = tk.Button(self.sf, text=sFSIZE
 			#~ , relief="flat"
@@ -1377,13 +1399,13 @@ class Application(tk.Frame):
 		self.lbVideosSizes = tk.Listbox(self.sf, activestyle="none"
 			, justify="center", font=self.tFont, bd=0
 			, bg=self._palette["SystemWindow"])
-		self.lbVideosSizes.pack(side="top", fill="both", expand=True, pady=0)
+		self.lbVideosSizes.pack(side="top", fill="y", expand=True, pady=0)
 
-		self.tf = tk.Frame(self.lf)
-		self.tf.pack(side="left", fill="x", expand=True)
+		self.tf = tk.Frame(self.lf, bg=get_random_color())
+		self.tf.pack(side="left", fill="both", expand=True)
 
-		self.fTitleButtons = tk.Frame(self.tf)
-		self.fTitleButtons.pack(side="top", fill="x", expand=True)
+		self.fTitleButtons = tk.Frame(self.tf, bg=get_random_color())
+		self.fTitleButtons.pack(side="top", fill="x", expand=False)
 
 		self.bVideoTitle = tk.Button(self.fTitleButtons, text=sTITLE
 			#~ , relief="flat"  # , cursor="target"
