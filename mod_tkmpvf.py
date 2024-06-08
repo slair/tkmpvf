@@ -742,6 +742,23 @@ def get_random_color():
 		return None
 
 
+def fix_filename(fn: str) -> str:
+	res = fn
+	escape_chars = "!'()"
+	changed = None
+
+	for c in escape_chars:
+		if c in res:
+			#~ res = res.resplace(c, "\\" + c)
+			res = res.replace(c, "")
+			changed = True
+
+	if changed:
+		logd("%r -> %r", fn, res)
+		os.rename(fn, res)
+	return res
+
+
 class Application(tk.Frame):
 	my_state = None
 	player_pid = None
@@ -832,11 +849,14 @@ class Application(tk.Frame):
 			if self.fp_video in self.prop_skipped:
 				self.fp_video = None
 
+		#~ if "'" in self.fp_video:
+			#~ self.fp_video = self.fp_video.replace("'", "\\'")
+
 		_cmd = TPL_PLAY_CMD % (
 			"-fs" if self.i_fullscreen.get() == 1 else ""
 			, self.display_names.index(self.sv_player_display.get())
 			, self.fp_video)
-		logc("_cmd=%r", _cmd)
+		logd("_cmd=%r", _cmd)
 		p = do_command_bg(_cmd)
 
 		self.sort_videos(self.first_run)
@@ -1060,6 +1080,8 @@ class Application(tk.Frame):
 		_duration = 0
 		_fsize = 0
 		for fn in _:
+			fn = fix_filename(fn)
+
 			if fn in self.prop_skipped:
 				continue
 
