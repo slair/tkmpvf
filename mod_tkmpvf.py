@@ -818,7 +818,10 @@ class Application(tk.Frame):
 		#~ self.master.state("iconic")
 
 	def geometry_to_config(self):
-		change_config("global", "geometry", self.master.geometry())
+		g = self.master.geometry()
+		#~ logd("g=%r", g)
+		if not g.startswith("1x1+"):
+			change_config("global", "geometry", g)
 
 	def ask_for_delete(self):
 		seen_files = glob.glob("*.seen")
