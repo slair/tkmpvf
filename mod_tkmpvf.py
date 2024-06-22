@@ -67,6 +67,7 @@ elif LINUX:
 	def enum_display_monitors():
 		res = []
 		res.append("%rx%r" % (1280, 1024))
+		res.append("%rx%r" % (1920, 1080))
 		return res
 
 else:
