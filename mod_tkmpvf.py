@@ -148,18 +148,19 @@ STOPPED = "stopped"
 
 COLOR_RENAMED_FG_NORM = "#c01000"
 if WIN32:
-	COLOR_RENAMED_BG_NORM = "SystemButtonFace"
+	COLOR_RENAMED_BG_NORM = os.environ.get("COL_SYSTEMBUTTONFACE"
+		, "SystemButtonFace")
 elif LINUX:
-	COLOR_RENAMED_BG_NORM = "gray85"
+	COLOR_RENAMED_BG_NORM = os.environ.get("COL_SYSTEMBUTTONFACE", "gray85")
 
 COLOR_RENAMED_FG_FAILED = "#800000"
 COLOR_RENAMED_BG_FAILED = "#ffff00"
 
 COLOR_FG_TITLE = "#000080"
 if WIN32:
-	COLOR_BG_TITLE = "SystemButtonFace"
+	COLOR_BG_TITLE = os.environ.get("COL_SYSTEMBUTTONFACE", "SystemButtonFace")
 elif LINUX:
-	COLOR_BG_TITLE = "gray85"
+	COLOR_BG_TITLE = os.environ.get("COL_SYSTEMBUTTONFACE", "gray85")
 
 PARTSEP = "·"
 
