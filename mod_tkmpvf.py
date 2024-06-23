@@ -767,6 +767,7 @@ class Application(tk.Frame):
 	video_folder = video_folder
 	_palette = {
 		"SystemWindow" : "#dac9bf",
+		#~ "SystemWindow" : SystemButtonFace,
 	}
 	sort_by = None
 	videos = []
