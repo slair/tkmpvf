@@ -27,6 +27,7 @@ from transliterate import translit	 # , get_available_language_codes
 #~ get_available_language_codes()	 # без этого заменяются языки
 import translit_pikabu_lp			 # noqa добавляем свой язык
 from num2t4ru import num2text		 # , num2text_VP
+from mod_monitors import enum_display_monitors
 #~ # pylint:disable=
 
 ope = os.path.exists
@@ -48,9 +49,9 @@ if WIN32:
 	timeBeginPeriod = windll.winmm.timeBeginPeriod
 	timeBeginPeriod(1)
 
-	import win32api
+	#~ import win32api
 
-	def enum_display_monitors():
+	"""def enum_display_monitors():
 		res = []
 		for mon in win32api.EnumDisplayMonitors():
 			width = mon[2][2] - mon[2][0]
@@ -61,17 +62,17 @@ if WIN32:
 			elif mon[2][0] >= 0:
 				#~ res.append("right", width, height)
 				res.append("%rx%r" % (width, height))
-		return res
+		return res"""
 
-elif LINUX:
-	def enum_display_monitors():
+#~ elif LINUX:
+	"""def enum_display_monitors():
 		res = []
 		res.append("%rx%r" % (1280, 1024))
 		res.append("%rx%r" % (1920, 1080))
-		return res
+		return res"""
 
-else:
-	print_unsupported_platform_and_exit()
+#~ else:
+	#~ print_unsupported_platform_and_exit()
 
 PLAYER = "mpv"
 
@@ -81,8 +82,8 @@ if WIN32:
 # todo: убрать ahk, трэй бесится, слишком дорого ради одного send_key_to_player
 ahk = None
 if WIN32:
-	from ahk import AHK
-	from ahk.window import Window
+	from ahk import AHK  # pylint: disable=E0401
+	from ahk.window import Window  # pylint: disable=E0401
 	ahk = AHK()
 
 #~ video_folder = r"C:\slair\to-delete\tg all"
@@ -317,9 +318,9 @@ def get_duration(fp) -> int:
 				si.dwFlags |= subprocess.STARTF_USESHOWWINDOW
 				#si.wShowWindow = subprocess.SW_HIDE # default
 				try:
-					duration = int(check_output(
+					duration = int(float(check_output(
 						f'"{mi_bin}" --Inform="Audio;%Duration%" "{fp}"'
-						, shell=False, startupinfo=si))  # nosec
+						, shell=False, startupinfo=si)))  # nosec
 
 					duration /= 1000
 
@@ -336,11 +337,12 @@ def get_duration(fp) -> int:
 					duration = 0
 					logw("Cant get fp=%r duration, changed to %r"
 						, fp, 0)
+
 			elif LINUX:
 				try:
-					duration = int(check_output(
+					duration = int(float(check_output(
 						f'"{mi_bin}" --Inform="Audio;%Duration%" \'{fp}\''
-						, shell=True))  # nosec
+						, shell=True)))  # nosec
 						#~ , shell=False, startupinfo=si))  # nosec
 
 					duration /= 1000
@@ -652,7 +654,7 @@ def td2words(td_object):
 	if strings:
 		return " ".join(strings)
 	else:
-		return "Сейчас!"
+		return ""
 
 
 def get_pids_by_fn(fn):
@@ -785,7 +787,9 @@ class Application(tk.Frame):
 		self._base_title = "tkmpvf - %s" % os.getcwd()
 		self.master.title(self._base_title)
 		self.pack(side="top", fill="both", expand=True)
-		self.display_names = enum_display_monitors()
+		self.monitors = enum_display_monitors(taskbar=False)
+		self.display_names = ["%sx%s" % (item[2], item[3])
+			for item in self.monitors]
 
 		self.create_widgets()
 
@@ -884,6 +888,9 @@ class Application(tk.Frame):
 		if self.i_bring_to_front.get() == 1:
 			self.master.state("normal")
 			self.b_skip.focus_force()
+			self.master.lift()
+			#~ self.master.attributes('-topmost', True)
+			#~ self.master.after_idle(self.master.attributes, '-topmost', False)
 
 	def change_label_height(self, label, min_height, max_height):
 		label_height = label.winfo_height()	 # 326
@@ -1273,7 +1280,7 @@ class Application(tk.Frame):
 
 	def pause_video(self):
 		if ahk and self.player_pid:
-			self.win_player = Window.from_pid(ahk, pid=str(self.player_pid))
+			self.win_player = Window.from_pid(ahk, pid=str(self.player_pid))  # pylint: disable=E0601
 			if self.win_player:
 				self.win_player.send("p")
 
