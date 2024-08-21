@@ -90,8 +90,10 @@ if WIN32:
 video_folder = r"."
 
 faster_speed = os.getcwd().endswith("1-today")
+dont_delete = os.getcwd().endswith("blender")
 #~ sys.exit()
 
+TPL_PLAY_CMD = None
 PLAYER_BINARY = shutil.which(PLAYER)
 if WIN32:
 	TPL_PLAY_CMD = " ".join((
@@ -115,6 +117,8 @@ elif LINUX:
 		"--",
 		"'%s'",
 	))
+else:
+	print_unsupported_platform_and_exit()
 
 _DEBUG = True
 
@@ -148,6 +152,7 @@ PLAYING = "playing"
 STOPPED = "stopped"
 
 COLOR_RENAMED_FG_NORM = "#c01000"
+COLOR_RENAMED_BG_NORM = "#ffa0a0"
 if WIN32:
 	COLOR_RENAMED_BG_NORM = os.environ.get("COL_SYSTEMBUTTONFACE"
 		, "SystemButtonFace")
@@ -158,6 +163,7 @@ COLOR_RENAMED_FG_FAILED = "#800000"
 COLOR_RENAMED_BG_FAILED = "#ffff00"
 
 COLOR_FG_TITLE = "#000080"
+COLOR_BG_TITLE = "#808080"
 if WIN32:
 	COLOR_BG_TITLE = os.environ.get("COL_SYSTEMBUTTONFACE", "SystemButtonFace")
 elif LINUX:
@@ -218,33 +224,42 @@ formatter = logging.Formatter(FLN + BASELOGFORMAT, BASEDTFORMAT)
 fh.setFormatter(formatter)
 logger.addHandler(fh)
 
-if "HOME" in os.environ:
-	ENV_HOME = os.environ["HOME"]
-elif "USERPROFILE" in os.environ:
-	logw("No HOME environment variable, using USERPROFILE")
-	ENV_HOME = os.environ["USERPROFILE"]
-else:
+#~ if "HOME" in os.environ:
+	#~ ENV_HOME = os.environ["HOME"]
+#~ elif "USERPROFILE" in os.environ:
+	#~ logw("No HOME environment variable, using USERPROFILE")
+	#~ ENV_HOME = os.environ["USERPROFILE"]
+#~ else:
+	#~ loge("No HOME or USERPROFILE environment variable")
+	#~ ENV_HOME = None
+ENV_HOME = os.environ.get("HOME", os.environ.get("USERPROFILE", None))
+if ENV_HOME is None:
 	loge("No HOME or USERPROFILE environment variable")
-	ENV_HOME = ""
 
-if "XDG_DATA_HOME" in os.environ:
-	XDG_DATA_HOME = os.environ["XDG_DATA_HOME"]
-elif "APPDATA" in os.environ:
-	XDG_DATA_HOME = os.environ["APPDATA"]
-elif ENV_HOME:
-	XDG_DATA_HOME = opj(ENV_HOME, opj(".local", "share"))
+#~ XDG_DATA_HOME = None
+#~ if "XDG_DATA_HOME" in os.environ:
+	#~ XDG_DATA_HOME = os.environ["XDG_DATA_HOME"]
+#~ elif "APPDATA" in os.environ:
+	#~ XDG_DATA_HOME = os.environ["APPDATA"]
+#~ elif ENV_HOME:
+	#~ XDG_DATA_HOME = opj(ENV_HOME, opj(".local", "share"))
+XDG_DATA_HOME = os.environ.get("XDG_DATA_HOME"
+	, os.environ.get("APPDATA", opj(ENV_HOME, opj(".local", "share"))))
 
 MY_XDG_DATA_HOME = opj(XDG_DATA_HOME, MY_NAME)
 if not os.path.exists(MY_XDG_DATA_HOME):
 	logi("Create folder %r", MY_XDG_DATA_HOME)
 	os.makedirs(MY_XDG_DATA_HOME)
 
-if "XDG_CONFIG_HOME" in os.environ:
-	XDG_CONFIG_HOME = os.environ["XDG_CONFIG_HOME"]
-elif "LOCALAPPDATA" in os.environ:
-	XDG_CONFIG_HOME = os.environ["LOCALAPPDATA"]
-elif ENV_HOME:
-	XDG_CONFIG_HOME = opj(ENV_HOME, ".config")
+#~ XDG_CONFIG_HOME = None
+#~ if "XDG_CONFIG_HOME" in os.environ:
+	#~ XDG_CONFIG_HOME = os.environ["XDG_CONFIG_HOME"]
+#~ elif "LOCALAPPDATA" in os.environ:
+	#~ XDG_CONFIG_HOME = os.environ["LOCALAPPDATA"]
+#~ elif ENV_HOME:
+	#~ XDG_CONFIG_HOME = opj(ENV_HOME, ".config")
+XDG_CONFIG_HOME = os.environ.get("XDG_CONFIG_HOME"
+	, os.environ.get("LOCALAPPDATA", opj(ENV_HOME, ".config")))
 
 MY_XDG_CONFIG_HOME = opj(XDG_CONFIG_HOME, MY_NAME)
 if not os.path.exists(MY_XDG_CONFIG_HOME):
@@ -431,8 +446,8 @@ def change_config(section, option, value):
 def dp(*args):
 	if _DEBUG:
 		a1 = args[0]
+		bl = ""
 		if isinstance(a1, str):
-			bl = ""
 			if a1[0] in "!><-+":
 				bl = a1[0]
 				#~ na0 = a1[1:]
@@ -667,6 +682,7 @@ def get_pids_by_fn(fn):
 
 
 def do_command_bg(cmd):
+	proc = None
 	if WIN32:
 		bshell = False
 		proc = subprocess.Popen(cmd, shell=bshell, stdin=subprocess.PIPE  # nosec
@@ -675,6 +691,8 @@ def do_command_bg(cmd):
 		bshell = True
 		proc = subprocess.Popen(cmd + "> /dev/null 2>&1 &"
 			, shell=bshell)  # nosec  # pylint: disable=
+	else:
+		print_unsupported_platform_and_exit()
 	return proc
 
 
@@ -831,6 +849,9 @@ class Application(tk.Frame):
 			change_config("global", "geometry", g)
 
 	def ask_for_delete(self):
+		if dont_delete:
+			return
+
 		seen_files = glob.glob("*.seen")
 		if seen_files:
 
@@ -841,8 +862,8 @@ class Application(tk.Frame):
 				cwd = os.getcwd()
 				logd("cwd=%r", cwd)
 				for item in seen_files:
-					logw("Deleting %r", item)
-					if cwd != 'C:\\slair\\work.local\\tkmpvf':
+					if not cwd.endswith("tkmpvf"):
+						logw("Deleting %r", item)
 						os.unlink(item)
 
 	def on_close_master(self, *args, **kwargs):  # noqa
