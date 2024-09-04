@@ -86,7 +86,6 @@ if WIN32:
 	from ahk.window import Window  # pylint: disable=E0401
 	ahk = AHK()
 
-#~ video_folder = r"C:\slair\to-delete\tg all"
 video_folder = r"."
 
 faster_speed = os.getcwd().endswith("1-today")
