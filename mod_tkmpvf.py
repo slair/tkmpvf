@@ -49,31 +49,6 @@ if WIN32:
 	timeBeginPeriod = windll.winmm.timeBeginPeriod
 	timeBeginPeriod(1)
 
-	#~ import win32api
-
-	"""def enum_display_monitors():
-		res = []
-		for mon in win32api.EnumDisplayMonitors():
-			width = mon[2][2] - mon[2][0]
-			height = mon[2][3] - mon[2][1]
-			if mon[2][0] < 0:
-				#~ res.append("left", width, height)
-				res.append("%rx%r" % (width, height))
-			elif mon[2][0] >= 0:
-				#~ res.append("right", width, height)
-				res.append("%rx%r" % (width, height))
-		return res"""
-
-#~ elif LINUX:
-	"""def enum_display_monitors():
-		res = []
-		res.append("%rx%r" % (1280, 1024))
-		res.append("%rx%r" % (1920, 1080))
-		return res"""
-
-#~ else:
-	#~ print_unsupported_platform_and_exit()
-
 PLAYER = "mpv"
 
 if WIN32:
