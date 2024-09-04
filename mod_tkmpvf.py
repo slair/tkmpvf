@@ -198,25 +198,10 @@ formatter = logging.Formatter(FLN + BASELOGFORMAT, BASEDTFORMAT)
 fh.setFormatter(formatter)
 logger.addHandler(fh)
 
-#~ if "HOME" in os.environ:
-	#~ ENV_HOME = os.environ["HOME"]
-#~ elif "USERPROFILE" in os.environ:
-	#~ logw("No HOME environment variable, using USERPROFILE")
-	#~ ENV_HOME = os.environ["USERPROFILE"]
-#~ else:
-	#~ loge("No HOME or USERPROFILE environment variable")
-	#~ ENV_HOME = None
 ENV_HOME = os.environ.get("HOME", os.environ.get("USERPROFILE", None))
 if ENV_HOME is None:
 	loge("No HOME or USERPROFILE environment variable")
 
-#~ XDG_DATA_HOME = None
-#~ if "XDG_DATA_HOME" in os.environ:
-	#~ XDG_DATA_HOME = os.environ["XDG_DATA_HOME"]
-#~ elif "APPDATA" in os.environ:
-	#~ XDG_DATA_HOME = os.environ["APPDATA"]
-#~ elif ENV_HOME:
-	#~ XDG_DATA_HOME = opj(ENV_HOME, opj(".local", "share"))
 XDG_DATA_HOME = os.environ.get("XDG_DATA_HOME"
 	, os.environ.get("APPDATA", opj(ENV_HOME, opj(".local", "share"))))
 
@@ -225,13 +210,6 @@ if not os.path.exists(MY_XDG_DATA_HOME):
 	logi("Create folder %r", MY_XDG_DATA_HOME)
 	os.makedirs(MY_XDG_DATA_HOME)
 
-#~ XDG_CONFIG_HOME = None
-#~ if "XDG_CONFIG_HOME" in os.environ:
-	#~ XDG_CONFIG_HOME = os.environ["XDG_CONFIG_HOME"]
-#~ elif "LOCALAPPDATA" in os.environ:
-	#~ XDG_CONFIG_HOME = os.environ["LOCALAPPDATA"]
-#~ elif ENV_HOME:
-	#~ XDG_CONFIG_HOME = opj(ENV_HOME, ".config")
 XDG_CONFIG_HOME = os.environ.get("XDG_CONFIG_HOME"
 	, os.environ.get("LOCALAPPDATA", opj(ENV_HOME, ".config")))
 
@@ -365,7 +343,6 @@ if ope(DUR_CACHE_FP):
 	dur_cache = load_cache(DUR_CACHE_FP)
 
 
-#~ def my_tk_excepthook(excType, excValue, ltraceback, *args):
 def my_tk_excepthook(*args):
 	logc("args= %r", args, exc_info=args)
 
@@ -462,27 +439,6 @@ def sizeof_fmt(num):
 		if num < 1024.0:
 			return "%3.1f %s" % (num, x)
 		num /= 1024.0
-
-
-"""def get_duration(filename):
-	video = cv2.VideoCapture(filename)  # pylint:disable=E1101
-
-	duration = video.get(cv2.CAP_PROP_POS_MSEC)  # pylint:disable=E1101
-	frame_count = video.get(cv2.CAP_PROP_FRAME_COUNT)  # pylint:disable=E1101
-	if duration <= 0:
-		#~ print("! duration = %r" % duration)
-		fps = video.get(cv2.CAP_PROP_FPS)  # pylint:disable=E1101
-		duration = frame_count / fps
-		#~ print("! duration(frame_count / fps) = %r / %r = %r" % (
-			#~ frame_count, fps, duration))
-
-	if duration <= 0:
-		print("! Bad duration=%r video=%r" % (duration, filename))
-		duration = 0
-
-	return duration, frame_count
-"""
-# 1566.9/60 = 26.115
 
 
 def untranslit_word(w):
