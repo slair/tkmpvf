@@ -65,7 +65,10 @@ video_folder = r"."
 
 faster_speed = os.getcwd().endswith("1-today")
 dont_delete = os.getcwd().endswith("blender")
-#~ sys.exit()
+add_brightness_list = (
+	"Supernatural", "walkthroughs",
+)
+add_brightness = any(lambda: a in os.getcwd() for a in add_brightness_list)
 
 TPL_PLAY_CMD = None
 PLAYER_BINARY = shutil.which(PLAYER)
@@ -75,8 +78,8 @@ if WIN32:
 		"%s",						# "-fs",
 		"--fs-screen=%s",
 		"--softvol-max=500",
-		"--brightness=0",
 		"--speed=1.33" if faster_speed else "",
+		"--brightness=13" if add_brightness else "",
 		"--",
 		'"%s"',
 	))
@@ -86,7 +89,7 @@ elif LINUX:
 		"%s",						# "-fs",
 		"--fs-screen=%s",
 		"--volume-max=500",
-		"--brightness=0",
+		"--brightness=13" if add_brightness else "",
 		"--speed=1.33" if faster_speed else "",
 		"--",
 		"'%s'",
