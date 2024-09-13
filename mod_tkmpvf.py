@@ -65,11 +65,18 @@ video_folder = r"."
 
 cd = os.getcwd()
 faster_speed = cd.endswith("1-today")
-dont_delete = cd.endswith(("blender", "Отбросы", "The Boys", ))
+
 add_brightness_list = (
 	"Supernatural", "walkthroughs",
 )
 add_brightness = any(lambda: a in os.getcwd() for a in add_brightness_list)
+
+dont_delete = False
+dont_delete_list = ("blender", "Отбросы", "The Boys", )
+for item in dont_delete_list:
+	if item in cd:
+		dont_delete = True
+		break
 
 TPL_PLAY_CMD = None
 PLAYER_BINARY = shutil.which(PLAYER)
