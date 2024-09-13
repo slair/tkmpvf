@@ -63,8 +63,9 @@ if WIN32:
 
 video_folder = r"."
 
-faster_speed = os.getcwd().endswith("1-today")
-dont_delete = os.getcwd().endswith("blender")
+cd = os.getcwd()
+faster_speed = cd.endswith("1-today")
+dont_delete = cd.endswith(("blender", "Отбросы", "The Boys", ))
 add_brightness_list = (
 	"Supernatural", "walkthroughs",
 )
