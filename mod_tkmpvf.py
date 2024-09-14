@@ -37,6 +37,17 @@ WIN32 = sys.platform == "win32"
 LINUX = sys.platform == "linux"
 TMPDIR = tempfile.gettempdir()
 
+VIDEO_EXT = (
+	"*.mp4",
+	"*.mkv",
+	"*.avi",
+	"*.webm",
+	"*.m4v",
+	"*.mov",
+	"*.dat",
+	"*.unknown_video",
+)
+
 
 def print_unsupported_platform_and_exit(rc=100):
 	print("Unknown platform - %r" % sys.platform)
@@ -1018,14 +1029,10 @@ class Application(tk.Frame):
 		#~ logd("os.getcwd()= %r", os.getcwd())
 		#~ self.videos.clear()
 
-		_ = glob.glob(opj(folder, "*.mp4"))
-		_ += glob.glob(opj(folder, "*.mkv"))
-		_ += glob.glob(opj(folder, "*.avi"))
-		_ += glob.glob(opj(folder, "*.webm"))
-		_ += glob.glob(opj(folder, "*.m4v"))
-		_ += glob.glob(opj(folder, "*.mov"))
-		_ += glob.glob(opj(folder, "*.dat"))
-		_ += glob.glob(opj(folder, "*.unknown_video"))
+		_ = []
+		for ext in VIDEO_EXT:
+			_ += glob.glob(opj(folder, ext))
+			_ += glob.glob(opj(folder, ext.upper()))
 
 		if announce:
 			count_videos = len(_)
@@ -1432,7 +1439,7 @@ class Application(tk.Frame):
 			self.send_key_to_player(chr(27))
 		elif LINUX:
 			os.system("wmctrl -c gl || wmctrl -c xv || wmctrl -c mpv ||"
-				" killall mpv")
+				" killall mpv")		# nosec
 		start_exit = tpc()
 		#~ while self.player_pid and psutil.pid_exists(self.player_pid):
 		while self.player_pid and get_pids_by_fn(self.fp_video):
