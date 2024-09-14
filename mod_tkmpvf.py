@@ -69,7 +69,7 @@ faster_speed = cd.endswith("1-today")
 add_brightness_list = (
 	"Supernatural", "walkthroughs",
 )
-add_brightness = any(lambda: a in os.getcwd() for a in add_brightness_list)
+add_brightness = any([a in cd for a in add_brightness_list])
 
 dont_delete = False
 dont_delete_list = ("blender", "Отбросы", "The Boys", )
@@ -1428,7 +1428,11 @@ class Application(tk.Frame):
 	def stop_player(self):
 		self.my_state = STOPPED
 		self.my_state_start = tpc()
-		self.send_key_to_player(chr(27))
+		if WIN32:
+			self.send_key_to_player(chr(27))
+		elif LINUX:
+			os.system("wmctrl -c gl || wmctrl -c xv || wmctrl -c mpv ||"
+				" killall mpv")
 		start_exit = tpc()
 		#~ while self.player_pid and psutil.pid_exists(self.player_pid):
 		while self.player_pid and get_pids_by_fn(self.fp_video):
