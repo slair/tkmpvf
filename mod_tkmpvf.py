@@ -360,6 +360,11 @@ def get_duration(fp) -> int:
 	return 0, 0
 
 
+logi("Starting ")
+logd("add_brightness=%r, add_brightness_list=%r", add_brightness
+	, add_brightness_list)
+logd("dont_delete=%r, dont_delete_list=%r", dont_delete, dont_delete_list)
+
 DUR_CACHE_FP = opj(TMPDIR, DUR_CACHE_FN)
 if ope(DUR_CACHE_FP):
 	dur_cache = load_cache(DUR_CACHE_FP)
