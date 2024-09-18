@@ -83,7 +83,7 @@ add_brightness_list = (
 add_brightness = any([a in cd for a in add_brightness_list])
 
 dont_delete = False
-dont_delete_list = ("blender", "Отбросы", "The Boys", )
+dont_delete_list = ("blender", "Отбросы", "The Boys", "tkmpvf")
 for item in dont_delete_list:
 	if item in cd:
 		dont_delete = True
@@ -1438,8 +1438,8 @@ class Application(tk.Frame):
 		if WIN32:
 			self.send_key_to_player(chr(27))
 		elif LINUX:
-			os.system("wmctrl -c gl || wmctrl -c xv || wmctrl -c mpv ||"
-				" killall mpv")		# nosec
+			os.system("wmctrl -v -x -c gl || wmctrl -v -x  -c xv "
+				"|| wmctrl -v -x  -c mpv || killall mpv")		# nosec
 		start_exit = tpc()
 		#~ while self.player_pid and psutil.pid_exists(self.player_pid):
 		while self.player_pid and get_pids_by_fn(self.fp_video):
