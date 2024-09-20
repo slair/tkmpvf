@@ -188,14 +188,17 @@ try:
 	from saymod import say_async, say, snd_play_async, snd_play, saymod_setup_log
 	saymod_setup_log(MY_NAME)
 except ModuleNotFoundError:
+	def say_async(*args, **kwargs):  # noqa
+		print("! say_async(", *args, ")")
+
 	def say(*args, **kwargs):  # noqa
 		print("! say(", *args, ")")
 
 	def snd_play_async(*args, **kwargs):  # noqa
 		print("! snd_play_async(", *args, ")")
 
-	def say_async(*args, **kwargs):  # noqa
-		print("! say_async(", *args, ")")
+	def snd_play(*args, **kwargs):  # noqa
+		print("! snd_play(", *args, ")")
 
 
 BASELOGFORMAT = "%(message)s"
