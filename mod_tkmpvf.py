@@ -83,7 +83,10 @@ add_brightness_list = (
 add_brightness = any([a in cd for a in add_brightness_list])
 
 dont_delete = False
-dont_delete_list = ("blender", "Отбросы", "The Boys", "tkmpvf")
+dont_delete_list = (
+	"_SEEN", "_dev", "blender",
+	"Отбросы", "The Boys", "tkmpvf",
+)
 for item in dont_delete_list:
 	if item in cd:
 		dont_delete = True
