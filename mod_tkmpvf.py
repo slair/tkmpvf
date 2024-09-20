@@ -185,7 +185,7 @@ MY_NAME = os.path.splitext(os.path.basename(MY_FILE_NAME))[0]
 
 
 try:
-	from saymod import say_async, say, snd_play_async, saymod_setup_log
+	from saymod import say_async, say, snd_play_async, snd_play, saymod_setup_log
 	saymod_setup_log(MY_NAME)
 except ModuleNotFoundError:
 	def say(*args, **kwargs):  # noqa
@@ -1002,7 +1002,7 @@ class Application(tk.Frame):
 
 				self.lStatus["text"] = "Нет video"
 				if state_duration > TIME_TO_EXIT:
-					snd_play_async(SND_DRUM, ep=True)
+					snd_play(SND_DRUM, ep=True)
 					#~ self.master.destroy()
 					self.on_close_master()
 
