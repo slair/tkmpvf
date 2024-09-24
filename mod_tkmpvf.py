@@ -1083,6 +1083,11 @@ class Application(tk.Frame):
 
 			if not any(e[0] == fn for e in self.videos):
 				#~ dp("! adding", fn)
+
+				# fixme: падает, если не нашли ни одного файла
+				if not ope(fn):
+					continue
+
 				fsize = os.stat(fn).st_size
 				if fsize == 0:
 					try:
