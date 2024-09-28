@@ -781,8 +781,8 @@ class Application(tk.Frame):
 			#~ , lambda *args: logd("<Enter> args=%r", args))
 		#~ self.master.bind('<Leave>'
 			#~ , lambda *args: logd("<Leave> args=%r", args))
-		self.master.focus()
-		self.b_skip.focus()
+		self.master.focus_set()
+		self.b_skip.focus_set()
 
 		self.master.geometry("+5000+5000")
 		self.master.wait_visibility(self.master)
@@ -811,7 +811,7 @@ class Application(tk.Frame):
 		if geometry is not None:
 			to_ = htk.geometry2list(geometry)
 			to_.append(1.1)		# alpha
-			htk.random_appearance_to(self.master, to_, duration=5)
+			htk.random_appearance_to(self.master, to_)
 		#~ self.master.state('zoomed')
 		#~ self.master.state("iconic")
 
