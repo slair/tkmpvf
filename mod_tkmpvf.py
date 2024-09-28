@@ -678,7 +678,7 @@ class Splash(tk.Frame):
 		self.l_fn.bind('<Configure>', lambda e: self.l_fn.config(
 			wraplength=self.l_fn.winfo_width()))
 		self.l_fn.pack(side="top", fill=tk.BOTH, expand=True
-			, ipadx=4, ipady=2)
+			, ipadx=4, ipady=2, padx=4)
 
 		self.l_progress = tk.Label(self.master, text="<progress>")
 		self.l_progress.pack(side="bottom", fill=tk.BOTH
