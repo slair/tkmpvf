@@ -28,7 +28,7 @@ from transliterate import translit	 # , get_available_language_codes
 import translit_pikabu_lp			 # noqa добавляем свой язык
 from num2t4ru import num2text		 # , num2text_VP
 from mod_monitors import enum_display_monitors
-#~ # pylint:disable=
+import mod_helpertk as htk
 
 ope = os.path.exists
 _ = gettext.gettext
@@ -688,16 +688,17 @@ class Splash(tk.Frame):
 			, length=100, mode="determinate")
 		self.pb.pack(side="bottom", fill="x", expand=False, padx=4)
 
-		xpos = (self.master.winfo_screenwidth() - self.window_width) // 2
-		ypos = (self.master.winfo_screenheight() - self.window_height) // 2
-		self.master.geometry("%sx%s+%s+%s" % (
-			self.window_width, self.window_height, xpos, ypos))
-		#~ self.pb.start()
-		#~ self.update()
+		#~ xpos = (self.master.winfo_screenwidth() - self.window_width) // 2
+		#~ ypos = (self.master.winfo_screenheight() - self.window_height) // 2
+		#~ self.master.geometry("%sx%s+%s+%s" % (
+			#~ self.window_width, self.window_height, xpos, ypos))
+		htk.random_appearance(self.master
+			, win_size=(self.window_width, self.window_height))
 
 	def on_keypress(self, e):
 		if e.keysym == "Escape":
 			self.working = False
+			htk.random_disappearance(self.master)
 			self.master.destroy()
 
 		else:
@@ -783,6 +784,10 @@ class Application(tk.Frame):
 		self.master.focus()
 		self.b_skip.focus()
 
+		self.master.geometry("+5000+5000")
+		self.master.wait_visibility(self.master)
+		self.master.attributes("-alpha", 0.0)
+		self.master.update()
 		self.master.withdraw()
 
 		self.my_state = VIDEO_RENAMED
@@ -802,6 +807,11 @@ class Application(tk.Frame):
 		logd("Starts in %r, self.sort_by=%r", os.getcwd(), self.sort_by)
 
 		self.on_every_second()
+		geometry = config["global"].get("geometry", None)
+		if geometry is not None:
+			to_ = htk.geometry2list(geometry)
+			to_.append(1.1)		# alpha
+			htk.random_appearance_to(self.master, to_, duration=5)
 		#~ self.master.state('zoomed')
 		#~ self.master.state("iconic")
 
@@ -834,6 +844,7 @@ class Application(tk.Frame):
 		self.stop_player()
 		self.geometry_to_config()
 		self.ask_for_delete()
+		htk.random_disappearance(self.master)
 		self.master.destroy()
 
 	def start_video(self):
@@ -985,6 +996,7 @@ class Application(tk.Frame):
 					if self.first_run:
 						self.first_run = None
 						self.splash.working = None
+						htk.random_disappearance(self.splash.master)
 						self.splash.master.destroy()
 						self.master.deiconify()
 					self.start_video()
