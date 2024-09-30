@@ -867,9 +867,16 @@ class Application(tk.Frame):
 			, self.fp_video)
 		logd("_cmd=%r", _cmd)
 
+		# note: ждёт без нарисованных интерфейсов, пока не произнесёт фразы
+		"""q = os.listdir(saymod.TS_QUEUE_FOLDER)
+		while q:
+			logd("Waiting os.listdir(saymod.TS_QUEUE_FOLDER)=%r", q)
+			time.sleep(0.1)
+			q = os.listdir(saymod.TS_QUEUE_FOLDER)
+
 		while saymod.TS_BUSY:
 			logd("Waiting saymod.TS_BUSY=%r", saymod.TS_BUSY)
-			time.sleep(0.1)
+			time.sleep(0.1)"""
 
 		p = do_command_bg(_cmd)
 
