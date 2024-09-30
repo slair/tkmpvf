@@ -185,8 +185,9 @@ MY_NAME = os.path.splitext(os.path.basename(MY_FILE_NAME))[0]
 
 
 try:
+	import saymod
 	from saymod import say_async, say, snd_play_async, snd_play\
-		, saymod_setup_log, say_with_queue
+		, saymod_setup_log, say_with_queue, run_talk_server
 	saymod_setup_log(MY_NAME)
 except ModuleNotFoundError:
 	def say_async(*args, **kwargs):  # noqa
@@ -268,6 +269,8 @@ else:
 if not mi_bin:
 	print("MediaInfo not found!")
 	sys.exit(100)
+
+run_talk_server()
 
 
 def save_cache(fp: str, cache: dict, datasep: str = "|"):
@@ -863,6 +866,11 @@ class Application(tk.Frame):
 			, self.display_names.index(self.sv_player_display.get())
 			, self.fp_video)
 		logd("_cmd=%r", _cmd)
+
+		while saymod.TS_BUSY:
+			logd("Waiting saymod.TS_BUSY=%r", saymod.TS_BUSY)
+			time.sleep(0.1)
+
 		p = do_command_bg(_cmd)
 
 		self.sort_videos(self.first_run)
@@ -1608,4 +1616,5 @@ if __name__ == '__main__':
 	check_for_running()
 	main()
 	check_for_running(True)
+	saymod.TS_ACTIVE = False
 	EXIT()
