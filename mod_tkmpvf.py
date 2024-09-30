@@ -749,6 +749,22 @@ def fix_filename(fn: str) -> str:
 	return res
 
 
+def wait_for_said(_cb=None):
+	q = os.listdir(saymod.TS_QUEUE_FOLDER)
+	while q:
+		#~ logd("Waiting os.listdir(saymod.TS_QUEUE_FOLDER)=%r", q)
+		if _cb:
+			_cb()
+		time.sleep(0.1)
+		q = os.listdir(saymod.TS_QUEUE_FOLDER)
+
+	while saymod.TS_BUSY:
+		#~ logd("Waiting saymod.TS_BUSY=%r", saymod.TS_BUSY)
+		if _cb:
+			_cb()
+		time.sleep(0.1)
+
+
 class Application(tk.Frame):
 	my_state = None
 	player_pid = None
@@ -810,14 +826,14 @@ class Application(tk.Frame):
 
 		logd("Starts in %r, self.sort_by=%r", os.getcwd(), self.sort_by)
 
-		self.on_every_second()
 		geometry = config["global"].get("geometry", None)
 		if geometry is not None:
 			to_ = htk.geometry2list(geometry)
 			to_.append(1.1)		# alpha
 			htk.random_appearance_to(self.master, to_)
-		#~ self.master.state('zoomed')
-		#~ self.master.state("iconic")
+
+		self.update_idletasks()
+		self.on_every_second()
 
 	def geometry_to_config(self):
 		g = self.master.geometry()
@@ -851,6 +867,10 @@ class Application(tk.Frame):
 		htk.random_disappearance(self.master)
 		self.master.destroy()
 
+	def refresh(self):
+		self.update()
+		self.update_idletasks()
+
 	def start_video(self):
 		self.fp_video = None
 		while not self.fp_video and self.videos:
@@ -868,16 +888,7 @@ class Application(tk.Frame):
 		logd("_cmd=%r", _cmd)
 
 		# note: ждёт без нарисованных интерфейсов, пока не произнесёт фразы
-		"""q = os.listdir(saymod.TS_QUEUE_FOLDER)
-		while q:
-			logd("Waiting os.listdir(saymod.TS_QUEUE_FOLDER)=%r", q)
-			time.sleep(0.1)
-			q = os.listdir(saymod.TS_QUEUE_FOLDER)
-
-		while saymod.TS_BUSY:
-			logd("Waiting saymod.TS_BUSY=%r", saymod.TS_BUSY)
-			time.sleep(0.1)"""
-
+		wait_for_said(lambda: self.refresh())
 		p = do_command_bg(_cmd)
 
 		self.sort_videos(self.first_run)
@@ -1322,7 +1333,7 @@ class Application(tk.Frame):
 			, font=("a_LCDNova", 56))
 		self.lClock.pack(side="right", anchor="n")
 
-		self.lStatus = tk.Label(self.uf, text="<lStatus><lStatus>"
+		self.lStatus = tk.Label(self.uf, text=""
 			, font=("Impact", 48), fg="#804000")
 
 		self.lStatus.bind('<Configure>'
@@ -1406,7 +1417,7 @@ class Application(tk.Frame):
 		self.b_clear_skipped.pack(side="right", fill="y", expand=False
 			, pady=4, padx=4)
 
-		self.lVideoTitle = tk.Label(self.mf, text="<lVideoTitle>\n2nd line"
+		self.lVideoTitle = tk.Label(self.mf, text=""
 			, relief="groove", bd=2, font=("Impact", 48)
 			, wraplength=0, fg="#000080")
 
