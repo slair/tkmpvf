@@ -121,7 +121,7 @@ else:
 
 _DEBUG = True
 
-FNSEP = "|"				# FileName SEParator in ini file
+FNSEP = "(_!_)"				# FileName SEParator in ini file
 FS_CHANGE_STEP = 3		# Font Size CHANGE STEP
 
 sDURATION = "Время"
@@ -185,7 +185,8 @@ MY_NAME = os.path.splitext(os.path.basename(MY_FILE_NAME))[0]
 
 
 try:
-	from saymod import say_async, say, snd_play_async, snd_play, saymod_setup_log
+	from saymod import say_async, say, snd_play_async, snd_play\
+		, saymod_setup_log, say_with_queue
 	saymod_setup_log(MY_NAME)
 except ModuleNotFoundError:
 	def say_async(*args, **kwargs):  # noqa
@@ -1067,7 +1068,7 @@ class Application(tk.Frame):
 				self.splash.l_fn["text"] = ""
 				self.splash.l_progress["text"] = ""
 				self.update_splash()
-				say(numsuf, narrator=narrator)
+				say_with_queue(numsuf, narrator=narrator)
 			else:
 				say_async("А здесь нет вид^осов"
 					, narrator=random.choice(narrators))  # nosec
@@ -1243,7 +1244,7 @@ class Application(tk.Frame):
 			narrator = random.choice(narrators)  # nosec
 			total_duration_str = td2words(timedelta(seconds=total_duration))
 			self.update_splash()
-			say(total_duration_str, narrator=narrator)
+			say_with_queue(total_duration_str, narrator=narrator)
 
 	def update_splash(self):
 		if self.splash.working:
