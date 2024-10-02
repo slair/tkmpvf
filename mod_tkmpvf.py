@@ -1015,8 +1015,9 @@ class Application(tk.Frame):
 		elif self.my_state == VIDEO_RENAMED:
 			if tpc() - self.my_state_start > TIME_TO_START:
 
-				if int(self.i_exit.get()) == 0:
-					self.get_videos(self.first_run)
+				#~ if int(self.i_exit.get()) == 0:
+				self.get_videos(self.first_run)
+				logd("self.videos=%r", self.videos)
 
 				if self.videos and int(self.i_exit.get()) == 0:
 					self.sort_videos(self.first_run)
@@ -1084,6 +1085,8 @@ class Application(tk.Frame):
 			_ += glob.glob(opj(folder, ext))
 			_ += glob.glob(opj(folder, ext.upper()))
 
+		logd("_=%r", _)
+
 		if announce:
 			count_videos = len(_)
 			if count_videos > 0:
@@ -1101,10 +1104,12 @@ class Application(tk.Frame):
 				#~ self.bring_to_front()
 
 		#~ dp("> checking for deleted videos")
+		#~ logd("self.videos=%r", self.videos)
 		for i, video_struct in enumerate(self.videos):
 			if video_struct[0] not in _:
-				dp("! deleting", i, video_struct)
+				logd("deleting %r %r", i, video_struct)
 				del self.videos[i]
+		#~ logd("self.videos=%r", self.videos)
 
 		#~ dp("> checking for added videos")
 		fn_count = 0
@@ -1137,8 +1142,12 @@ class Application(tk.Frame):
 							, fsize, (0.0, 0)))
 				else:
 					fn_duration = get_duration(fn)
-					self.videos.append((fn, get_video_title(fn), fsize
-						, fn_duration))
+					new_video = (fn, get_video_title(fn), fsize, fn_duration)
+					logd("adding %r", new_video)
+					self.videos.append(new_video)
+					self.i_exit.set(False)
+					logd("self.i_exit.get()=%r", self.i_exit.get())
+					#~ logd("self.videos=%r", self.videos)
 
 					_duration += fn_duration[0]
 					_fsize += fsize
