@@ -784,6 +784,10 @@ class Application(tk.Frame):
 	def __init__(self, master=None, sort_by="fsize_desc"):
 		super().__init__(master)
 		#~ logd("sort_by=%r", sort_by)
+
+		# если сами задумаем выйти после последнего видоса
+		self.exit_by_self = False
+
 		self.sort_by = sort_by
 		self.master = master
 		self._base_title = "tkmpvf - %s" % os.getcwd()
@@ -904,6 +908,7 @@ class Application(tk.Frame):
 		else:
 			self.lStatus["text"] = "Последнее video"
 			self.i_exit.set(True)
+			self.exit_by_self = True  # сами назначили выход
 			self.i_delseen.set(True)
 
 	def bring_to_front(self):
@@ -1145,7 +1150,10 @@ class Application(tk.Frame):
 					new_video = (fn, get_video_title(fn), fsize, fn_duration)
 					logd("adding %r", new_video)
 					self.videos.append(new_video)
-					self.i_exit.set(False)
+					if self.exit_by_self:
+						# отменяем выход, если назначили его сами
+						self.i_exit.set(False)
+						self.exit_by_self = False
 					logd("self.i_exit.get()=%r", self.i_exit.get())
 					#~ logd("self.videos=%r", self.videos)
 
