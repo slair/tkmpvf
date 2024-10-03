@@ -808,12 +808,6 @@ class Application(tk.Frame):
 		self.master.focus_set()
 		self.b_skip.focus_set()
 
-		self.master.geometry("+5000+5000")
-		self.master.wait_visibility(self.master)
-		self.master.attributes("-alpha", 0.0)
-		self.master.update()
-		self.master.withdraw()
-
 		self.my_state = VIDEO_RENAMED
 		self.my_state_start = 1
 
@@ -829,6 +823,11 @@ class Application(tk.Frame):
 		logi("len(self.prop_skipped)=%r", len(self.prop_skipped))
 
 		logd("Starts in %r, self.sort_by=%r", os.getcwd(), self.sort_by)
+
+		htk.hide_window(self.master)
+		self.master.geometry("+5000+5000")
+		self.master.update()
+		self.master.withdraw()
 
 		geometry = config["global"].get("geometry", None)
 		if geometry is not None:
