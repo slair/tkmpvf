@@ -74,23 +74,34 @@ if WIN32:
 
 video_folder = r"."
 
+dont_delete_flag = "~~dont-delete~~"
+add_brightness_flag = "~~add-brightness~~"
+faster_speed_flag = "~~faster-speed~~"
+
 cd = os.getcwd()
-faster_speed = cd.endswith("1-today")
+FASTER_SPEED = cd.endswith("1-today")
 
 add_brightness_list = (
 	"Supernatural", "walkthroughs",
 )
-add_brightness = any([a in cd for a in add_brightness_list])
+ADD_BRIGHTNESS = any([a in cd for a in add_brightness_list])
 
-dont_delete = False
+DONT_DELETE = False
 dont_delete_list = (
 	"_SEEN", "_dev", "blender",
 	"Отбросы", "The Boys", "tkmpvf",
 )
 for item in dont_delete_list:
 	if item in cd:
-		dont_delete = True
+		DONT_DELETE = True
 		break
+
+if ope(dont_delete_flag):
+	DONT_DELETE = True
+if ope(add_brightness_flag):
+	ADD_BRIGHTNESS = True
+if ope(faster_speed_flag):
+	FASTER_SPEED = True
 
 TPL_PLAY_CMD = None
 PLAYER_BINARY = shutil.which(PLAYER)
@@ -100,8 +111,8 @@ if WIN32:
 		"%s",						# "-fs",
 		"--fs-screen=%s",
 		"--softvol-max=500",
-		"--speed=1.33" if faster_speed else "",
-		"--brightness=13" if add_brightness else "",
+		"--speed=1.33" if FASTER_SPEED else "",
+		"--brightness=13" if ADD_BRIGHTNESS else "",
 		"--",
 		'"%s"',
 	))
@@ -111,8 +122,8 @@ elif LINUX:
 		"%s",						# "-fs",
 		"--fs-screen=%s",
 		"--volume-max=500",
-		"--brightness=13" if add_brightness else "",
-		"--speed=1.33" if faster_speed else "",
+		"--brightness=13" if ADD_BRIGHTNESS else "",
+		"--speed=1.33" if FASTER_SPEED else "",
 		"--",
 		"'%s'",
 	))
@@ -371,9 +382,9 @@ def get_duration(fp) -> int:
 
 
 logi("Starting ")
-logd("add_brightness=%r, add_brightness_list=%r", add_brightness
+logd("add_brightness=%r, add_brightness_list=%r", ADD_BRIGHTNESS
 	, add_brightness_list)
-logd("dont_delete=%r, dont_delete_list=%r", dont_delete, dont_delete_list)
+logd("DONT_DELETE=%r, DONT_DELETE_list=%r", DONT_DELETE, dont_delete_list)
 
 DUR_CACHE_FP = opj(TMPDIR, DUR_CACHE_FN)
 if ope(DUR_CACHE_FP):
@@ -845,7 +856,7 @@ class Application(tk.Frame):
 			change_config("global", "geometry", g)
 
 	def ask_for_delete(self):
-		if dont_delete:
+		if DONT_DELETE:
 			return
 
 		seen_files = glob.glob("*.seen")
