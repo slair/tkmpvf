@@ -31,11 +31,29 @@ from mod_monitors import enum_display_monitors
 import mod_helpertk as htk
 
 ope = os.path.exists
+opj = os.path.join
+tpc = time.perf_counter
 _ = gettext.gettext
 
 WIN32 = sys.platform == "win32"
 LINUX = sys.platform == "linux"
 TMPDIR = tempfile.gettempdir()
+
+
+start_tpc = tpc()
+
+
+def dp(*args):
+	if _DEBUG:
+		a1 = args[0]
+		bl = ""
+		if isinstance(a1, str):
+			if a1[0] in "!><-+":
+				bl = a1[0]
+				#~ na0 = a1[1:]
+				#~ args = (na0, *args[1:])
+		print(bl + "\t%.2f\t" % (tpc() - start_tpc), *args)
+
 
 VIDEO_EXT = (
 	"*.mp4",
@@ -50,7 +68,7 @@ VIDEO_EXT = (
 
 
 def print_unsupported_platform_and_exit(rc=100):
-	print("Unknown platform - %r" % sys.platform)
+	dp("Unknown platform - %r" % sys.platform)
 	sys.exit(rc)
 
 
@@ -181,8 +199,6 @@ elif LINUX:
 
 PARTSEP = "·"
 
-opj = os.path.join
-tpc = time.perf_counter
 config = configparser.ConfigParser()
 config["global"] = {}
 config.my_changed = False
@@ -202,16 +218,16 @@ try:
 	saymod_setup_log(MY_NAME)
 except ModuleNotFoundError:
 	def say_async(*args, **kwargs):  # noqa
-		print("! say_async(", *args, ")")
+		dp("! say_async(", *args, ")")
 
 	def say(*args, **kwargs):  # noqa
-		print("! say(", *args, ")")
+		dp("! say(", *args, ")")
 
 	def snd_play_async(*args, **kwargs):  # noqa
-		print("! snd_play_async(", *args, ")")
+		dp("! snd_play_async(", *args, ")")
 
 	def snd_play(*args, **kwargs):  # noqa
-		print("! snd_play(", *args, ")")
+		dp("! snd_play(", *args, ")")
 
 
 BASELOGFORMAT = "%(message)s"
@@ -232,7 +248,7 @@ console_output_handler.setFormatter(formatter)
 logger.addHandler(console_output_handler)
 
 LOG_FILE_NAME = opj(TMPDIR, MY_NAME + ".log")
-print("LOG_FILE_NAME = %r" % LOG_FILE_NAME)
+if _DEBUG: dp("LOG_FILE_NAME = %r" % LOG_FILE_NAME)
 
 fh = logging.FileHandler(LOG_FILE_NAME, encoding="utf-8")
 formatter = logging.Formatter(FLN + BASELOGFORMAT, BASEDTFORMAT)
@@ -278,7 +294,7 @@ else:
 	mi_bin = None
 
 if not mi_bin:
-	print("MediaInfo not found!")
+	dp("! MediaInfo not found!")
 	sys.exit(100)
 
 run_talk_server()
@@ -442,18 +458,6 @@ def change_config(section, option, value):
 	return config.my_changed
 
 
-def dp(*args):
-	if _DEBUG:
-		a1 = args[0]
-		bl = ""
-		if isinstance(a1, str):
-			if a1[0] in "!><-+":
-				bl = a1[0]
-				#~ na0 = a1[1:]
-				#~ args = (na0, *args[1:])
-		print(bl + " %.2f" % tpc(), *args)
-
-
 def all_children(wid):
 	_list = wid.winfo_children()
 
@@ -564,10 +568,6 @@ def get_video_title(s):
 
 	if title.endswith("yapfiles ru") and title != "yapfiles ru":
 		title = untranslit(title[:-11])
-
-	#~ print(title)
-	#~ print(repr(title))
-	#~ print()
 
 	if channel:
 		return channel + "\n" + title
@@ -715,9 +715,6 @@ class Splash(tk.Frame):
 			self.working = False
 			htk.random_disappearance(self.master)
 			self.master.destroy()
-
-		else:
-			print(e)
 
 
 def EXIT(rc=0):
@@ -887,6 +884,7 @@ class Application(tk.Frame):
 		self.master.destroy()
 
 	def refresh(self):
+		self.lClock["text"] = datetime.now().strftime("%H:%M:%S")
 		self.update()
 		self.update_idletasks()
 
@@ -900,18 +898,7 @@ class Application(tk.Frame):
 		#~ if "'" in self.fp_video:
 			#~ self.fp_video = self.fp_video.replace("'", "\\'")
 
-		_cmd = TPL_PLAY_CMD % (
-			"-fs" if self.i_fullscreen.get() == 1 else ""
-			, self.display_names.index(self.sv_player_display.get())
-			, self.fp_video)
-		logd("_cmd=%r", _cmd)
-
-		# note: ждёт без нарисованных интерфейсов, пока не произнесёт фразы
-		wait_for_said(lambda: self.refresh())
-		p = do_command_bg(_cmd)
-
 		self.sort_videos(self.first_run)
-		self.player_pid = p.pid
 		#~ logd("self.fp_video=%r", self.fp_video)
 		#~ logd("self.player_pid=%r", self.player_pid)
 		self.lVideoTitle["text"] = title
@@ -925,6 +912,17 @@ class Application(tk.Frame):
 			self.i_exit.set(True)
 			self.exit_by_self = True  # сами назначили выход
 			self.i_delseen.set(True)
+
+		# note: ждёт без нарисованных интерфейсов, пока не произнесёт фразы
+		wait_for_said(lambda: self.refresh())
+
+		_cmd = TPL_PLAY_CMD % (
+			"-fs" if self.i_fullscreen.get() == 1 else ""
+			, self.display_names.index(self.sv_player_display.get())
+			, self.fp_video)
+		logd("_cmd=%r", _cmd)
+		p = do_command_bg(_cmd)
+		self.player_pid = p.pid
 
 	def bring_to_front(self):
 		if self.i_bring_to_front.get() == 1:
@@ -1037,7 +1035,8 @@ class Application(tk.Frame):
 
 				#~ if int(self.i_exit.get()) == 0:
 				self.get_videos(self.first_run)
-				logd("self.videos=%r", self.videos)
+				logd("len(self.videos)=%r self.first_run=%r"
+					, len(self.videos), self.first_run)
 
 				if self.videos and int(self.i_exit.get()) == 0:
 					self.sort_videos(self.first_run)
@@ -1048,11 +1047,12 @@ class Application(tk.Frame):
 						htk.random_disappearance(self.splash.master)
 						self.splash.master.destroy()
 						self.master.deiconify()
-						logd("self.splash.working=%r", self.splash.working)
-						logd("\n! start appearance")
+						#~ logd("self.splash.working=%r", self.splash.working)
+						#~ logd("\n! start appearance")
+						# note: show window
 						htk.random_appearance_to(self.master, self.to_
 							, duration=0.2)
-						logd("\n! stop appearance")
+						#~ logd("\n! stop appearance")
 					self.start_video()
 					self.my_state = PLAYING
 					self.my_state_start = tpc()
@@ -1244,8 +1244,6 @@ class Application(tk.Frame):
 
 		elif self.sort_by == "fn_asc":
 			self.videos.sort(key=lambda x: x[0].lower(), reverse=False)
-			#~ print(">", "sort by fn_asc", id(self.videos))
-			#~ for item in self.videos:print(item)
 			self.bVideoFilename["text"] = sFN_ASC
 
 		elif self.sort_by == "title_desc":
@@ -1257,7 +1255,7 @@ class Application(tk.Frame):
 			self.bVideoTitle["text"] = sTITLE_ASC
 
 		else:
-			print("! unknown self.sort_by=%r" % self.sort_by)
+			loge("\n! unknown self.sort_by=%r" % self.sort_by)
 
 		idx = 0
 		max_len_fsize = 0
