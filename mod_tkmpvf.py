@@ -842,9 +842,13 @@ class Application(tk.Frame):
 
 		geometry = config["global"].get("geometry", None)
 		if geometry is not None:
-			to_ = htk.geometry2list(geometry)
-			to_.append(1.1)		# alpha
-			htk.random_appearance_to(self.master, to_)
+			self.to_ = htk.geometry2list(geometry)
+			self.to_.append(1.1)		# alpha
+			#~ logd("self.splash.working=%r", self.splash.working)
+			#~ logd("\n! start appearance")
+			#~ htk.random_appearance_to(self.master, to_, duration=5)
+			#~ logd("\n! stop appearance")
+			#~ logd("self.splash.working=%r", self.splash.working)
 
 		self.update_idletasks()
 		self.on_every_second()
@@ -856,11 +860,12 @@ class Application(tk.Frame):
 			change_config("global", "geometry", g)
 
 	def ask_for_delete(self):
-		if DONT_DELETE:
-			return
-
 		seen_files = glob.glob("*.seen")
 		if seen_files:
+
+			if DONT_DELETE:
+				say_async("Не буду удалять файлы из этого каталога")
+				return
 
 			if int(self.i_delseen.get()) == 1 \
 				or messagebox.askyesnocancel("Просмотренные файлы"
@@ -1039,9 +1044,15 @@ class Application(tk.Frame):
 					if self.first_run:
 						self.first_run = None
 						self.splash.working = None
+						logd("self.splash.working=%r", self.splash.working)
 						htk.random_disappearance(self.splash.master)
 						self.splash.master.destroy()
 						self.master.deiconify()
+						logd("self.splash.working=%r", self.splash.working)
+						logd("\n! start appearance")
+						htk.random_appearance_to(self.master, self.to_
+							, duration=0.2)
+						logd("\n! stop appearance")
 					self.start_video()
 					self.my_state = PLAYING
 					self.my_state_start = tpc()
