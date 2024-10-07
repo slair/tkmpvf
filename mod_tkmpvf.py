@@ -1116,7 +1116,7 @@ class Application(tk.Frame):
 			_ += glob.glob(opj(folder, ext))
 			_ += glob.glob(opj(folder, ext.upper()))
 
-		logd("_=%r", _)
+		logd("len(_)=%r", len(_))
 
 		if announce:
 			count_videos = len(_)
