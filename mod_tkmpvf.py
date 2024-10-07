@@ -127,6 +127,8 @@ if WIN32:
 	TPL_PLAY_CMD = " ".join((
 		PLAYER_BINARY,
 		"%s",						# "-fs",
+		"--audio-channels=stereo",
+		"--audio-normalize-downmix=yes",
 		"--fs-screen=%s",
 		"--softvol-max=500",
 		"--speed=1.33" if FASTER_SPEED else "",
@@ -138,6 +140,8 @@ elif LINUX:
 	TPL_PLAY_CMD = " ".join((
 		PLAYER_BINARY,
 		"%s",						# "-fs",
+		"--audio-channels=stereo",
+		"--audio-normalize-downmix=yes",
 		"--fs-screen=%s",
 		"--volume-max=500",
 		"--brightness=13" if ADD_BRIGHTNESS else "",
