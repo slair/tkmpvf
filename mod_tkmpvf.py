@@ -144,6 +144,7 @@ elif LINUX:
 		"--audio-normalize-downmix=yes",
 		"--fs-screen=%s",
 		"--volume-max=500",
+		"--volume=90",
 		"--brightness=13" if ADD_BRIGHTNESS else "",
 		"--speed=1.33" if FASTER_SPEED else "",
 		"--",
