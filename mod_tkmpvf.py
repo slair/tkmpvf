@@ -93,7 +93,13 @@ if WIN32:
 video_folder = r"."
 
 dont_delete_flag = "~~dont-delete~~"
+
+# todo: brightness value from flag instead *
+#~ add_brightness_flag = "~~add-brightness-*-~~"
 add_brightness_flag = "~~add-brightness~~"
+
+# todo: speed value from flag instead *
+#~ faster_speed_flag = "~~faster-speed-*-~~"
 faster_speed_flag = "~~faster-speed~~"
 
 cd = os.getcwd()
