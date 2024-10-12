@@ -663,7 +663,7 @@ def td2words(td_object):
 
 def get_pids_by_fn(fn):
 	res = []
-	proc_iter = psutil.process_iter(attrs=["pid", "name", "cmdline"])  # pylint: disable=
+	proc_iter = psutil.process_iter(attrs=["pid", "name", "cmdline"])
 	for p in proc_iter:
 		if p.info["cmdline"] and fn in p.info["cmdline"]:
 			res.append(p.pid)
@@ -961,6 +961,7 @@ class Application(tk.Frame):
 				, label_font_size)
 
 	def on_every_second(self):
+		_start = tpc()
 		#~ logd("self.my_state=%r, duration=%r"
 			#~ , self.my_state, tpc()-self.my_state_start)
 
@@ -1085,6 +1086,10 @@ class Application(tk.Frame):
 					snd_play(SND_DRUM, ep=True)
 					#~ self.master.destroy()
 					self.on_close_master()
+
+		_duration = tpc() - _start
+		if _duration * 1000 > REPINT_MSEC:
+			logw("_duration=%r", _duration)
 
 		self.after(REPINT_MSEC, self.on_every_second)
 
