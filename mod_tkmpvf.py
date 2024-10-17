@@ -1,5 +1,8 @@
-#!/usr/bin/env python3
+#!/usr/bin/python3 -u
 # -*- coding: utf-8 -*-
+from __future__ import annotations
+from typing import Any, Callable, Dict, List, Optional, Union  # noqa:F401
+
 import os
 import sys
 import random
@@ -7,6 +10,7 @@ import glob
 import tempfile
 import time
 import re
+import socket
 import logging
 import subprocess  # nosec
 import configparser
@@ -35,6 +39,7 @@ opj = os.path.join
 tpc = time.perf_counter
 _ = gettext.gettext
 
+TS_PORT = 12987
 WIN32 = sys.platform == "win32"
 LINUX = sys.platform == "linux"
 TMPDIR = tempfile.gettempdir()
@@ -520,6 +525,36 @@ def untranslit(s):
 		return res[0].upper() + res[1:]
 	else:
 		return res
+
+
+def already_running(UDP_PORT: int
+	, log: Union[Callable, None] = None) -> Union[bool, None]:
+	res = None
+	if WIN32:
+		import win32event  # pylint: disable=E0401
+		import win32api  # pylint: disable=E0401
+		from winerror import ERROR_ALREADY_EXISTS  # pylint: disable=E0401
+		mutex = win32event.CreateMutex(None, False, MY_NAME)  # noqa:F841
+		last_error = win32api.GetLastError()
+		if last_error == ERROR_ALREADY_EXISTS:
+			res = True
+
+	elif LINUX:
+		global serverSocket
+		serverSocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+		try:
+			serverSocket.bind(('', UDP_PORT))
+			res = False
+		except OSError as e:
+			if e.errno == 98:
+				res = True
+			else:
+				if log: log("e=%s" % e)
+				res = False
+	else:
+		raise NotImplementedError("Unknown platform %r" % sys.platform)
+
+	return res
 
 
 def get_video_title(s):
@@ -1616,38 +1651,6 @@ class Application(tk.Frame):
 			self.b_clear_skipped["state"] = "disabled"
 
 
-def check_for_running(end=False):
-	global pid_fd
-	pid_fp = os.path.join(TMPDIR, os.path.basename(__file__) + ".pid")
-
-	if os.path.exists(pid_fp):
-		if end:
-			if pid_fd:
-				pid_fd.close()
-				try:
-					os.unlink(pid_fp)
-					logd("Deleted %r", pid_fp)
-				except PermissionError as e:
-					logw("Deleting %r failed. %r", pid_fp, e)
-				pid_fd = None
-		else:
-			try:
-				os.unlink(pid_fp)		# здесь должно падать
-				logd("Deleted %r", pid_fp)
-			except PermissionError as e:
-				logw("Deleting %r failed. %r", pid_fp, e)
-				say_async("Уже запущено!"
-					, narrator=random.choice(narrators))  # nosec
-				EXIT(32)
-
-	else:
-		if not end:
-			pid = os.getpid()
-			logd("Creating %r", pid_fp)
-			pid_fd = open(pid_fp, "w")
-			pid_fd.write("%d" % pid)	 # оставляем открытым, чтобы не потёрли
-
-
 def main():
 	# done: Загрузка настроек
 	load_config()
@@ -1677,14 +1680,16 @@ def main():
 
 
 if __name__ == '__main__':
+	if already_running(TS_PORT):
+		loge("ALREADY_RUNNING TS_PORT=%r", TS_PORT)
+		EXIT()
+
 	if len(sys.argv) > 1:
 		folder = sys.argv[1]
 		if folder[0] != "-":
 			os.chdir(folder)
 
 	logi("Starting %r in %r", " ".join(sys.argv), os.getcwd())
-	check_for_running()
 	main()
-	check_for_running(True)
 	saymod.TS_ACTIVE = False
 	EXIT()
