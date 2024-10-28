@@ -33,6 +33,7 @@ import translit_pikabu_lp			 # noqa добавляем свой язык
 from num2t4ru import num2text		 # , num2text_VP
 from mod_monitors import enum_display_monitors
 import mod_helpertk as htk
+from mod_tools import tp
 
 ope = os.path.exists
 opj = os.path.join
@@ -885,6 +886,9 @@ class Application(tk.Frame):
 
 		geometry = config["global"].get("geometry", None)
 		if geometry is not None:
+			tp("geometry=%r", geometry)
+			if "-" in geometry:
+				geometry = "960x1025+2239+0"
 			self.to_ = htk.geometry2list(geometry)
 			self.to_.append(1.1)		# alpha
 			#~ logd("self.splash.working=%r", self.splash.working)
@@ -1414,11 +1418,11 @@ class Application(tk.Frame):
 
 	def create_widgets(self):
 		self.uf = tk.Frame(self, relief="groove", bd=2)
-		self.uf.pack(side="top", fill="x", expand=False)
+		self.uf.pack(side="top", fill="x", expand=False, pady=8, padx=4)
 
 		self.lClock = tk.Label(self.uf, text="<lClock>"
 			, font=("a_LCDNova", 56))
-		self.lClock.pack(side="right", anchor="n")
+		self.lClock.pack(side="right", anchor="n", pady=4)
 
 		self.lStatus = tk.Label(self.uf, text=""
 			, font=("Impact", 48), fg="#804000")
@@ -1428,20 +1432,20 @@ class Application(tk.Frame):
 				wraplength=self.lStatus.winfo_width()))
 
 		self.lStatus.pack(side="left", fill="both", expand=True
-			, padx=8, pady=8)
+			, padx=4, pady=8)
 
 		self.mf = tk.Frame(self)
 		self.mf.pack(side="top", fill="x", expand=False)
 
 		self.f_video = tk.Frame(self.mf)  # фрейм для кнопок к текущему видео
-		self.f_video.pack(side="top", fill="x", expand=False)
+		self.f_video.pack(side="top", fill="x", expand=False, pady=0, padx=4)
 
 		self.b_pause = tk.Button(self.f_video, text=" Пауза "
-			, command=self.pause_video)
+			, command=self.pause_video, highlightthickness=0)
 		self.b_pause.pack(side="left", fill="y", expand=False, pady=4, padx=4)
 
 		self.b_skip = tk.Button(self.f_video, text=" Пропустить "
-			, command=self.skip_video)
+			, command=self.skip_video, highlightthickness=0)
 		self.b_skip.pack(side="left", fill="y", expand=False, pady=4, padx=4)
 
 		self.i_fullscreen = tk.IntVar(value=int(
@@ -1449,7 +1453,7 @@ class Application(tk.Frame):
 
 		self.cb_fullscreen = tk.Checkbutton(self.f_video, text=_("Fullscreen")
 			, variable=self.i_fullscreen, onvalue=1, offvalue=0
-			, bd=1, relief="raised"
+			, bd=1, relief="raised", highlightthickness=0
 			, command=self.cb_fullscreen_changed)
 		self.cb_fullscreen.pack(side="left", fill="y", padx=4, pady=4
 			, ipady=4, ipadx=4)
@@ -1469,6 +1473,7 @@ class Application(tk.Frame):
 
 		self.cb_bring_to_front = tk.Checkbutton(self.f_video
 			, text=_("Bring to front after playing")
+			, highlightthickness=0
 			, variable=self.i_bring_to_front, onvalue=1, offvalue=0
 			, bd=1, relief="raised"
 			, command=self.cb_bring_to_front_changed)
@@ -1479,7 +1484,7 @@ class Application(tk.Frame):
 			config["global"].get("exit_after_play", "0")))
 
 		self.cb_exit = tk.Checkbutton(self.f_video
-			, text=_("Exit")
+			, text=_("Exit"), highlightthickness=0
 			, variable=self.i_exit, onvalue=1, offvalue=0
 			, bd=1, relief="raised"
 			, command=self.cb_exit_changed)
@@ -1490,7 +1495,7 @@ class Application(tk.Frame):
 			config["global"].get("delete_seen_files", "0")))
 
 		self.cb_delseen = tk.Checkbutton(self.f_video
-			, text=_("Delete seen")
+			, text=_("Delete seen"), highlightthickness=0
 			, variable=self.i_delseen, onvalue=1, offvalue=0
 			, bd=1, relief="raised"
 			, command=self.cb_delseen_changed)
@@ -1500,6 +1505,7 @@ class Application(tk.Frame):
 		self.tpl_clear_skipped = " Очистить %d пропущенных "
 		self.b_clear_skipped = tk.Button(self.f_video
 			, text=self.tpl_clear_skipped % len(self.prop_skipped)
+			, highlightthickness=0
 			, command=self.clear_skipped)
 		self.b_clear_skipped.pack(side="right", fill="y", expand=False
 			, pady=4, padx=4)
@@ -1513,7 +1519,7 @@ class Application(tk.Frame):
 				wraplength=self.lVideoTitle.winfo_width()))
 
 		self.lVideoTitle.pack(side="top", fill="x", expand=True
-			, ipadx=8, ipady=8)
+			, ipadx=8, ipady=8, pady=4, padx=4)
 
 		self.lf = tk.Frame(self, bg=get_random_color())
 		self.lf.pack(side="top", fill="both", expand=True)
@@ -1525,12 +1531,12 @@ class Application(tk.Frame):
 		self.df.pack(side="left", fill="y", expand=False)
 
 		self.bVideoDuration = tk.Button(self.df, text=sDURATION
-			#~ , relief="flat"
+			, highlightthickness=0
 			, command=self.set_sort_duration)
 		self.bVideoDuration.pack(side="top", fill="x", expand=False)
 
 		self.lbVideosDurations = tk.Listbox(self.df, activestyle="none"
-			#~ , listvariable=self.lvVDurations
+			, highlightthickness=0
 			, justify="center", font=self.tFont, bd=0
 			, bg=self._palette["SystemWindow"])
 		self.lbVideosDurations.pack(side="top", fill="both", expand=True
@@ -1540,12 +1546,13 @@ class Application(tk.Frame):
 		self.sf.pack(side="left", fill="both", expand=False)
 
 		self.bVideoSize = tk.Button(self.sf, text=sFSIZE
-			#~ , relief="flat"
+			, highlightthickness=0
 			, command=self.set_sort_fsize)
 		self.bVideoSize.pack(side="top", fill="x", expand=False)
 
 		self.lbVideosSizes = tk.Listbox(self.sf, activestyle="none"
 			, justify="center", font=self.tFont, bd=0
+			, highlightthickness=1, highlightbackground="darkgray"
 			, bg=self._palette["SystemWindow"])
 		self.lbVideosSizes.pack(side="top", fill="y", expand=True, pady=0)
 
@@ -1556,17 +1563,18 @@ class Application(tk.Frame):
 		self.fTitleButtons.pack(side="top", fill="x", expand=False)
 
 		self.bVideoTitle = tk.Button(self.fTitleButtons, text=sTITLE
-			#~ , relief="flat"  # , cursor="target"
+			, highlightthickness=0
 			, command=self.set_sort_title)
 		self.bVideoTitle.pack(side="left", fill="x", expand=True)
 
 		self.bVideoFilename = tk.Button(self.fTitleButtons, text=sFN
-			#~ , relief="flat"
+			, highlightthickness=0
 			, command=self.set_sort_fn)
 		self.bVideoFilename.pack(side="left", fill="x", expand=False)
 
 		self.lbVideosTitles = tk.Listbox(self.tf, activestyle="none"
 			, justify="left", font=self.tFont, bd=0
+			, highlightthickness=0
 			, bg=self._palette["SystemWindow"])
 		self.lbVideosTitles.pack(side="top", fill="both", expand=True, pady=0)
 
