@@ -129,7 +129,8 @@ for item in dont_delete_list:
 cd_ = cd
 while cd_:
 	#~ print(cd_)
-	if ope(opj(cd_, dont_delete_flag)):
+	found_flag = opj(cd_, dont_delete_flag)
+	if ope(found_flag):
 		print(f"{dont_delete_flag!r} found in {cd_!r}")
 		DONT_DELETE = True
 		break
@@ -311,7 +312,10 @@ SND_DRUM = opj(SND_FOLDER, "drum.wav")
 
 dur_cache = dict()  # note: кэш, чтобы не сканировать файлы каждый раз
 dur_cache_changed = False
+
 DUR_CACHE_FN = "%s-dur-cache.txt" % MY_NAME
+DUR_CACHE_FP = opj(TMPDIR, DUR_CACHE_FN)
+
 MAX_DURATION = 7 * 24 * 60 * 60  # неделя в секундах
 
 if WIN32:
@@ -428,11 +432,8 @@ def get_duration(fp) -> int:
 logi("Starting ")
 logd("add_brightness=%r, add_brightness_list=%r", ADD_BRIGHTNESS
 	, add_brightness_list)
-logd("DONT_DELETE=%r, DONT_DELETE_list=%r", DONT_DELETE, dont_delete_list)
-
-DUR_CACHE_FP = opj(TMPDIR, DUR_CACHE_FN)
-if ope(DUR_CACHE_FP):
-	dur_cache = load_cache(DUR_CACHE_FP)
+logd("DONT_DELETE=%r, found_flag=%r, DONT_DELETE_list=%r"
+	, DONT_DELETE, found_flag, dont_delete_list)
 
 
 def my_tk_excepthook(*args):
@@ -1703,12 +1704,20 @@ if __name__ == '__main__':
 		loge("ALREADY_RUNNING TS_PORT=%r", TS_PORT)
 		EXIT()
 
+	if ope(DUR_CACHE_FP):
+		dur_cache = load_cache(DUR_CACHE_FP)
+
 	if len(sys.argv) > 1:
 		folder = sys.argv[1]
 		if folder[0] != "-":
 			os.chdir(folder)
+			# fixme: надо ли проверить наличие dont_delete_flag
 
 	logi("Starting %r in %r", " ".join(sys.argv), os.getcwd())
+
+	if DONT_DELETE:
+		say_async("Не буду удалять файлы из этого каталога")
+
 	main()
 	saymod.TS_ACTIVE = False
 	EXIT()
