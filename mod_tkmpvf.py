@@ -126,8 +126,19 @@ for item in dont_delete_list:
 		DONT_DELETE = True
 		break
 
-if ope(dont_delete_flag):
-	DONT_DELETE = True
+cd_ = cd
+while cd_:
+	#~ print(cd_)
+	if ope(opj(cd_, dont_delete_flag)):
+		print(f"{dont_delete_flag!r} found in {cd_!r}")
+		DONT_DELETE = True
+		break
+
+	last_cd = cd_
+	cd_ = os.path.split(cd_)[0]
+	if cd_ == last_cd:
+		break
+
 if ope(add_brightness_flag):
 	ADD_BRIGHTNESS = True
 if ope(faster_speed_flag):
