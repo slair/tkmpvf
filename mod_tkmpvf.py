@@ -1716,7 +1716,7 @@ if __name__ == '__main__':
 	logi("Starting %r in %r", " ".join(sys.argv), os.getcwd())
 
 	if DONT_DELETE:
-		say_async("Не буду удалять файлы из этого каталога")
+		say("Не буду удалять файлы из этого каталога")
 
 	main()
 	saymod.TS_ACTIVE = False
