@@ -109,10 +109,10 @@ add_brightness_flag = "~~add-brightness~~"
 faster_speed_flag = "~~faster-speed~~"
 
 cd = os.getcwd()
-FASTER_SPEED = cd.endswith("1-today")
+FASTER_SPEED = cd.endswith("_news")
 
 add_brightness_list = (
-	"Supernatural", "walkthroughs",
+	"Supernatural", "_games",
 )
 ADD_BRIGHTNESS = any([a in cd for a in add_brightness_list])
 
