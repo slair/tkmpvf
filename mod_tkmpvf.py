@@ -376,9 +376,14 @@ def get_duration(fp) -> int:
 				si.dwFlags |= subprocess.STARTF_USESHOWWINDOW
 				#si.wShowWindow = subprocess.SW_HIDE # default
 				try:
-					duration = int(float(check_output(
-						f'"{mi_bin}" --Inform="Audio;%Duration%" "{fp}"'
-						, shell=False, startupinfo=si)))  # nosec
+					sduration = str(check_output(
+						f'"{mi_bin}" --Inform="Video;%Duration%" "{fp}"'
+						, shell=False, startupinfo=si), encoding="utf-8")  # nosec
+
+					if "." in sduration:
+						duration = int(sduration.split(".", maxsplit=1)[0])
+					else:
+						duration = int(sduration)
 
 					duration /= 1000
 
@@ -398,10 +403,15 @@ def get_duration(fp) -> int:
 
 			elif LINUX:
 				try:
-					duration = int(float(check_output(
-						f'"{mi_bin}" --Inform="Audio;%Duration%" \'{fp}\''
-						, shell=True)))  # nosec
+					sduration = str(check_output(
+						f'"{mi_bin}" --Inform="Video;%Duration%" \'{fp}\''
+						, shell=True), encoding="utf-8")  # nosec
 						#~ , shell=False, startupinfo=si))  # nosec
+
+					if "." in sduration:
+						duration = int(sduration.split(".", maxsplit=1)[0])
+					else:
+						duration = int(sduration)
 
 					duration /= 1000
 
