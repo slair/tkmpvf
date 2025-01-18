@@ -1441,7 +1441,7 @@ class Application(tk.Frame):
 	def create_widgets(self):
 		self.uf = tk.Frame(self, relief="groove", bd=2)
 		self.uf.pack(side="top", fill="x", expand=False, pady=8, padx=4)
-
+		#~ mim = tk.PhotoImage(file = "/home/slair/share/cote-640x360.png")
 		self.lClock = tk.Label(self.uf, text="<lClock>"
 			, font=("a_LCDNova", 56))
 		self.lClock.pack(side="right", anchor="n", pady=4)
