@@ -628,9 +628,12 @@ def get_video_title(s):
 
 	elif s.count(PARTSEP) == 1:
 		dt, title = s.split(PARTSEP)
-		title = title[:title.rfind(".")]
-		if title.split()[-1].isdigit():
-			title = title[:title.rfind(" ")]
+		if " " in dt:
+			title = dt
+		else:
+			title = title[:title.rfind(".")]
+			if title.split()[-1].isdigit():
+				title = title[:title.rfind(" ")]
 
 	else:
 		title = s
