@@ -1,4 +1,4 @@
-#!/usr/bin/python3 -u
+	#!/usr/bin/python3 -u
 # -*- coding: utf-8 -*-
 from __future__ import annotations
 from typing import Any, Callable, Dict, List, Optional, Union  # noqa:F401
@@ -98,15 +98,37 @@ if WIN32:
 
 video_folder = r"."
 
-dont_delete_flag = "~~dont-delete~~"
+
+def getflag(flags, folder=None):
+	flagnames = []
+	if isinstance(flags, (list, tuple)):
+		flagnames.extend(flags)
+	elif isinstance(flags, str):
+		flagnames.append(flags)
+	else:
+		loge("wrong type flags=%r", type(flags))
+
+	for fn in flagnames:
+		if folder:
+			fp = opj(folder, fn)
+		else:
+			fp = fn
+
+		if ope(fp):
+			return True
+
+	return False
+
+
+dont_delete_flag = ("~~dont-delete~~", ".~~dont-delete~~")
 
 # todo: brightness value from flag instead *
 #~ add_brightness_flag = "~~add-brightness-*-~~"
-add_brightness_flag = "~~add-brightness~~"
+add_brightness_flag = ("~~add-brightness~~", ".~~add-brightness~~")
 
 # todo: speed value from flag instead *
 #~ faster_speed_flag = "~~faster-speed-*-~~"
-faster_speed_flag = "~~faster-speed~~"
+faster_speed_flag = ("~~faster-speed~~", ".~~faster-speed~~")
 
 cd = os.getcwd()
 FASTER_SPEED = cd.endswith("_news")
@@ -129,9 +151,8 @@ for item in dont_delete_list:
 cd_ = cd
 while cd_:
 	#~ print(cd_)
-	found_flag = opj(cd_, dont_delete_flag)
-	if ope(found_flag):
-		print(f"{dont_delete_flag!r} found in {cd_!r}")
+	if getflag(dont_delete_flag, cd_):
+		tp(f"{dont_delete_flag!r} found in {cd_!r}")
 		DONT_DELETE = True
 		break
 
@@ -140,9 +161,9 @@ while cd_:
 	if cd_ == last_cd:
 		break
 
-if ope(add_brightness_flag):
+if getflag(add_brightness_flag):
 	ADD_BRIGHTNESS = True
-if ope(faster_speed_flag):
+if getflag(faster_speed_flag):
 	FASTER_SPEED = True
 
 TPL_PLAY_CMD = None
@@ -277,7 +298,7 @@ console_output_handler.setFormatter(formatter)
 logger.addHandler(console_output_handler)
 
 LOG_FILE_NAME = opj(TMPDIR, MY_NAME + ".log")
-if _DEBUG: dp("LOG_FILE_NAME = %r" % LOG_FILE_NAME)
+if _DEBUG: tp("LOG_FILE_NAME = %r", LOG_FILE_NAME)
 
 fh = logging.FileHandler(LOG_FILE_NAME, encoding="utf-8")
 formatter = logging.Formatter(FLN + BASELOGFORMAT, BASEDTFORMAT)
@@ -442,8 +463,8 @@ def get_duration(fp) -> int:
 logi("Starting ")
 logd("add_brightness=%r, add_brightness_list=%r", ADD_BRIGHTNESS
 	, add_brightness_list)
-logd("DONT_DELETE=%r, found_flag=%r, DONT_DELETE_list=%r"
-	, DONT_DELETE, found_flag, dont_delete_list)
+logd("DONT_DELETE=%r, DONT_DELETE_list=%r"
+	, DONT_DELETE, dont_delete_list)
 
 
 def my_tk_excepthook(*args):
