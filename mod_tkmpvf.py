@@ -882,6 +882,9 @@ class Application(tk.Frame):
 	lVideoTitle_font = ("Impact", 48)
 	need_to_exit = False
 
+	KP_Enter_pressed = tpc()
+	not_announced = True
+
 	def __init__(self, master=None, sort_by="fsize_desc"):
 		super().__init__(master)
 		#~ logd("sort_by=%r", sort_by)
@@ -1201,6 +1204,18 @@ class Application(tk.Frame):
 			logd("self.i_exit.get()=%r", self.i_exit.get())
 		else:
 			logd("e=%r", e)
+			if e.keysym == "KP_Enter":
+				passed = tpc() - self.KP_Enter_pressed
+				logd("passed=%r", passed)
+				if passed < 0.1:
+					logw("KP_Enter залип!")
+					if self.not_announced:
+						say_with_queue("у вас Кнопка залипла. Завершаю работу"
+							, narrator=random.choice(narrators))  # nosec
+						self.not_announced = False
+					self.i_exit.set(True)
+					self.i_delseen.set(False)
+				self.KP_Enter_pressed = tpc()
 
 	def get_videos(self, announce=None):
 		folder = self.video_folder
