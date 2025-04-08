@@ -131,7 +131,8 @@ add_brightness_flag = ("~~add-brightness~~", ".~~add-brightness~~")
 faster_speed_flag = ("~~faster-speed~~", ".~~faster-speed~~")
 
 cd = os.getcwd()
-FASTER_SPEED = cd.endswith("_news")
+#~ FASTER_SPEED = cd.endswith("_news")
+FASTER_SPEED = False
 
 add_brightness_list = (
 	"Supernatural", "_games",
