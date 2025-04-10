@@ -136,7 +136,7 @@ FASTER_SPEED = False
 
 FASTER_KEYWORDS = ("информатор", "новости сегодня")
 
-BRIGHTER_KEYWORDS = ("ужасн", "хоррор")
+BRIGHTER_KEYWORDS = ("ужасн", "хоррор", "raychez", "ютуберы", "логово")
 
 add_brightness_list = (
 	"Supernatural", "_games",
