@@ -33,7 +33,7 @@ import translit_pikabu_lp			 # noqa добавляем свой язык
 from num2t4ru import num2text		 # , num2text_VP
 from mod_monitors import enum_display_monitors
 import mod_helpertk as htk
-from mod_tools import tp
+from mod_tools import tp, stop  # noqa:F401
 
 ope = os.path.exists
 opj = os.path.join
@@ -134,6 +134,10 @@ cd = os.getcwd()
 #~ FASTER_SPEED = cd.endswith("_news")
 FASTER_SPEED = False
 
+FASTER_KEYWORDS = ("информатор", "новости сегодня")
+
+BRIGHTER_KEYWORDS = ("ужасн", "хоррор")
+
 add_brightness_list = (
 	"Supernatural", "_games",
 )
@@ -169,35 +173,42 @@ if getflag(faster_speed_flag):
 
 TPL_PLAY_CMD = None
 PLAYER_BINARY = shutil.which(PLAYER)
-if WIN32:
-	TPL_PLAY_CMD = " ".join((
-		PLAYER_BINARY,
-		"%s",						# "-fs",
-		"--audio-channels=stereo",
-		"--audio-normalize-downmix=yes",
-		"--fs-screen=%s",
-		"--softvol-max=500",
-		"--speed=1.33" if FASTER_SPEED else "",
-		"--brightness=13" if ADD_BRIGHTNESS else "",
-		"--",
-		'"%s"',
-	))
-elif LINUX:
-	TPL_PLAY_CMD = " ".join((
-		PLAYER_BINARY,
-		"%s",						# "-fs",
-		"--audio-channels=stereo",
-		"--audio-normalize-downmix=yes",
-		"--fs-screen=%s",
-		"--volume-max=500",
-		"--volume=90",
-		"--brightness=13" if ADD_BRIGHTNESS else "",
-		"--speed=1.33" if FASTER_SPEED else "",
-		"--",
-		"'%s'",
-	))
-else:
-	print_unsupported_platform_and_exit()
+
+
+def get_TPL_PLAY_CMD():
+	if WIN32:
+		res = " ".join((
+			PLAYER_BINARY,
+			"%s",						# "-fs",
+			"--audio-channels=stereo",
+			"--audio-normalize-downmix=yes",
+			"--fs-screen=%s",
+			"--softvol-max=500",
+			"--speed=1.33" if FASTER_SPEED else "",
+			"--brightness=16" if ADD_BRIGHTNESS else "",
+			"--",
+			'"%s"',
+		))
+	elif LINUX:
+		res = " ".join((
+			PLAYER_BINARY,
+			"%s",						# "-fs",
+			"--audio-channels=stereo",
+			"--audio-normalize-downmix=yes",
+			"--fs-screen=%s",
+			"--volume-max=500",
+			"--volume=90",
+			"--brightness=16" if ADD_BRIGHTNESS else "",
+			"--speed=1.33" if FASTER_SPEED else "",
+			"--",
+			"'%s'",
+		))
+	else:
+		print_unsupported_platform_and_exit()
+		res = None
+
+	return res
+
 
 _DEBUG = True
 
@@ -867,6 +878,22 @@ def wait_for_said(_cb=None):
 		time.sleep(0.1)
 
 
+def on_start_video(fp):
+	global FASTER_SPEED, ADD_BRIGHTNESS
+	#~ stop("fp=%r", fp)
+	fpl = fp.lower()
+
+	for kw in FASTER_KEYWORDS:
+		if kw in fpl:
+			FASTER_SPEED = True
+			break
+
+	for kw in BRIGHTER_KEYWORDS:
+		if kw in fpl:
+			ADD_BRIGHTNESS = True
+			break
+
+
 class Application(tk.Frame):
 	my_state = None
 	player_pid = None
@@ -1016,7 +1043,9 @@ class Application(tk.Frame):
 		# note: ждёт без нарисованных интерфейсов, пока не произнесёт фразы
 		wait_for_said(lambda: self.refresh())
 
-		_cmd = TPL_PLAY_CMD % (
+		on_start_video(self.fp_video)
+
+		_cmd = get_TPL_PLAY_CMD() % (
 			"-fs" if self.i_fullscreen.get() == 1 else ""
 			, self.display_names.index(self.sv_player_display.get())
 			, self.fp_video)
