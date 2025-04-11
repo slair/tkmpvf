@@ -1016,6 +1016,7 @@ class Application(tk.Frame):
 		self.update_idletasks()
 
 	def start_video(self):
+		global FASTER_SPEED, ADD_BRIGHTNESS
 		self.fp_video = None
 		while not self.fp_video and self.videos:
 			self.fp_video, title, fsize, duration = self.videos.pop(0)
@@ -1052,6 +1053,8 @@ class Application(tk.Frame):
 		logd("_cmd=%r", _cmd)
 		p = do_command_bg(_cmd)
 		self.player_pid = p.pid
+		FASTER_SPEED = False
+		ADD_BRIGHTNESS = False
 
 	def bring_to_front(self):
 		if self.i_bring_to_front.get() == 1:
