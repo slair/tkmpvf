@@ -136,10 +136,12 @@ FASTER_SPEED = False
 
 FASTER_KEYWORDS = ("информатор", "новости сегодня")
 
-BRIGHTER_KEYWORDS = ("ужасн", "хоррор", "raychez", "ютуберы", "логово", "geo")
+BRIGHTER_KEYWORDS = ("ужасн", "хоррор", "raychez", "ютуберы", "логово", "geo"
+	, "доктор грег")
 
 add_brightness_list = (
-	"Supernatural", "_games",
+	"Supernatural", "_games", "sdb2_video", "_movies", "The Boys"
+	, "Мир дикого запада", "Отбросы"
 )
 ADD_BRIGHTNESS = any([a in cd for a in add_brightness_list])
 
