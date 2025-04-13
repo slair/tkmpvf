@@ -1,4 +1,4 @@
-	#!/usr/bin/python3 -u
+#!/usr/bin/python3 -u
 # -*- coding: utf-8 -*-
 from __future__ import annotations
 from typing import Any, Callable, Dict, List, Optional, Union  # noqa:F401
@@ -34,6 +34,16 @@ from num2t4ru import num2text		 # , num2text_VP
 from mod_monitors import enum_display_monitors
 import mod_helpertk as htk
 from mod_tools import tp, stop  # noqa:F401
+
+
+try:
+	from my_settings import FASTER_KEYWORDS, BRIGHTER_KEYWORDS \
+		, add_brightness_list, dont_delete_list
+except ModuleNotFoundError:
+	FASTER_KEYWORDS = tuple()
+	BRIGHTER_KEYWORDS = tuple()
+	add_brightness_list = tuple()
+	dont_delete_list = tuple()
 
 ope = os.path.exists
 opj = os.path.join
@@ -134,22 +144,10 @@ cd = os.getcwd()
 #~ FASTER_SPEED = cd.endswith("_news")
 FASTER_SPEED = False
 
-FASTER_KEYWORDS = ("информатор", "новости сегодня")
-
-BRIGHTER_KEYWORDS = ("ужасн", "хоррор", "raychez", "ютуберы", "логово", "geo"
-	, "доктор грег")
-
-add_brightness_list = (
-	"Supernatural", "_games", "sdb2_video", "_movies", "The Boys"
-	, "Мир дикого запада", "Отбросы"
-)
 ADD_BRIGHTNESS = any([a in cd for a in add_brightness_list])
 
 DONT_DELETE = False
-dont_delete_list = (
-	"_SEEN", "_dev", "blender",
-	"Отбросы", "The Boys", "tkmpvf",
-)
+
 for item in dont_delete_list:
 	if item in cd:
 		DONT_DELETE = True
@@ -482,7 +480,8 @@ logd("DONT_DELETE=%r, DONT_DELETE_list=%r"
 
 
 def my_tk_excepthook(*args):
-	logc("args= %r", args, exc_info=args)
+	logc("args=%r", args)
+	#~ logc("args= %r", args, exc_info=args)
 
 	pid_fp = os.path.join(TMPDIR, os.path.basename(__file__) + ".pid")
 	if os.path.exists(pid_fp):
@@ -885,6 +884,8 @@ def on_start_video(fp):
 	#~ stop("fp=%r", fp)
 	fpl = fp.lower()
 
+	ADD_BRIGHTNESS = any([a in cd for a in add_brightness_list])
+
 	for kw in FASTER_KEYWORDS:
 		if kw in fpl:
 			FASTER_SPEED = True
@@ -894,6 +895,9 @@ def on_start_video(fp):
 		if kw in fpl:
 			ADD_BRIGHTNESS = True
 			break
+
+	logd("ADD_BRIGHTNESS=%r, FASTER_SPEED=%r, cd=%r", ADD_BRIGHTNESS
+		, FASTER_SPEED, cd)
 
 
 class Application(tk.Frame):
@@ -1089,7 +1093,17 @@ class Application(tk.Frame):
 			#~ , self.my_state, tpc()-self.my_state_start)
 
 		now = datetime.now()
-		self.lClock["text"] = now.strftime("%H:%M:%S")
+		try:
+			self.lClock["text"] = now.strftime("%H:%M:%S")
+		except Exception as e:
+			#~ if _DEBUG:
+				#~ loge("error", exc_info=e)
+			self.splash.working = None
+			logd("self.splash.working=%r", self.splash.working)
+			htk.random_disappearance(self.splash.master)
+			self.splash.master.destroy()
+			return
+			#~ self.master.deiconify()
 
 		old_title = self.master.title()
 		if old_title[-1] != "*" and config.my_changed:
