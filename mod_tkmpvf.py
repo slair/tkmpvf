@@ -675,7 +675,7 @@ def get_video_title(s):
 	if title.endswith("yapfiles ru") and title != "yapfiles ru":
 		title = untranslit(title[:-11])
 
-	if channel:
+	if channel and channel not in ("NA",):
 		return channel + "\n" + title
 
 	return title
@@ -1095,7 +1095,7 @@ class Application(tk.Frame):
 		now = datetime.now()
 		try:
 			self.lClock["text"] = now.strftime("%H:%M:%S")
-		except Exception as e:
+		except Exception as e:  # noqa
 			#~ if _DEBUG:
 				#~ loge("error", exc_info=e)
 			self.splash.working = None
