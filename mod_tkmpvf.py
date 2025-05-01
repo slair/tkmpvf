@@ -915,6 +915,7 @@ class Application(tk.Frame):
 	lStatus_font = ("Impact", 48)
 	lVideoTitle_font = ("Impact", 48)
 	need_to_exit = False
+	ready = False
 
 	KP_Enter_pressed = tpc()
 	not_announced = True
@@ -982,6 +983,7 @@ class Application(tk.Frame):
 
 		self.update_idletasks()
 		self.on_every_second()
+		self.ready = True
 
 	def geometry_to_config(self):
 		g = self.master.geometry()
@@ -1009,6 +1011,10 @@ class Application(tk.Frame):
 						os.unlink(item)
 
 	def on_close_master(self, *args, **kwargs):  # noqa
+		if not self.ready:
+			return
+
+		self.ready = False
 		self.need_to_exit = True
 		self.stop_player()
 		self.geometry_to_config()
@@ -1245,6 +1251,9 @@ class Application(tk.Frame):
 		return False
 
 	def on_keyup(self, e):
+		if not self.ready:
+			return
+
 		if e.keysym == "Escape":
 			self.on_close_master()
 		elif e.keysym == "F12":
