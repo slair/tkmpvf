@@ -1011,6 +1011,7 @@ class Application(tk.Frame):
 		self.update_idletasks()
 		self.on_every_second()
 		self.ready = True
+		#~ self.master.attributes('-topmost', True)
 		self.wid = mod_xdotool.win_active()
 		_geometry = self.master.geometry()
 		self.normal_pos = htk.geometry2tuple(_geometry)
@@ -1033,6 +1034,7 @@ class Application(tk.Frame):
 			htk.anim_window(self.master, (*current_pos, 255)
 				, (*self.normal_pos, 255))
 			self.bring_to_front()
+			self.hover = True
 		else:
 			logd(f"move from {current_pos} to {self.hidden_pos!r}")
 			#~ to = self.hidden_pos
@@ -1063,6 +1065,7 @@ class Application(tk.Frame):
 			#~ self.master.geometry(new_geometry)
 
 			self.master.update_idletasks()
+			self.hover = False
 
 	def on_focus_in(self, e=None):
 		if not self.ready:
