@@ -1004,25 +1004,21 @@ class Application(tk.Frame):
 				geometry = "960x1025+2239+0"
 			self.to_ = htk.geometry2list(geometry)
 			self.to_.append(1.1)		# alpha
-			#~ logd("self.splash.working=%r", self.splash.working)
-			#~ logd("\n! start appearance")
-			#~ htk.random_appearance_to(self.master, to_, duration=5)
-			#~ logd("\n! stop appearance")
-			#~ logd("self.splash.working=%r", self.splash.working)
 
 		self.update_idletasks()
 		self.on_every_second()
-		#~ self.master.attributes('-topmost', True)
 		self.wid = mod_xdotool.win_active()
-		_geometry = self.master.geometry()
-		#~ self.normal_pos = htk.geometry2tuple(_geometry)
-		self.normal_pos = (1280+960 , 0, 960, 1025)
+		normal_geometry = config["global"].get("normal_geometry", None)
+		if normal_geometry is None:
+			normal_geometry = "960x1025+2240+0"
+			change_config("global", "normal_geometry", normal_geometry)
+		self.normal_pos = htk.geometry2tuple(normal_geometry)
 		self.hidden_pos = list(self.normal_pos[:])
 		self.hidden_pos[0] += self.normal_pos[2]
 		self.hidden_pos[1] += self.normal_pos[3]
-		logd("\n< _geometry=%r, self.normal_pos=%r, self.hidden_pos=%r, "
+		logd("\n< self.normal_pos=%r, self.hidden_pos=%r, "
 			"self.wid=0x%0x"
-			, _geometry, self.normal_pos, self.hidden_pos, self.wid)
+			, self.normal_pos, self.hidden_pos, self.wid)
 		#~ self.on_hover_change(True)
 		htk.anim_window(self.master
 			, (*htk.geometry2tuple(self.master.geometry()), MIN_ALPHA)
@@ -1030,8 +1026,9 @@ class Application(tk.Frame):
 		self.ready = True
 
 	def on_hover_change(self, _hover=None):
-		_or = 0 if _hover else 1
-		logd("_hover=%r, _or=%r", _hover, _or)
+		if not self.ready:
+			return
+
 		current_pos = htk.geometry2tuple(self.master.geometry())
 		logd("current_pos=%r", current_pos)
 		if _hover:
