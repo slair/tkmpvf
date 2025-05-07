@@ -35,6 +35,7 @@ from mod_monitors import enum_display_monitors
 import mod_helpertk as htk
 from mod_tools import tp, stop  # noqa:F401
 
+import mod_xdotool
 
 try:
 	from my_settings import FASTER_KEYWORDS, BRIGHTER_KEYWORDS \
@@ -54,7 +55,6 @@ TS_PORT = 12987
 WIN32 = sys.platform == "win32"
 LINUX = sys.platform == "linux"
 TMPDIR = tempfile.gettempdir()
-
 
 start_tpc = tpc()
 
@@ -399,6 +399,15 @@ def load_cache(fp: str, datasep: str = "|") -> dict:
 	return res
 
 
+def fix2title(s: str) -> str:
+	res = s.replace("\r", " ")
+	res = res.replace("\n", " ")
+	res = res.replace("\t", " ")
+	while "  " in res:
+		res = res.replace("  ", " ")
+	return res
+
+
 def get_duration(fp) -> int:
 	global dur_cache, dur_cache_changed
 	if ope(fp):
@@ -484,7 +493,7 @@ logd("DONT_DELETE=%r, DONT_DELETE_list=%r"
 
 
 def my_tk_excepthook(*args):
-	logc("args=%r", args)
+	logc("\n! args=%r", args, exc_info=args)
 	#~ logc("args= %r", args, exc_info=args)
 
 	pid_fp = os.path.join(TMPDIR, os.path.basename(__file__) + ".pid")
@@ -920,6 +929,12 @@ class Application(tk.Frame):
 	lVideoTitle_font = ("Impact", 48)
 	need_to_exit = False
 	ready = False
+	end_title = ""
+	tpl_title = "%s"
+	tpl_title_paused = "paused - %s"
+	paused = False
+	hover = True
+	normal_pos = None
 
 	KP_Enter_pressed = tpc()
 	not_announced = True
@@ -933,8 +948,9 @@ class Application(tk.Frame):
 
 		self.sort_by = sort_by
 		self.master = master
-		self._base_title = "tkmpvf - %s" % os.getcwd()
-		self.master.title(self._base_title)
+		#~ self._base_title = "tkmpvf - %s" % os.getcwd()
+		self._base_title = self.tpl_title
+		#~ self.master.title(self._base_title)
 		self.pack(side="top", fill="both", expand=True)
 		self.monitors = enum_display_monitors(taskbar=False)
 		self.display_names = ["%sx%s" % (item[2], item[3])
@@ -948,6 +964,13 @@ class Application(tk.Frame):
 			#~ , lambda *args: logd("<Enter> args=%r", args))
 		#~ self.master.bind('<Leave>'
 			#~ , lambda *args: logd("<Leave> args=%r", args))
+
+		self.master.bind('<Enter>', self.on_start_hover)
+		self.master.bind('<Leave>', self.on_end_hover)
+
+		self.master.bind('<FocusIn>', self.on_focus_in)
+		self.master.bind('<FocusOut>', self.on_focus_out)
+
 		self.master.focus_set()
 		self.b_skip.focus_set()
 
@@ -988,6 +1011,90 @@ class Application(tk.Frame):
 		self.update_idletasks()
 		self.on_every_second()
 		self.ready = True
+		self.wid = mod_xdotool.win_active()
+		_geometry = self.master.geometry()
+		self.normal_pos = htk.geometry2tuple(_geometry)
+		self.hidden_pos = list(self.normal_pos[:])
+		self.hidden_pos[0] += self.normal_pos[2]
+		self.hidden_pos[1] += self.normal_pos[3]
+		logd("\n< _geometry=%r, self.normal_pos=%r, self.hidden_pos=%r, "
+			"self.wid=0x%0x"
+			, _geometry, self.normal_pos, self.hidden_pos, self.wid)
+
+	def on_hover_change(self, _hover=None):
+		_or = 0 if _hover else 1
+		logd("_hover=%r, _or=%r", _hover, _or)
+		#~ self.master.overrideredirect(_or)
+		#~ self.master.update_idletasks()
+		current_pos = htk.geometry2tuple(self.master.geometry())
+		logd("current_pos=%r", current_pos)
+		if _hover:
+			logd(f"move from {current_pos!r} to {self.normal_pos!r}")
+			htk.anim_window(self.master, (*current_pos, 255)
+				, (*self.normal_pos, 255))
+			self.bring_to_front()
+		else:
+			logd(f"move from {current_pos} to {self.hidden_pos!r}")
+			#~ to = self.hidden_pos
+			#~ mod_xdotool.win_move(self.wid, to, anim_time=None, bounce=None
+				#~ , log=False)
+			#~ wp = mod_xdotool.get_win_pos(self.wid)
+			#~ logd("wp=%r", wp)
+
+			#~ to[0] = wp[0]
+			#~ for i in range(100):
+				#~ to[0] += 1
+				#~ to[1] += 1
+				#~ mod_xdotool.win_move(self.wid, to, anim_time=None, bounce=None
+					#~ , log=False)
+				#~ wp = mod_xdotool.get_win_pos(self.wid)
+				#~ logd("wp=%r, to=%r", wp, to)
+
+			htk.anim_window(self.master, (*current_pos, 255)
+				, (*self.hidden_pos, 255))
+
+			#~ _x = self.hidden_pos[0]
+			#~ _y = self.hidden_pos[1]
+			#~ _w = self.hidden_pos[2]
+			#~ _h = self.hidden_pos[3]
+			#~ r = lambda x: x
+			#~ new_geometry = f"{r(_w)}x{r(_h)}+{r(_x)}+{r(_y)}"
+			#~ logd("new_geometry=%r", new_geometry)
+			#~ self.master.geometry(new_geometry)
+
+			self.master.update_idletasks()
+
+	def on_focus_in(self, e=None):
+		if not self.ready:
+			return
+
+		#~ logd("e=%r", e)
+
+	def on_focus_out(self, e=None):
+		if not self.ready:
+			return
+
+		if self.hover:
+			self.hover = False
+			#~ logd("e=%r", e)
+			self.on_hover_change(self.hover)
+
+	def on_start_hover(self, e=None):
+		if not self.ready:
+			return
+
+		if not self.hover:
+			self.hover = True
+			#~ logd("e=%r", e)
+			self.on_hover_change(self.hover)
+
+	def on_end_hover(self, e=None):
+		if not self.ready:
+			return
+
+		#~ if self.hover:
+			#~ self.hover = False
+			#~ logd("e=%r", e)
 
 	def geometry_to_config(self):
 		g = self.master.geometry()
@@ -1115,11 +1222,18 @@ class Application(tk.Frame):
 			return
 			#~ self.master.deiconify()
 
-		old_title = self.master.title()
-		if old_title[-1] != "*" and config.my_changed:
-			self.master.title(old_title + " *")
-		elif old_title[-1] == "*" and not config.my_changed:
-			self.master.title(old_title[:-2])
+		# приведём title в порядок
+		if not self.paused:
+			self._base_title = self.tpl_title \
+				% fix2title(self.lVideoTitle["text"])
+		else:
+			self._base_title = self.tpl_title_paused \
+				% fix2title(self.lVideoTitle["text"])
+
+		title = self._base_title + self.end_title
+		#~ logd("self._base_title=%r, self.end_title=%r"
+			#~ , self._base_title, self.end_title)
+		self.master.title(title)
 
 		self.change_label_height(self.lVideoTitle
 			, min_height=100, max_height=200)
@@ -1135,7 +1249,8 @@ class Application(tk.Frame):
 				self.my_state = PLAY_FINISHED
 				self.my_state_start = tpc()
 				self._points_added = 0
-				self.bring_to_front()
+				self.on_hover_change(True)
+				#~ self.bring_to_front()
 
 		if self.my_state == PLAY_FINISHED:
 			if tpc() - self.my_state_start > (TIME_TO_RENAME + 1.0)\
@@ -1194,8 +1309,8 @@ class Application(tk.Frame):
 
 				#~ if int(self.i_exit.get()) == 0:
 				self.get_videos(self.first_run)
-				logd("len(self.videos)=%r self.first_run=%r"
-					, len(self.videos), self.first_run)
+				#~ logd("len(self.videos)=%r self.first_run=%r"
+					#~ , len(self.videos), self.first_run)
 
 				if self.videos and int(self.i_exit.get()) == 0:
 					self.sort_videos(self.first_run)
@@ -1212,9 +1327,10 @@ class Application(tk.Frame):
 						htk.random_appearance_to(self.master, self.to_
 							, duration=0.2)
 						#~ logd("\n! stop appearance")
-					self.start_video()
-					self.my_state = PLAYING
-					self.my_state_start = tpc()
+					if not self.paused:
+						self.start_video()
+						self.my_state = PLAYING
+						self.my_state_start = tpc()
 				else:
 					self.my_state = STOPPED
 					self.my_state_start = tpc()
@@ -1265,7 +1381,6 @@ class Application(tk.Frame):
 			self.i_delseen.set(not self.i_delseen.get())
 			logd("self.i_exit.get()=%r", self.i_exit.get())
 		else:
-			logd("e=%r", e)
 			if e.keysym == "KP_Enter":
 				passed = tpc() - self.KP_Enter_pressed
 				logd("passed=%r", passed)
@@ -1279,6 +1394,12 @@ class Application(tk.Frame):
 					self.i_delseen.set(False)
 				self.KP_Enter_pressed = tpc()
 
+			elif e.keysym == "Pause":
+				self.paused = not self.paused
+
+			else:
+				logd("e=%r", e)
+
 	def get_videos(self, announce=None):
 		folder = self.video_folder
 		#~ logd("os.getcwd()= %r", os.getcwd())
@@ -1289,7 +1410,7 @@ class Application(tk.Frame):
 			_ += glob.glob(opj(folder, ext))
 			_ += glob.glob(opj(folder, ext.upper()))
 
-		logd("len(_)=%r", len(_))
+		#~ logd("len(_)=%r", len(_))
 
 		if announce:
 			count_videos = len(_)
@@ -1473,12 +1594,11 @@ class Application(tk.Frame):
 		self.lbVideosDurations["width"] = max_len_duration
 		self.lbVideosSizes["width"] = max_len_fsize + 1
 
-		new_title = self._base_title + " - Всего: " \
+		self.end_title = " - Всего: " \
 			+ duration_fmt((total_duration, None)) \
 			+ "    " + sizeof_fmt(total_fsize) \
-			+ (" *" if config.my_changed else "")
-		#~ logd("self.master.title(%r)", new_title)
-		self.master.title(new_title)
+			+ f" - {MY_NAME}"
+			#~ + (" *" if config.my_changed else "")
 
 		if announce:
 			narrator = random.choice(narrators)  # nosec
@@ -1517,8 +1637,11 @@ class Application(tk.Frame):
 		self.set_sort("title")
 
 	def pause_video(self):
+		self.paused = not self.paused
+		# todo: send pause to player
 		if ahk and self.player_pid:
-			self.win_player = Window.from_pid(ahk, pid=str(self.player_pid))  # pylint: disable=E0601
+			self.win_player = Window.from_pid(ahk  # pylint: disable=E0601
+				, pid=str(self.player_pid))
 			if self.win_player:
 				self.win_player.send("p")
 
