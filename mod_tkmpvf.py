@@ -41,10 +41,10 @@ try:
 	from my_settings import FASTER_KEYWORDS, BRIGHTER_KEYWORDS \
 		, add_brightness_list, dont_delete_list
 except ModuleNotFoundError:
-	FASTER_KEYWORDS = tuple()
-	BRIGHTER_KEYWORDS = tuple()
-	add_brightness_list = tuple()
-	dont_delete_list = tuple()
+	FASTER_KEYWORDS = tuple()  # type: ignore[assignment]
+	BRIGHTER_KEYWORDS = tuple()  # type: ignore[assignment]
+	add_brightness_list = tuple()  # type: ignore[assignment]
+	dont_delete_list = tuple()  # type: ignore[assignment]
 
 ope = os.path.exists
 opj = os.path.join
@@ -91,7 +91,7 @@ def print_unsupported_platform_and_exit(rc=100):
 
 
 if WIN32:
-	from ctypes import windll
+	from ctypes import windll  # type:ignore[attr-defined]
 
 	timeBeginPeriod = windll.winmm.timeBeginPeriod
 	timeBeginPeriod(1)
@@ -103,6 +103,7 @@ if WIN32:
 
 # todo: убрать ahk, трэй бесится, слишком дорого ради одного send_key_to_player
 ahk = None
+# mypy: disable-error-code="import-not-found,arg-type,var-annotated"
 if WIN32:
 	from ahk import AHK  # pylint: disable=E0401
 	from ahk.window import Window  # pylint: disable=E0401
@@ -269,7 +270,7 @@ PARTSEP = "·"
 
 config = configparser.ConfigParser()
 config["global"] = {}
-config.my_changed = False
+config.my_changed = False  # type:ignore[attr-defined]
 pid_fd = None
 
 MY_FILE_NAME = os.path.abspath(__file__)
@@ -328,7 +329,8 @@ if ENV_HOME is None:
 	loge("No HOME or USERPROFILE environment variable")
 
 XDG_DATA_HOME = os.environ.get("XDG_DATA_HOME"
-	, os.environ.get("APPDATA", opj(ENV_HOME, opj(".local", "share"))))
+	, os.environ.get("APPDATA"
+	, opj(ENV_HOME, opj(".local", "share"))))  # type:ignore[arg-type]
 
 MY_XDG_DATA_HOME = opj(XDG_DATA_HOME, MY_NAME)
 if not os.path.exists(MY_XDG_DATA_HOME):
@@ -336,7 +338,8 @@ if not os.path.exists(MY_XDG_DATA_HOME):
 	os.makedirs(MY_XDG_DATA_HOME)
 
 XDG_CONFIG_HOME = os.environ.get("XDG_CONFIG_HOME"
-	, os.environ.get("LOCALAPPDATA", opj(ENV_HOME, ".config")))
+	, os.environ.get("LOCALAPPDATA"
+	, opj(ENV_HOME, ".config")))  # type:ignore[arg-type]
 
 MY_XDG_CONFIG_HOME = opj(XDG_CONFIG_HOME, MY_NAME)
 if not os.path.exists(MY_XDG_CONFIG_HOME):
@@ -345,11 +348,12 @@ if not os.path.exists(MY_XDG_CONFIG_HOME):
 
 CONFIG_FILE_PATH = opj(MY_XDG_CONFIG_HOME, MY_NAME + ".ini")
 
-SND_FOLDER = opj(ENV_HOME, "share", "sounds")
+SND_FOLDER = opj(ENV_HOME, "share", "sounds")  # type:ignore[arg-type]
 SND_CLICK = opj(SND_FOLDER, "click-06.wav")
 SND_DRUM = opj(SND_FOLDER, "drum.wav")
 
-dur_cache = dict()  # note: кэш, чтобы не сканировать файлы каждый раз
+# note: кэш, чтобы не сканировать файлы каждый раз
+dur_cache = dict()  # type:ignore[var-annotated]
 dur_cache_changed = False
 
 DUR_CACHE_FN = "%s-dur-cache.txt" % MY_NAME
@@ -410,7 +414,7 @@ def fix2title(s: str) -> str:
 	return res
 
 
-def get_duration(fp) -> int:
+def get_duration(fp) -> tuple[Any, int]:
 	global dur_cache, dur_cache_changed
 	if ope(fp):
 		fstat = os.stat(fp)
@@ -420,8 +424,8 @@ def get_duration(fp) -> int:
 			duration = dur_cache[cfp]
 		else:
 			if WIN32:
-				si = subprocess.STARTUPINFO()
-				si.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+				si = subprocess.STARTUPINFO()  # type:ignore[attr-defined]
+				si.dwFlags |= subprocess.STARTF_USESHOWWINDOW  # type:ignore[attr-defined]
 				#si.wShowWindow = subprocess.SW_HIDE # default
 				try:
 					sduration = str(check_output(
@@ -597,6 +601,9 @@ def untranslit(s):
 		return res[0].upper() + res[1:]
 	else:
 		return res
+
+
+serverSocket = None
 
 
 def already_running(UDP_PORT: int
@@ -1012,6 +1019,7 @@ class Application(tk.Frame):
 		if normal_geometry is None:
 			normal_geometry = "960x1025+2240+0"
 			change_config("global", "normal_geometry", normal_geometry)
+			save_config()
 		self.normal_pos = htk.geometry2tuple(normal_geometry)
 		self.hidden_pos = list(self.normal_pos[:])
 		self.hidden_pos[0] += self.normal_pos[2]
