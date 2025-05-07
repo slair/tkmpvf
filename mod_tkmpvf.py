@@ -1012,7 +1012,6 @@ class Application(tk.Frame):
 
 		self.update_idletasks()
 		self.on_every_second()
-		self.ready = True
 		#~ self.master.attributes('-topmost', True)
 		self.wid = mod_xdotool.win_active()
 		_geometry = self.master.geometry()
@@ -1024,21 +1023,26 @@ class Application(tk.Frame):
 		logd("\n< _geometry=%r, self.normal_pos=%r, self.hidden_pos=%r, "
 			"self.wid=0x%0x"
 			, _geometry, self.normal_pos, self.hidden_pos, self.wid)
+		#~ self.on_hover_change(True)
+		htk.anim_window(self.master
+			, (*htk.geometry2tuple(self.master.geometry()), MIN_ALPHA)
+			, (*self.normal_pos, MAX_ALPHA))
+		self.ready = True
 
 	def on_hover_change(self, _hover=None):
 		_or = 0 if _hover else 1
 		logd("_hover=%r, _or=%r", _hover, _or)
-		#~ self.master.overrideredirect(_or)
-		#~ self.master.update_idletasks()
 		current_pos = htk.geometry2tuple(self.master.geometry())
 		logd("current_pos=%r", current_pos)
 		if _hover:
+			self.master.attributes('-topmost', True)
 			logd(f"move from {current_pos!r} to {self.normal_pos!r}")
 			self.bring_to_front()
 			htk.anim_window(self.master, (*current_pos, MIN_ALPHA)
 				, (*self.normal_pos, MAX_ALPHA))
 			self.hover = True
 		else:
+			self.master.attributes('-topmost', True)
 			logd(f"move from {current_pos} to {self.hidden_pos!r}")
 			#~ to = self.hidden_pos
 			#~ mod_xdotool.win_move(self.wid, to, anim_time=None, bounce=None
@@ -1190,7 +1194,6 @@ class Application(tk.Frame):
 			self.master.state("normal")
 			self.b_skip.focus_force()
 			self.master.lift()
-			#~ self.master.attributes('-topmost', True)
 			#~ self.master.after_idle(self.master.attributes, '-topmost', False)
 
 	def change_label_height(self, label, min_height, max_height):
@@ -1211,6 +1214,10 @@ class Application(tk.Frame):
 				, label_font_size)
 
 	def on_every_second(self):
+		if not self.ready:
+			self.after(REPINT_MSEC, self.on_every_second)
+			return
+
 		_start = tpc()
 		#~ logd("self.my_state=%r, duration=%r"
 			#~ , self.my_state, tpc()-self.my_state_start)
@@ -1225,6 +1232,7 @@ class Application(tk.Frame):
 			logd("self.splash.working=%r", self.splash.working)
 			htk.random_disappearance(self.splash.master)
 			self.splash.master.destroy()
+			self.after(REPINT_MSEC, self.on_every_second)
 			return
 			#~ self.master.deiconify()
 
