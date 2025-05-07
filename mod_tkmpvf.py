@@ -1040,13 +1040,17 @@ class Application(tk.Frame):
 		current_pos = htk.geometry2tuple(self.master.geometry())
 		logd("current_pos=%r", current_pos)
 		if _hover:
+			self.ready = False
+			self.hover = True
 			self.master.attributes('-topmost', True)
 			logd(f"move from {current_pos!r} to {self.normal_pos!r}")
 			self.bring_to_front()
 			htk.anim_window(self.master, (*current_pos, MIN_ALPHA)
 				, (*self.normal_pos, MAX_ALPHA))
-			self.hover = True
+			self.ready = True
 		else:
+			self.ready = False
+			self.hover = False
 			self.master.attributes('-topmost', True)
 			logd(f"move from {current_pos} to {self.hidden_pos!r}")
 			#~ to = self.hidden_pos
@@ -1077,7 +1081,7 @@ class Application(tk.Frame):
 			#~ self.master.geometry(new_geometry)
 
 			self.master.update_idletasks()
-			self.hover = False
+			self.ready = True
 
 	def on_focus_in(self, e=None):
 		if not self.ready:
