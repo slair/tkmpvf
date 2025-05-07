@@ -55,6 +55,8 @@ TS_PORT = 12987
 WIN32 = sys.platform == "win32"
 LINUX = sys.platform == "linux"
 TMPDIR = tempfile.gettempdir()
+MIN_ALPHA = 0.25
+MAX_ALPHA = 0.75
 
 start_tpc = tpc()
 
@@ -1014,7 +1016,8 @@ class Application(tk.Frame):
 		#~ self.master.attributes('-topmost', True)
 		self.wid = mod_xdotool.win_active()
 		_geometry = self.master.geometry()
-		self.normal_pos = htk.geometry2tuple(_geometry)
+		#~ self.normal_pos = htk.geometry2tuple(_geometry)
+		self.normal_pos = (1280+960 , 0, 960, 1025)
 		self.hidden_pos = list(self.normal_pos[:])
 		self.hidden_pos[0] += self.normal_pos[2]
 		self.hidden_pos[1] += self.normal_pos[3]
@@ -1031,9 +1034,9 @@ class Application(tk.Frame):
 		logd("current_pos=%r", current_pos)
 		if _hover:
 			logd(f"move from {current_pos!r} to {self.normal_pos!r}")
-			htk.anim_window(self.master, (*current_pos, 255)
-				, (*self.normal_pos, 255))
 			self.bring_to_front()
+			htk.anim_window(self.master, (*current_pos, MIN_ALPHA)
+				, (*self.normal_pos, MAX_ALPHA))
 			self.hover = True
 		else:
 			logd(f"move from {current_pos} to {self.hidden_pos!r}")
@@ -1052,8 +1055,8 @@ class Application(tk.Frame):
 				#~ wp = mod_xdotool.get_win_pos(self.wid)
 				#~ logd("wp=%r, to=%r", wp, to)
 
-			htk.anim_window(self.master, (*current_pos, 255)
-				, (*self.hidden_pos, 255))
+			htk.anim_window(self.master, (*current_pos, MAX_ALPHA)
+				, (*self.hidden_pos, MIN_ALPHA))
 
 			#~ _x = self.hidden_pos[0]
 			#~ _y = self.hidden_pos[1]
