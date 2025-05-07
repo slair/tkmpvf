@@ -1046,7 +1046,7 @@ class Application(tk.Frame):
 			logd(f"move from {current_pos!r} to {self.normal_pos!r}")
 			self.bring_to_front()
 			htk.anim_window(self.master, (*current_pos, MIN_ALPHA)
-				, (*self.normal_pos, MAX_ALPHA))
+				, (*self.normal_pos, MAX_ALPHA), bounce=False)
 			self.ready = True
 		else:
 			self.ready = False
@@ -1069,7 +1069,7 @@ class Application(tk.Frame):
 				#~ logd("wp=%r, to=%r", wp, to)
 
 			htk.anim_window(self.master, (*current_pos, MAX_ALPHA)
-				, (*self.hidden_pos, MIN_ALPHA))
+				, (*self.hidden_pos, MIN_ALPHA), bounce=False)
 
 			#~ _x = self.hidden_pos[0]
 			#~ _y = self.hidden_pos[1]
