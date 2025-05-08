@@ -1004,7 +1004,7 @@ class Application(tk.Frame):
 		self.master.update()
 		self.master.withdraw()
 
-		geometry = config["global"].get("geometry", None)
+		geometry = config["global"].get("normal_geometry", None)
 		if geometry is not None:
 			tp("geometry=%r", geometry)
 			if "-" in geometry:
