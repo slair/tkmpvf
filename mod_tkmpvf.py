@@ -679,8 +679,14 @@ def get_video_title(s):
 		title = re.sub(r'(?<=\d)[_](?=\d)', ":", title)
 
 	elif s.count(PARTSEP) == 2:
+		_na = "NA"
 		dt, title, _ = s.split(PARTSEP)
 		title = re.sub(r'(?<=\d)[_](?=\d)', ":", title)
+		#~ loge("\n! s=%r, dt=%r, title=%r", s, dt, title)
+		_pnap = PARTSEP + _na + PARTSEP
+		if title == _na and s.startswith(_pnap):
+			title = s[len(_pnap):].strip()
+		#~ loge("\n< s=%r, dt=%r, title=%r", s, dt, title)
 
 	elif s.count(PARTSEP) == 1:
 		dt, title = s.split(PARTSEP)
