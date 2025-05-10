@@ -801,7 +801,7 @@ def do_command_bg(cmd):
 			, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 	elif LINUX:
 		bshell = True
-		proc = subprocess.Popen(cmd + "> /dev/null 2>&1 &"
+		proc = subprocess.Popen(cmd + ">> /tmp/mpv.log 2>&1 &"
 			, shell=bshell)  # nosec  # pylint: disable=
 	else:
 		print_unsupported_platform_and_exit()
