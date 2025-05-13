@@ -81,6 +81,7 @@ VIDEO_EXT = (
 	"*.m4v",
 	"*.mov",
 	"*.dat",
+	"*.3gp",
 	"*.unknown_video",
 )
 
