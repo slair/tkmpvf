@@ -964,6 +964,8 @@ class Application(tk.Frame):
 
 		self.sort_by = sort_by
 		self.master = master
+		# todo: надо что-то делать
+		#~ self.master.overrideredirect(True)
 		#~ self._base_title = "tkmpvf - %s" % os.getcwd()
 		self._base_title = self.tpl_title
 		#~ self.master.title(self._base_title)
@@ -1023,14 +1025,15 @@ class Application(tk.Frame):
 		self.on_every_second()
 		self.wid = mod_xdotool.win_active()
 		normal_geometry = config["global"].get("normal_geometry", None)
+		normal_geometry = None
 		if normal_geometry is None:
 			normal_geometry = "960x1025+2240+0"
 			change_config("global", "normal_geometry", normal_geometry)
 			save_config()
 		self.normal_pos = htk.geometry2tuple(normal_geometry)
 		self.hidden_pos = list(self.normal_pos[:])
-		self.hidden_pos[0] += self.normal_pos[2]
-		self.hidden_pos[1] += self.normal_pos[3]
+		self.hidden_pos[0] += self.normal_pos[2] - 16
+		self.hidden_pos[1] += self.normal_pos[3] - 16
 		logd("\n< self.normal_pos=%r, self.hidden_pos=%r, "
 			"self.wid=0x%0x"
 			, self.normal_pos, self.hidden_pos, self.wid)
@@ -1052,6 +1055,7 @@ class Application(tk.Frame):
 			self.master.attributes('-topmost', True)
 			logd(f"move from {current_pos!r} to {self.normal_pos!r}")
 			self.bring_to_front()
+			#~ self.master.overrideredirect(False)
 			htk.anim_window(self.master, (*current_pos, MIN_ALPHA)
 				, (*self.normal_pos, MAX_ALPHA), bounce=False)
 			self.ready = True
@@ -1074,6 +1078,8 @@ class Application(tk.Frame):
 					#~ , log=False)
 				#~ wp = mod_xdotool.get_win_pos(self.wid)
 				#~ logd("wp=%r, to=%r", wp, to)
+
+			#~ self.master.overrideredirect(True)
 
 			htk.anim_window(self.master, (*current_pos, MAX_ALPHA)
 				, (*self.hidden_pos, MIN_ALPHA), bounce=False)
@@ -1230,6 +1236,7 @@ class Application(tk.Frame):
 				, label_font_size)
 
 	def on_every_second(self):
+		#~ self.update()
 		if not self.ready:
 			self.after(REPINT_MSEC, self.on_every_second)
 			return
@@ -1940,6 +1947,7 @@ def main():
 	load_config()
 
 	root = tk.Tk()
+	#~ root.overrideredirect(1)
 
 	#~ sw, sh = root.winfo_screenwidth(), root.winfo_screenheight()
 	#~ logd("screen=%rx%r", sw, sh)
