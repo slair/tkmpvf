@@ -1418,7 +1418,7 @@ class Application(tk.Frame):
 			self.i_delseen.set(not self.i_delseen.get())
 			logd("self.i_exit.get()=%r", self.i_exit.get())
 		else:
-			if e.keysym == "KP_Enter":
+			if e.keysym == "KP_Enter" or e.keysym == "Return":
 				passed = tpc() - self.KP_Enter_pressed
 				logd("passed=%r", passed)
 				if passed < 0.1:
