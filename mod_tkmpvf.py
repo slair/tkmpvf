@@ -183,7 +183,7 @@ def get_TPL_PLAY_CMD():
 	if WIN32:
 		res = " ".join((
 			PLAYER_BINARY,
-			"%s",						# "-fs",
+			"%s",
 			"--audio-channels=stereo",
 			"--audio-normalize-downmix=yes",
 			"--fs-screen=%s",
@@ -196,11 +196,8 @@ def get_TPL_PLAY_CMD():
 	elif LINUX:
 		res = " ".join((
 			PLAYER_BINARY,
-			"%s",						# "-fs",
+			"%s",
 			"--vo=gpu",
-			#~ '--vf="pp=de/al|f"',
-			'--vf="normalize=blackpt=black:whitept=white:smoothing=50:' \
-			'independence=0:strength=0.5"',
 			"--audio-channels=stereo",
 			"--audio-normalize-downmix=yes",
 			"--fs-screen=%s",
