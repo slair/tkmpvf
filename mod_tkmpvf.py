@@ -39,7 +39,7 @@ import mod_xdotool
 
 try:
 	from my_settings import FASTER_KEYWORDS, BRIGHTER_KEYWORDS \
-		, add_brightness_list, dont_delete_list
+		, add_brightness_list, dont_delete_list, no_hide_window_list
 except ModuleNotFoundError:
 	FASTER_KEYWORDS = tuple()  # type: ignore[assignment]
 	BRIGHTER_KEYWORDS = tuple()  # type: ignore[assignment]
@@ -149,6 +149,8 @@ cd = os.getcwd()
 FASTER_SPEED = False
 
 ADD_BRIGHTNESS = any([a in cd for a in add_brightness_list])
+
+NO_HIDE_WINDOW = any([a in cd for a in no_hide_window_list])
 
 DONT_DELETE = False
 
@@ -1047,6 +1049,7 @@ class Application(tk.Frame):
 		current_pos = htk.geometry2tuple(self.master.geometry())
 		logd("current_pos=%r", current_pos)
 		if _hover:
+			# возврат в нормальную позицию
 			self.ready = False
 			self.hover = True
 			self.master.attributes('-topmost', True)
@@ -1057,6 +1060,7 @@ class Application(tk.Frame):
 				, (*self.normal_pos, MAX_ALPHA), bounce=False)
 			self.ready = True
 		else:
+			# скрываем окно
 			self.ready = False
 			self.hover = False
 			self.master.attributes('-topmost', True)
@@ -1103,6 +1107,9 @@ class Application(tk.Frame):
 		if not self.ready:
 			return
 
+		if NO_HIDE_WINDOW:
+			return
+
 		if self.hover:
 			self.hover = False
 			#~ logd("e=%r", e)
@@ -1110,6 +1117,9 @@ class Application(tk.Frame):
 
 	def on_start_hover(self, e=None):
 		if not self.ready:
+			return
+
+		if NO_HIDE_WINDOW:
 			return
 
 		if not self.hover:
@@ -1283,7 +1293,8 @@ class Application(tk.Frame):
 				self.my_state = PLAY_FINISHED
 				self.my_state_start = tpc()
 				self._points_added = 0
-				self.on_hover_change(True)
+				if not NO_HIDE_WINDOW:
+					self.on_hover_change(True)
 				#~ self.bring_to_front()
 
 		if self.my_state == PLAY_FINISHED:
