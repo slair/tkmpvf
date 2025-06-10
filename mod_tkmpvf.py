@@ -1065,34 +1065,14 @@ class Application(tk.Frame):
 			self.hover = False
 			self.master.attributes('-topmost', True)
 			logd(f"move from {current_pos} to {self.hidden_pos!r}")
-			#~ to = self.hidden_pos
-			#~ mod_xdotool.win_move(self.wid, to, anim_time=None, bounce=None
-				#~ , log=False)
-			#~ wp = mod_xdotool.get_win_pos(self.wid)
-			#~ logd("wp=%r", wp)
 
-			#~ to[0] = wp[0]
-			#~ for i in range(100):
-				#~ to[0] += 1
-				#~ to[1] += 1
-				#~ mod_xdotool.win_move(self.wid, to, anim_time=None, bounce=None
-					#~ , log=False)
-				#~ wp = mod_xdotool.get_win_pos(self.wid)
-				#~ logd("wp=%r, to=%r", wp, to)
-
-			#~ self.master.overrideredirect(True)
-
-			htk.anim_window(self.master, (*current_pos, MAX_ALPHA)
-				, (*self.hidden_pos, MIN_ALPHA), bounce=False)
-
-			#~ _x = self.hidden_pos[0]
-			#~ _y = self.hidden_pos[1]
-			#~ _w = self.hidden_pos[2]
-			#~ _h = self.hidden_pos[3]
-			#~ r = lambda x: x
-			#~ new_geometry = f"{r(_w)}x{r(_h)}+{r(_x)}+{r(_y)}"
-			#~ logd("new_geometry=%r", new_geometry)
-			#~ self.master.geometry(new_geometry)
+			if NO_HIDE_WINDOW:
+				# остаёмся на месте
+				htk.anim_window(self.master, (*current_pos, MAX_ALPHA)
+					, (*current_pos, MIN_ALPHA), bounce=False)
+			else:
+				htk.anim_window(self.master, (*current_pos, MAX_ALPHA)
+					, (*self.hidden_pos, MIN_ALPHA), bounce=False)
 
 			self.master.update_idletasks()
 			self.ready = True
@@ -1107,9 +1087,6 @@ class Application(tk.Frame):
 		if not self.ready:
 			return
 
-		if NO_HIDE_WINDOW:
-			return
-
 		if self.hover:
 			self.hover = False
 			#~ logd("e=%r", e)
@@ -1117,9 +1094,6 @@ class Application(tk.Frame):
 
 	def on_start_hover(self, e=None):
 		if not self.ready:
-			return
-
-		if NO_HIDE_WINDOW:
 			return
 
 		if not self.hover:
@@ -1293,8 +1267,8 @@ class Application(tk.Frame):
 				self.my_state = PLAY_FINISHED
 				self.my_state_start = tpc()
 				self._points_added = 0
-				if not NO_HIDE_WINDOW:
-					self.on_hover_change(True)
+				#~ if not NO_HIDE_WINDOW:
+				self.on_hover_change(True)
 				#~ self.bring_to_front()
 
 		if self.my_state == PLAY_FINISHED:
