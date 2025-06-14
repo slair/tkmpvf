@@ -1082,7 +1082,8 @@ class Application(tk.Frame):
 		if self.hover:
 			self.hover = False
 			# ~ logd("e=%r", e)
-			self.on_hover_change(self.hover)
+			self.after(500, lambda x=None: self.on_hover_change(self.hover))
+			# ~ self.on_hover_change(self.hover)
 
 	def on_start_hover(self, e=None):
 		if not self.ready:
