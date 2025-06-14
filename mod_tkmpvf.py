@@ -1068,22 +1068,24 @@ class Application(tk.Frame):
 			self.ready = True
 
 	def on_focus_in(self, e=None):
-		logd("e=%r", e)
 		if not self.ready:
 			return
 
-		# ~ logd("e=%r", e)
+		self.focus_out_tpc = None
+
+	def go_hide(self):
+		# ~ logd("self.focus_out_tpc=%r", self.focus_out_tpc)
+		if self.focus_out_tpc:
+			if self.hover:
+				self.hover = False
+				self.on_hover_change(self.hover)
 
 	def on_focus_out(self, e=None):
-		logd("e=%r", e)
 		if not self.ready:
 			return
 
-		if self.hover:
-			self.hover = False
-			# ~ logd("e=%r", e)
-			self.after(500, lambda x=None: self.on_hover_change(self.hover))
-			# ~ self.on_hover_change(self.hover)
+		self.focus_out_tpc = tpc()
+		self.after(500, self.go_hide)
 
 	def on_start_hover(self, e=None):
 		if not self.ready:
