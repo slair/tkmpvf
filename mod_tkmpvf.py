@@ -1045,7 +1045,7 @@ class Application(tk.Frame):
 			self.ready = False
 			self.hover = True
 			self.master.attributes("-topmost", True)
-			logd(f"move from {current_pos!r} to {self.normal_pos!r}")
+			logd(f"showing from {current_pos!r} to {self.normal_pos!r}")
 			self.bring_to_front()
 			# ~ self.master.overrideredirect(False)
 			htk.anim_window(self.master, (*current_pos, MIN_ALPHA), (*self.normal_pos, MAX_ALPHA), bounce=False)
@@ -1055,7 +1055,7 @@ class Application(tk.Frame):
 			self.ready = False
 			self.hover = False
 			self.master.attributes("-topmost", True)
-			logd(f"move from {current_pos} to {self.hidden_pos!r}")
+			logd(f"hiding from {current_pos} to {self.hidden_pos!r}")
 
 			if NO_HIDE_WINDOW:
 				# остаёмся на месте
@@ -1068,12 +1068,14 @@ class Application(tk.Frame):
 			self.ready = True
 
 	def on_focus_in(self, e=None):
+		logd("e=%r", e)
 		if not self.ready:
 			return
 
 		# ~ logd("e=%r", e)
 
 	def on_focus_out(self, e=None):
+		logd("e=%r", e)
 		if not self.ready:
 			return
 
@@ -1366,6 +1368,8 @@ class Application(tk.Frame):
 	def on_keyup(self, e):
 		if not self.ready:
 			return
+
+		logd("e=%r", e)
 
 		if e.keysym == "Escape":
 			self.on_close_master()
