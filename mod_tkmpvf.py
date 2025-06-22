@@ -1935,7 +1935,10 @@ if __name__ == "__main__":
 		EXIT()
 
 	if ope(DUR_CACHE_FP):
-		dur_cache = load_cache(DUR_CACHE_FP)
+		try:
+			dur_cache = load_cache(DUR_CACHE_FP)
+		except Exception as e:
+			logd("dur_cache = load_cache(%r)", DUR_CACHE_FP, exc_info=e)
 
 	if len(sys.argv) > 1:
 		folder = sys.argv[1]
