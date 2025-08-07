@@ -39,7 +39,13 @@ from mod_tools import tp, stop  # noqa:F401
 import mod_xdotool
 
 try:
-	from my_settings import FASTER_KEYWORDS, BRIGHTER_KEYWORDS, add_brightness_list, dont_delete_list, no_hide_window_list
+	from my_settings import (
+		FASTER_KEYWORDS,
+		BRIGHTER_KEYWORDS,
+		add_brightness_list,
+		dont_delete_list,
+		no_hide_window_list,
+	)
 except ModuleNotFoundError:
 	FASTER_KEYWORDS = tuple()  # type: ignore[assignment]
 	BRIGHTER_KEYWORDS = tuple()  # type: ignore[assignment]
@@ -256,7 +262,9 @@ STOPPED = "stopped"
 COLOR_RENAMED_FG_NORM = "#c01000"
 COLOR_RENAMED_BG_NORM = "#ffa0a0"
 if WIN32:
-	COLOR_RENAMED_BG_NORM = os.environ.get("COL_SYSTEMBUTTONFACE", "SystemButtonFace")
+	COLOR_RENAMED_BG_NORM = os.environ.get(
+		"COL_SYSTEMBUTTONFACE", "SystemButtonFace"
+	)
 elif LINUX:
 	COLOR_RENAMED_BG_NORM = os.environ.get("COL_SYSTEMBUTTONFACE", "gray85")
 
@@ -286,7 +294,15 @@ MY_NAME = os.path.splitext(os.path.basename(MY_FILE_NAME))[0]
 
 try:
 	import saymod
-	from saymod import say_async, say, snd_play_async, snd_play, saymod_setup_log, say_with_queue, run_talk_server
+	from saymod import (
+		say_async,
+		say,
+		snd_play_async,
+		snd_play,
+		saymod_setup_log,
+		say_with_queue,
+		run_talk_server,
+	)
 
 	saymod_setup_log(MY_NAME)
 except ModuleNotFoundError:
@@ -334,14 +350,19 @@ ENV_HOME = os.environ.get("HOME", os.environ.get("USERPROFILE", None))
 if ENV_HOME is None:
 	loge("No HOME or USERPROFILE environment variable")
 
-XDG_DATA_HOME = os.environ.get("XDG_DATA_HOME", os.environ.get("APPDATA", opj(ENV_HOME, opj(".local", "share"))))  # type:ignore[arg-type]
+XDG_DATA_HOME = os.environ.get(
+	"XDG_DATA_HOME",
+	os.environ.get("APPDATA", opj(ENV_HOME, opj(".local", "share"))),
+)  # type:ignore[arg-type]
 
 MY_XDG_DATA_HOME = opj(XDG_DATA_HOME, MY_NAME)
 if not os.path.exists(MY_XDG_DATA_HOME):
 	logi("Create folder %r", MY_XDG_DATA_HOME)
 	os.makedirs(MY_XDG_DATA_HOME)
 
-XDG_CONFIG_HOME = os.environ.get("XDG_CONFIG_HOME", os.environ.get("LOCALAPPDATA", opj(ENV_HOME, ".config")))  # type:ignore[arg-type]
+XDG_CONFIG_HOME = os.environ.get(
+	"XDG_CONFIG_HOME", os.environ.get("LOCALAPPDATA", opj(ENV_HOME, ".config"))
+)  # type:ignore[arg-type]
 
 MY_XDG_CONFIG_HOME = opj(XDG_CONFIG_HOME, MY_NAME)
 if not os.path.exists(MY_XDG_CONFIG_HOME):
@@ -358,8 +379,13 @@ SND_DRUM = opj(SND_FOLDER, "drum.wav")
 dur_cache = dict()  # type:ignore[var-annotated]
 dur_cache_changed = False
 
-DUR_CACHE_FN = "%s-dur-cache.txt" % MY_NAME
-DUR_CACHE_FP = opj(TMPDIR, DUR_CACHE_FN)
+DUR_CACHE_FOLDER = opj(ENV_HOME, ".cache", MY_NAME)
+if not ope(DUR_CACHE_FOLDER):
+	logi("Create folder %r", DUR_CACHE_FOLDER)
+	os.makedirs(DUR_CACHE_FOLDER)
+
+DUR_CACHE_FN = "dur-cache.txt"
+DUR_CACHE_FP = opj(DUR_CACHE_FOLDER, DUR_CACHE_FN)
 
 MAX_DURATION = 7 * 24 * 60 * 60  # неделя в секундах
 
@@ -420,7 +446,12 @@ def get_duration(fp) -> tuple[Any, int]:
 	global dur_cache, dur_cache_changed
 	if ope(fp):
 		fstat = os.stat(fp)
-		cfp = "%s %s %s %s" % (fp, fstat.st_size, fstat.st_ctime, fstat.st_mtime)
+		cfp = "%s %s %s %s" % (
+			fp,
+			fstat.st_size,
+			fstat.st_ctime,
+			fstat.st_mtime,
+		)
 		if cfp in dur_cache:
 			duration = dur_cache[cfp]
 		else:
@@ -430,7 +461,11 @@ def get_duration(fp) -> tuple[Any, int]:
 				# si.wShowWindow = subprocess.SW_HIDE # default
 				try:
 					sduration = str(
-						check_output(f'"{mi_bin}" --Inform="Video;%Duration%" "{fp}"', shell=False, startupinfo=si),  # nosec
+						check_output(
+							f'"{mi_bin}" --Inform="Video;%Duration%" "{fp}"',
+							shell=False,
+							startupinfo=si,
+						),  # nosec
 						encoding="utf-8",
 					)
 
@@ -442,7 +477,12 @@ def get_duration(fp) -> tuple[Any, int]:
 					duration /= 1000
 
 					if duration > MAX_DURATION:
-						logw("Wrong duration=%r, fp=%r changed to %r", duration, fp, 0)
+						logw(
+							"Wrong duration=%r, fp=%r changed to %r",
+							duration,
+							fp,
+							0,
+						)
 						duration = 0
 
 					dur_cache[cfp] = duration
@@ -456,7 +496,10 @@ def get_duration(fp) -> tuple[Any, int]:
 			elif LINUX:
 				try:
 					sduration = str(
-						check_output(f'"{mi_bin}" --Inform="Video;%Duration%" \'{fp}\'', shell=True),  # nosec
+						check_output(
+							f'"{mi_bin}" --Inform="Video;%Duration%" \'{fp}\'',
+							shell=True,
+						),  # nosec
 						encoding="utf-8",
 					)
 					# ~ , shell=False, startupinfo=si))  # nosec
@@ -469,7 +512,12 @@ def get_duration(fp) -> tuple[Any, int]:
 					duration /= 1000
 
 					if duration > MAX_DURATION:
-						logw("Wrong duration=%r, fp=%r changed to %r", duration, fp, 0)
+						logw(
+							"Wrong duration=%r, fp=%r changed to %r",
+							duration,
+							fp,
+							0,
+						)
 						duration = 0
 
 					dur_cache[cfp] = duration
@@ -490,7 +538,11 @@ def get_duration(fp) -> tuple[Any, int]:
 
 
 logi("Starting ")
-logd("add_brightness=%r, add_brightness_list=%r", ADD_BRIGHTNESS, add_brightness_list)
+logd(
+	"add_brightness=%r, add_brightness_list=%r",
+	ADD_BRIGHTNESS,
+	add_brightness_list,
+)
 logd("DONT_DELETE=%r, DONT_DELETE_list=%r", DONT_DELETE, dont_delete_list)
 
 
@@ -538,7 +590,9 @@ def change_config(section, option, value):
 
 	old_value = config[section].get(option)
 	if old_value != value:
-		logd("Change [%r][%r] from %r to %r", section, option, old_value, value)
+		logd(
+			"Change [%r][%r] from %r to %r", section, option, old_value, value
+		)
 
 		config[section][option] = value
 		config.my_changed = True
@@ -604,7 +658,9 @@ def untranslit(s):
 serverSocket = None
 
 
-def already_running(UDP_PORT: int, log: Union[Callable, None] = None) -> Union[bool, None]:
+def already_running(
+	UDP_PORT: int, log: Union[Callable, None] = None
+) -> Union[bool, None]:
 	res = None
 	if WIN32:
 		import win32event  # pylint: disable=E0401
@@ -827,20 +883,31 @@ class Splash(tk.Frame):
 		self.bind("<KeyPress>", self.on_keypress)
 
 		self.l_fn = tk.Label(self.master, text="<filename>", height=3)
-		self.l_fn.bind("<Configure>", lambda e: self.l_fn.config(wraplength=self.l_fn.winfo_width()))
-		self.l_fn.pack(side="top", fill=tk.BOTH, expand=True, ipadx=4, ipady=2, padx=4)
+		self.l_fn.bind(
+			"<Configure>",
+			lambda e: self.l_fn.config(wraplength=self.l_fn.winfo_width()),
+		)
+		self.l_fn.pack(
+			side="top", fill=tk.BOTH, expand=True, ipadx=4, ipady=2, padx=4
+		)
 
 		self.l_progress = tk.Label(self.master, text="<progress>")
-		self.l_progress.pack(side="bottom", fill=tk.BOTH, expand=True, ipadx=4, ipady=2)
+		self.l_progress.pack(
+			side="bottom", fill=tk.BOTH, expand=True, ipadx=4, ipady=2
+		)
 
-		self.pb = ttk.Progressbar(self.master, orient=tk.HORIZONTAL, length=100, mode="determinate")
+		self.pb = ttk.Progressbar(
+			self.master, orient=tk.HORIZONTAL, length=100, mode="determinate"
+		)
 		self.pb.pack(side="bottom", fill="x", expand=False, padx=4)
 
 		# ~ xpos = (self.master.winfo_screenwidth() - self.window_width) // 2
 		# ~ ypos = (self.master.winfo_screenheight() - self.window_height) // 2
 		# ~ self.master.geometry("%sx%s+%s+%s" % (
 		# ~ self.window_width, self.window_height, xpos, ypos))
-		htk.random_appearance(self.master, win_size=(self.window_width, self.window_height))
+		htk.random_appearance(
+			self.master, win_size=(self.window_width, self.window_height)
+		)
 
 	def on_keypress(self, e):
 		if e.keysym == "Escape":
@@ -922,7 +989,12 @@ def on_start_video(fp):
 			ADD_BRIGHTNESS = True
 			break
 
-	logd("ADD_BRIGHTNESS=%r, FASTER_SPEED=%r, cd=%r", ADD_BRIGHTNESS, FASTER_SPEED, cd)
+	logd(
+		"ADD_BRIGHTNESS=%r, FASTER_SPEED=%r, cd=%r",
+		ADD_BRIGHTNESS,
+		FASTER_SPEED,
+		cd,
+	)
 
 
 class Application(tk.Frame):
@@ -967,7 +1039,9 @@ class Application(tk.Frame):
 		# ~ self.master.title(self._base_title)
 		self.pack(side="top", fill="both", expand=True)
 		self.monitors = enum_display_monitors(taskbar=False)
-		self.display_names = ["%sx%s" % (item[2], item[3]) for item in self.monitors]
+		self.display_names = [
+			"%sx%s" % (item[2], item[3]) for item in self.monitors
+		]
 
 		self.create_widgets()
 
@@ -1029,9 +1103,18 @@ class Application(tk.Frame):
 		self.hidden_pos = list(self.normal_pos[:])
 		self.hidden_pos[0] += self.normal_pos[2] - 16
 		self.hidden_pos[1] += self.normal_pos[3] - 16
-		logd("\n< self.normal_pos=%r, self.hidden_pos=%r, self.wid=0x%0x", self.normal_pos, self.hidden_pos, self.wid)
+		logd(
+			"\n< self.normal_pos=%r, self.hidden_pos=%r, self.wid=0x%0x",
+			self.normal_pos,
+			self.hidden_pos,
+			self.wid,
+		)
 		# ~ self.on_hover_change(True)
-		htk.anim_window(self.master, (*htk.geometry2tuple(self.master.geometry()), MIN_ALPHA), (*self.normal_pos, MAX_ALPHA))
+		htk.anim_window(
+			self.master,
+			(*htk.geometry2tuple(self.master.geometry()), MIN_ALPHA),
+			(*self.normal_pos, MAX_ALPHA),
+		)
 		self.ready = True
 
 	def on_hover_change(self, _hover=None):
@@ -1048,7 +1131,12 @@ class Application(tk.Frame):
 			logd(f"showing from {current_pos!r} to {self.normal_pos!r}")
 			self.bring_to_front()
 			# ~ self.master.overrideredirect(False)
-			htk.anim_window(self.master, (*current_pos, MIN_ALPHA), (*self.normal_pos, MAX_ALPHA), bounce=False)
+			htk.anim_window(
+				self.master,
+				(*current_pos, MIN_ALPHA),
+				(*self.normal_pos, MAX_ALPHA),
+				bounce=False,
+			)
 			self.ready = True
 		else:
 			# скрываем окно
@@ -1059,10 +1147,20 @@ class Application(tk.Frame):
 
 			if NO_HIDE_WINDOW:
 				# остаёмся на месте
-				htk.anim_window(self.master, (*current_pos, MAX_ALPHA), (*current_pos, MIN_ALPHA), bounce=False)
+				htk.anim_window(
+					self.master,
+					(*current_pos, MAX_ALPHA),
+					(*current_pos, MIN_ALPHA),
+					bounce=False,
+				)
 				self.master.attributes("-topmost", False)
 			else:
-				htk.anim_window(self.master, (*current_pos, MAX_ALPHA), (*self.hidden_pos, MIN_ALPHA), bounce=False)
+				htk.anim_window(
+					self.master,
+					(*current_pos, MAX_ALPHA),
+					(*self.hidden_pos, MIN_ALPHA),
+					bounce=False,
+				)
 
 			self.master.update_idletasks()
 			self.ready = True
@@ -1234,16 +1332,22 @@ class Application(tk.Frame):
 
 		# приведём title в порядок
 		if not self.paused:
-			self._base_title = self.tpl_title % fix2title(self.lVideoTitle["text"])
+			self._base_title = self.tpl_title % fix2title(
+				self.lVideoTitle["text"]
+			)
 		else:
-			self._base_title = self.tpl_title_paused % fix2title(self.lVideoTitle["text"])
+			self._base_title = self.tpl_title_paused % fix2title(
+				self.lVideoTitle["text"]
+			)
 
 		title = self._base_title + self.end_title
 		# ~ logd("self._base_title=%r, self.end_title=%r"
 		# ~ , self._base_title, self.end_title)
 		self.master.title(title)
 
-		self.change_label_height(self.lVideoTitle, min_height=100, max_height=200)
+		self.change_label_height(
+			self.lVideoTitle, min_height=100, max_height=200
+		)
 
 		if self.player_pid and self.my_state == PLAYING:
 			self.b_pause["state"] = "normal"
@@ -1261,8 +1365,15 @@ class Application(tk.Frame):
 				# ~ self.bring_to_front()
 
 		if self.my_state == PLAY_FINISHED:
-			if tpc() - self.my_state_start > (TIME_TO_RENAME + 1.0) and self._points_added >= TIME_TO_RENAME:
-				if self.fp_video and self.fp_video not in self.prop_skipped and os.path.exists(self.fp_video):
+			if (
+				tpc() - self.my_state_start > (TIME_TO_RENAME + 1.0)
+				and self._points_added >= TIME_TO_RENAME
+			):
+				if (
+					self.fp_video
+					and self.fp_video not in self.prop_skipped
+					and os.path.exists(self.fp_video)
+				):
 					rename_status = "<переименовано>"
 					color_fg_renamed = COLOR_RENAMED_FG_NORM
 					color_bg_renamed = COLOR_RENAMED_BG_NORM
@@ -1274,7 +1385,9 @@ class Application(tk.Frame):
 						color_fg_renamed = COLOR_RENAMED_FG_FAILED
 						color_bg_renamed = COLOR_RENAMED_BG_FAILED
 					except FileExistsError:
-						rename_status = "<не удалось переименовать>\nтакой файл уже есть"
+						rename_status = (
+							"<не удалось переименовать>\nтакой файл уже есть"
+						)
 						color_fg_renamed = COLOR_RENAMED_FG_FAILED
 						color_bg_renamed = COLOR_RENAMED_BG_FAILED
 
@@ -1284,7 +1397,9 @@ class Application(tk.Frame):
 						try:
 							os.rename(vtt_fp, vtt_fp + ".seen")
 						except PermissionError:
-							rename_status = "<vtt не удалось переименовать>\nнет прав"
+							rename_status = (
+								"<vtt не удалось переименовать>\nнет прав"
+							)
 							color_fg_renamed = COLOR_RENAMED_FG_FAILED
 							color_bg_renamed = COLOR_RENAMED_BG_FAILED
 						except FileExistsError:
@@ -1324,7 +1439,9 @@ class Application(tk.Frame):
 						# ~ logd("self.splash.working=%r", self.splash.working)
 						# ~ logd("\n! start appearance")
 						# note: show window
-						htk.random_appearance_to(self.master, self.to_, duration=0.2)
+						htk.random_appearance_to(
+							self.master, self.to_, duration=0.2
+						)
 						# ~ logd("\n! stop appearance")
 					if not self.paused:
 						self.start_video()
@@ -1340,7 +1457,9 @@ class Application(tk.Frame):
 				snd_play_async(SND_CLICK)
 				state_duration = tpc() - self.my_state_start
 
-				self.lVideoTitle["text"] = "выход через %.1f" % (TIME_TO_EXIT - state_duration)
+				self.lVideoTitle["text"] = "выход через %.1f" % (
+					TIME_TO_EXIT - state_duration
+				)
 
 				self.lStatus["text"] = "Нет video"
 				if state_duration > TIME_TO_EXIT:
@@ -1387,7 +1506,10 @@ class Application(tk.Frame):
 				if passed < 0.1:
 					logw("KP_Enter залип!")
 					if self.not_announced:
-						say_with_queue("у вас Кнопка залипла. Завершаю работу", narrator=random.choice(narrators))  # nosec
+						say_with_queue(
+							"у вас Кнопка залипла. Завершаю работу",
+							narrator=random.choice(narrators),  # nosec
+						)
 						self.not_announced = False
 					self.i_exit.set(True)
 					self.i_delseen.set(False)
@@ -1423,7 +1545,10 @@ class Application(tk.Frame):
 				self.update_splash()
 				say_with_queue(numsuf, narrator=narrator)
 			else:
-				say_async("А здесь нет вид^осов", narrator=random.choice(narrators))  # nosec
+				say_async(
+					"А здесь нет вид^осов",
+					narrator=random.choice(narrators),  # nosec
+				)
 				# ~ self.bring_to_front()
 
 		# ~ dp("> checking for deleted videos")
@@ -1460,7 +1585,14 @@ class Application(tk.Frame):
 					try:
 						os.unlink(fn)
 					except PermissionError:
-						self.videos.append((fn, fn + "\nПустой файл! Не могу удалить!", fsize, (0.0, 0)))
+						self.videos.append(
+							(
+								fn,
+								fn + "\nПустой файл! Не могу удалить!",
+								fsize,
+								(0.0, 0),
+							)
+						)
 				else:
 					fn_duration = get_duration(fn)
 					new_video = (fn, get_video_title(fn), fsize, fn_duration)
@@ -1485,9 +1617,16 @@ class Application(tk.Frame):
 						# ~ logd("fn_count=%r, fn_total=%r, perc=%r"
 						# ~ , fn_count, fn_total, perc)
 
-						self.splash.l_progress["text"] = "%.2f %%" % self.splash.pb["value"]
+						self.splash.l_progress["text"] = (
+							"%.2f %%" % self.splash.pb["value"]
+						)
 
-						self.splash.master.title(self.splash._title + duration_fmt((_duration,)) + "    " + sizeof_fmt(_fsize))
+						self.splash.master.title(
+							self.splash._title
+							+ duration_fmt((_duration,))
+							+ "    "
+							+ sizeof_fmt(_fsize)
+						)
 
 						self.update_splash()
 
@@ -1562,7 +1701,9 @@ class Application(tk.Frame):
 			sfsize = sizeof_fmt(fsize)
 			self.lbVideosDurations.insert(tk.END, sduration)
 			self.lbVideosSizes.insert(tk.END, sfsize)
-			self.lbVideosTitles.insert(tk.END, " " + title.replace("\n", " / "))
+			self.lbVideosTitles.insert(
+				tk.END, " " + title.replace("\n", " / ")
+			)
 
 			bgcolor = self._palette["SystemWindow"]
 			if idx % 2 == 0:  # odd
@@ -1587,7 +1728,11 @@ class Application(tk.Frame):
 		self.lbVideosSizes["width"] = max_len_fsize + 1
 
 		self.end_title = (
-			" - Всего: " + duration_fmt((total_duration, None)) + "    " + sizeof_fmt(total_fsize) + f" - {MY_NAME}"
+			" - Всего: "
+			+ duration_fmt((total_duration, None))
+			+ "    "
+			+ sizeof_fmt(total_fsize)
+			+ f" - {MY_NAME}"
 		)
 		# ~ + (" *" if config.my_changed else "")
 
@@ -1640,7 +1785,9 @@ class Application(tk.Frame):
 
 	def skip_video(self):
 		# done: Переспросить перед добавлением видоса в пропущенные
-		if messagebox.askyesno(_("Skipped"), _("Do you want add current video into skipped?")):
+		if messagebox.askyesno(
+			_("Skipped"), _("Do you want add current video into skipped?")
+		):
 			_set = self.prop_skipped
 			_set.add(self.fp_video)
 			self.prop_skipped = _set
@@ -1649,7 +1796,9 @@ class Application(tk.Frame):
 
 	def clear_skipped(self):
 		# done: Переспросить перед очисткой пропущенных видосов
-		if messagebox.askyesno(_("Skipped"), _("Do you want to clear skipped?")):
+		if messagebox.askyesno(
+			_("Skipped"), _("Do you want to clear skipped?")
+		):
 			self.prop_skipped = set()
 			self.restart_player()
 
@@ -1657,14 +1806,25 @@ class Application(tk.Frame):
 		self.uf = tk.Frame(self, relief="groove", bd=2)
 		self.uf.pack(side="top", fill="x", expand=False, pady=8, padx=4)
 		# ~ mim = tk.PhotoImage(file = "/home/slair/share/cote-640x360.png")
-		self.lClock = tk.Label(self.uf, text="<lClock>", font=("a_LCDNova", 56))
+		self.lClock = tk.Label(
+			self.uf, text="<lClock>", font=("a_LCDNova", 56)
+		)
 		self.lClock.pack(side="right", anchor="n", pady=4)
 
-		self.lStatus = tk.Label(self.uf, text="", font=("Impact", 48), fg="#804000")
+		self.lStatus = tk.Label(
+			self.uf, text="", font=("Impact", 48), fg="#804000"
+		)
 
-		self.lStatus.bind("<Configure>", lambda e: self.lStatus.config(wraplength=self.lStatus.winfo_width()))
+		self.lStatus.bind(
+			"<Configure>",
+			lambda e: self.lStatus.config(
+				wraplength=self.lStatus.winfo_width()
+			),
+		)
 
-		self.lStatus.pack(side="left", fill="both", expand=True, padx=4, pady=8)
+		self.lStatus.pack(
+			side="left", fill="both", expand=True, padx=4, pady=8
+		)
 
 		self.mf = tk.Frame(self)
 		self.mf.pack(side="top", fill="x", expand=False)
@@ -1672,13 +1832,25 @@ class Application(tk.Frame):
 		self.f_video = tk.Frame(self.mf)  # фрейм для кнопок к текущему видео
 		self.f_video.pack(side="top", fill="x", expand=False, pady=0, padx=4)
 
-		self.b_pause = tk.Button(self.f_video, text=" Пауза ", command=self.pause_video, highlightthickness=0)
+		self.b_pause = tk.Button(
+			self.f_video,
+			text=" Пауза ",
+			command=self.pause_video,
+			highlightthickness=0,
+		)
 		self.b_pause.pack(side="left", fill="y", expand=False, pady=4, padx=4)
 
-		self.b_skip = tk.Button(self.f_video, text=" Пропустить ", command=self.skip_video, highlightthickness=0)
+		self.b_skip = tk.Button(
+			self.f_video,
+			text=" Пропустить ",
+			command=self.skip_video,
+			highlightthickness=0,
+		)
 		self.b_skip.pack(side="left", fill="y", expand=False, pady=4, padx=4)
 
-		self.i_fullscreen = tk.IntVar(value=int(config["global"].get("fullscreen", "1")))
+		self.i_fullscreen = tk.IntVar(
+			value=int(config["global"].get("fullscreen", "1"))
+		)
 
 		self.cb_fullscreen = tk.Checkbutton(
 			self.f_video,
@@ -1691,18 +1863,29 @@ class Application(tk.Frame):
 			highlightthickness=0,
 			command=self.cb_fullscreen_changed,
 		)
-		self.cb_fullscreen.pack(side="left", fill="y", padx=4, pady=4, ipady=4, ipadx=4)
+		self.cb_fullscreen.pack(
+			side="left", fill="y", padx=4, pady=4, ipady=4, ipadx=4
+		)
 
-		self.sv_player_display = tk.StringVar(value=self.display_names[int(config["global"].get("fs-screen", "0"))])
+		self.sv_player_display = tk.StringVar(
+			value=self.display_names[
+				int(config["global"].get("fs-screen", "0"))
+			]
+		)
 
 		# done: Выбор монитора для фулскрина
 		self.cb_display = ttk.Combobox(
-			self.f_video, state="readonly", textvariable=self.sv_player_display, values=self.display_names
+			self.f_video,
+			state="readonly",
+			textvariable=self.sv_player_display,
+			values=self.display_names,
 		)
 		self.cb_display.pack(side="left", fill="y", pady=4, padx=4)
 		self.cb_display.bind("<<ComboboxSelected>>", self.display_selected)
 
-		self.i_bring_to_front = tk.IntVar(value=int(config["global"].get("bring_to_front", "1")))
+		self.i_bring_to_front = tk.IntVar(
+			value=int(config["global"].get("bring_to_front", "1"))
+		)
 
 		self.cb_bring_to_front = tk.Checkbutton(
 			self.f_video,
@@ -1715,9 +1898,13 @@ class Application(tk.Frame):
 			relief="raised",
 			command=self.cb_bring_to_front_changed,
 		)
-		self.cb_bring_to_front.pack(side="left", fill="y", pady=4, padx=4, ipady=4, ipadx=4)
+		self.cb_bring_to_front.pack(
+			side="left", fill="y", pady=4, padx=4, ipady=4, ipadx=4
+		)
 
-		self.i_exit = tk.IntVar(value=int(config["global"].get("exit_after_play", "0")))
+		self.i_exit = tk.IntVar(
+			value=int(config["global"].get("exit_after_play", "0"))
+		)
 
 		self.cb_exit = tk.Checkbutton(
 			self.f_video,
@@ -1730,9 +1917,13 @@ class Application(tk.Frame):
 			relief="raised",
 			command=self.cb_exit_changed,
 		)
-		self.cb_exit.pack(side="left", fill="y", pady=4, padx=4, ipady=4, ipadx=4)
+		self.cb_exit.pack(
+			side="left", fill="y", pady=4, padx=4, ipady=4, ipadx=4
+		)
 
-		self.i_delseen = tk.IntVar(value=int(config["global"].get("delete_seen_files", "0")))
+		self.i_delseen = tk.IntVar(
+			value=int(config["global"].get("delete_seen_files", "0"))
+		)
 
 		self.cb_delseen = tk.Checkbutton(
 			self.f_video,
@@ -1745,7 +1936,9 @@ class Application(tk.Frame):
 			relief="raised",
 			command=self.cb_delseen_changed,
 		)
-		self.cb_delseen.pack(side="left", fill="y", pady=4, padx=4, ipady=4, ipadx=4)
+		self.cb_delseen.pack(
+			side="left", fill="y", pady=4, padx=4, ipady=4, ipadx=4
+		)
 
 		self.tpl_clear_skipped = " Очистить %d пропущенных "
 		self.b_clear_skipped = tk.Button(
@@ -1754,13 +1947,30 @@ class Application(tk.Frame):
 			highlightthickness=0,
 			command=self.clear_skipped,
 		)
-		self.b_clear_skipped.pack(side="right", fill="y", expand=False, pady=4, padx=4)
+		self.b_clear_skipped.pack(
+			side="right", fill="y", expand=False, pady=4, padx=4
+		)
 
-		self.lVideoTitle = tk.Label(self.mf, text="", relief="groove", bd=2, font=("Impact", 48), wraplength=0, fg="#000080")
+		self.lVideoTitle = tk.Label(
+			self.mf,
+			text="",
+			relief="groove",
+			bd=2,
+			font=("Impact", 48),
+			wraplength=0,
+			fg="#000080",
+		)
 
-		self.lVideoTitle.bind("<Configure>", lambda e: self.lVideoTitle.config(wraplength=self.lVideoTitle.winfo_width()))
+		self.lVideoTitle.bind(
+			"<Configure>",
+			lambda e: self.lVideoTitle.config(
+				wraplength=self.lVideoTitle.winfo_width()
+			),
+		)
 
-		self.lVideoTitle.pack(side="top", fill="x", expand=True, ipadx=8, ipady=8, pady=4, padx=4)
+		self.lVideoTitle.pack(
+			side="top", fill="x", expand=True, ipadx=8, ipady=8, pady=4, padx=4
+		)
 
 		self.lf = tk.Frame(self, bg=get_random_color())
 		self.lf.pack(side="top", fill="both", expand=True)
@@ -1771,7 +1981,12 @@ class Application(tk.Frame):
 		self.df = tk.Frame(self.lf, bg=get_random_color())
 		self.df.pack(side="left", fill="y", expand=False)
 
-		self.bVideoDuration = tk.Button(self.df, text=sDURATION, highlightthickness=0, command=self.set_sort_duration)
+		self.bVideoDuration = tk.Button(
+			self.df,
+			text=sDURATION,
+			highlightthickness=0,
+			command=self.set_sort_duration,
+		)
 		self.bVideoDuration.pack(side="top", fill="x", expand=False)
 
 		self.lbVideosDurations = tk.Listbox(
@@ -1783,12 +1998,19 @@ class Application(tk.Frame):
 			bd=0,
 			bg=self._palette["SystemWindow"],
 		)
-		self.lbVideosDurations.pack(side="top", fill="both", expand=True, pady=0)
+		self.lbVideosDurations.pack(
+			side="top", fill="both", expand=True, pady=0
+		)
 
 		self.sf = tk.Frame(self.lf, bg=get_random_color())
 		self.sf.pack(side="left", fill="both", expand=False)
 
-		self.bVideoSize = tk.Button(self.sf, text=sFSIZE, highlightthickness=0, command=self.set_sort_fsize)
+		self.bVideoSize = tk.Button(
+			self.sf,
+			text=sFSIZE,
+			highlightthickness=0,
+			command=self.set_sort_fsize,
+		)
 		self.bVideoSize.pack(side="top", fill="x", expand=False)
 
 		self.lbVideosSizes = tk.Listbox(
@@ -1809,10 +2031,20 @@ class Application(tk.Frame):
 		self.fTitleButtons = tk.Frame(self.tf, bg=get_random_color())
 		self.fTitleButtons.pack(side="top", fill="x", expand=False)
 
-		self.bVideoTitle = tk.Button(self.fTitleButtons, text=sTITLE, highlightthickness=0, command=self.set_sort_title)
+		self.bVideoTitle = tk.Button(
+			self.fTitleButtons,
+			text=sTITLE,
+			highlightthickness=0,
+			command=self.set_sort_title,
+		)
 		self.bVideoTitle.pack(side="left", fill="x", expand=True)
 
-		self.bVideoFilename = tk.Button(self.fTitleButtons, text=sFN, highlightthickness=0, command=self.set_sort_fn)
+		self.bVideoFilename = tk.Button(
+			self.fTitleButtons,
+			text=sFN,
+			highlightthickness=0,
+			command=self.set_sort_fn,
+		)
 		self.bVideoFilename.pack(side="left", fill="x", expand=False)
 
 		self.lbVideosTitles = tk.Listbox(
@@ -1836,12 +2068,19 @@ class Application(tk.Frame):
 		if WIN32:
 			self.send_key_to_player(chr(27))
 		elif LINUX:
-			os.system("wmctrl -v -x -c gl || wmctrl -v -x  -c xv || wmctrl -v -x  -c mpv || killall mpv")  # nosec
+			os.system(
+				"wmctrl -v -x -c gl || wmctrl -v -x  -c xv || wmctrl -v -x  -c mpv || killall mpv"
+			)  # nosec
 		start_exit = tpc()
 		# ~ while self.player_pid and psutil.pid_exists(self.player_pid):
 		while self.player_pid and get_pids_by_fn(self.fp_video):
 			exit_duration = tpc() - start_exit
-			logd("Waiting %r for the %r (%r) to die", exit_duration, self.player_pid, PLAYER_BINARY)
+			logd(
+				"Waiting %r for the %r (%r) to die",
+				exit_duration,
+				self.player_pid,
+				PLAYER_BINARY,
+			)
 			time.sleep(0.1)
 			if exit_duration > MAX_TIME_TO_DIE:
 				logd("Killing %r (%r)", self.player_pid, PLAYER_BINARY)
@@ -1864,7 +2103,9 @@ class Application(tk.Frame):
 				self.send_key_to_player("G")
 
 	def cb_bring_to_front_changed(self):
-		change_config("global", "bring_to_front", str(self.i_bring_to_front.get()))
+		change_config(
+			"global", "bring_to_front", str(self.i_bring_to_front.get())
+		)
 
 	def cb_exit_changed(self):
 		# ~ change_config("global", "exit_after_play"
@@ -1878,7 +2119,9 @@ class Application(tk.Frame):
 
 	def display_selected(self, event):  # noqa
 		selection = self.cb_display.get()
-		config_changed = change_config("global", "fs-screen", self.display_names.index(selection))
+		config_changed = change_config(
+			"global", "fs-screen", self.display_names.index(selection)
+		)
 		if config_changed:
 			self.restart_player()
 
@@ -1893,7 +2136,9 @@ class Application(tk.Frame):
 
 		change_config("global", "skipped", FNSEP.join(sorted(self.skipped)))
 
-		self.b_clear_skipped["text"] = self.tpl_clear_skipped % len(self.skipped)
+		self.b_clear_skipped["text"] = self.tpl_clear_skipped % len(
+			self.skipped
+		)
 
 		if self.skipped:
 			self.b_clear_skipped["state"] = "normal"
@@ -1915,7 +2160,9 @@ def main():
 	if geometry:
 		root.geometry(geometry)
 	else:
-		root.geometry("1024x512+" + str(1366 - 1024 - 7) + "+" + str(720 - 512 - 31))
+		root.geometry(
+			"1024x512+" + str(1366 - 1024 - 7) + "+" + str(720 - 512 - 31)
+		)
 
 	SCRIPTPATH = os.path.dirname(os.path.realpath(__file__))
 	icon = tk.PhotoImage(file=os.path.join(SCRIPTPATH, "icon.png"))
