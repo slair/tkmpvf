@@ -916,7 +916,7 @@ class Splash(tk.Frame):
 			self.master.destroy()
 
 
-def EXIT(rc=0):
+def EXIT(rc=0, actions: str = ""):
 	# done: Сохранение настроек
 	save_config()
 	save_cache(DUR_CACHE_FP, dur_cache)
@@ -2179,7 +2179,7 @@ def main():
 if __name__ == "__main__":
 	if already_running(TS_PORT):
 		loge("ALREADY_RUNNING TS_PORT=%r", TS_PORT)
-		EXIT()
+		EXIT(121, "cache")
 
 	if ope(DUR_CACHE_FP):
 		try:
