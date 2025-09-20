@@ -142,6 +142,7 @@ def getflag(flags, folder=None):
 
 
 dont_delete_flag = ("~~dont-delete~~", ".~~dont-delete~~")
+delete_flag = ("~~dont-delete~~", ".~~dont-delete~~")
 
 # todo: brightness value from flag instead *
 # ~ add_brightness_flag = "~~add-brightness-*-~~"
@@ -169,6 +170,11 @@ for item in dont_delete_list:
 cd_ = cd
 while cd_:
 	# ~ print(cd_)
+	if getflag(delete_flag, cd_):
+		tp(f"{delete_flag!r} found in {cd_!r}")
+		DONT_DELETE = False
+		break
+
 	if getflag(dont_delete_flag, cd_):
 		tp(f"{dont_delete_flag!r} found in {cd_!r}")
 		DONT_DELETE = True
@@ -2197,6 +2203,8 @@ if __name__ == "__main__":
 
 	if DONT_DELETE:
 		say("Не буду удалять файлы из этого каталога")
+	else:
+		say("Просмотренные файлы будут удалены из этого каталога")
 
 	main()
 	saymod.TS_ACTIVE = False
