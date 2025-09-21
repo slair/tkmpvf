@@ -303,6 +303,7 @@ try:
 	from saymod import (
 		say_async,
 		say,
+		say_mp,
 		snd_play_async,
 		snd_play,
 		saymod_setup_log,
@@ -449,7 +450,8 @@ def fix2title(s: str) -> str:
 
 
 def get_duration(fp) -> tuple[Any, int]:
-	global dur_cache, dur_cache_changed
+	# ~ global dur_cache, dur_cache_changed
+	global dur_cache_changed
 	if ope(fp):
 		fstat = os.stat(fp)
 		cfp = "%s %s %s %s" % (
@@ -922,7 +924,7 @@ class Splash(tk.Frame):
 			self.master.destroy()
 
 
-def EXIT(rc=0, actions: str = ""):
+def EXIT(rc=0, _actions: str = ""):
 	# done: Сохранение настроек
 	save_config()
 	save_cache(DUR_CACHE_FP, dur_cache)
@@ -2202,9 +2204,12 @@ if __name__ == "__main__":
 	logi("Starting %r in %r", " ".join(sys.argv), os.getcwd())
 
 	if DONT_DELETE:
-		say("Не буду удалять файлы из этого каталога")
+		say_mp("Не буду удалять файлы из этого каталога", mpv_volume=120)
 	else:
-		say("Просмотренные файлы будут удалены из этого каталога")
+		say_mp(
+			"Просмотренные файлы будут удалены из этого каталога",
+			mpv_volume=120,
+		)
 
 	main()
 	saymod.TS_ACTIVE = False
