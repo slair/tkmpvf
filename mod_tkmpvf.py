@@ -142,7 +142,7 @@ def getflag(flags, folder=None):
 
 
 dont_delete_flag = ("~~dont-delete~~", ".~~dont-delete~~")
-delete_flag = ("~~dont-delete~~", ".~~dont-delete~~")
+delete_flag = ("~~delete~~", ".~~delete~~")
 
 # todo: brightness value from flag instead *
 # ~ add_brightness_flag = "~~add-brightness-*-~~"
@@ -171,19 +171,21 @@ cd_ = cd
 while cd_:
 	# ~ print(cd_)
 	if getflag(delete_flag, cd_):
-		tp(f"{delete_flag!r} found in {cd_!r}")
 		DONT_DELETE = False
+		tp(f"{delete_flag!r} found in {cd_!r} DONT_DELETE={DONT_DELETE!r}")
 		break
 
 	if getflag(dont_delete_flag, cd_):
-		tp(f"{dont_delete_flag!r} found in {cd_!r}")
 		DONT_DELETE = True
+		tp(f"{dont_delete_flag!r} found in {cd_!r} DONT_DELETE={DONT_DELETE!r}")
 		break
 
 	last_cd = cd_
 	cd_ = os.path.split(cd_)[0]
 	if cd_ == last_cd:
 		break
+
+print("DONT_DELETE=%r" % DONT_DELETE)
 
 if getflag(add_brightness_flag):
 	ADD_BRIGHTNESS = True
