@@ -1737,12 +1737,16 @@ class Application(tk.Frame):
 		self.lbVideosDurations["width"] = max_len_duration
 		self.lbVideosSizes["width"] = max_len_fsize + 1
 
+		del_status = ""
+		if not DONT_DELETE:
+			del_status = " (удаляем файлы)"
+			
 		self.end_title = (
 			" - Всего: "
 			+ duration_fmt((total_duration, None))
 			+ "    "
 			+ sizeof_fmt(total_fsize)
-			+ f" - {MY_NAME}"
+			+ f" - {MY_NAME}{del_status}"
 		)
 		# ~ + (" *" if config.my_changed else "")
 
