@@ -1075,7 +1075,7 @@ class Application(tk.Frame):
 		self.my_state_start = 1
 
 		if "global" in config and "skipped" in config["global"]:
-			skipped_items = config["global"]["skipped"].split(FNSEP)
+			skipped_items = config["global"]["skipped"].split(s)
 			# ~ logd("skipped_items= %r", skipped_items)
 			# ~ logd("any(skipped_items)= %r", any(skipped_items))
 			if any(skipped_items):
