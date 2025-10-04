@@ -141,8 +141,8 @@ def getflag(flags, folder=None):
 	return False
 
 
-dont_delete_flag = ("~~dont-delete~~", ".~~dont-delete~~")
-delete_flag = ("~~delete~~", ".~~delete~~")
+dont_delete_flag = ("~~dont-delete~~", ".~~dont-delete~~", "֍ ~~dont-delete~~")
+delete_flag = ("~~delete~~", ".~~delete~~", "֍ ~~delete~~")
 
 # todo: brightness value from flag instead *
 # ~ add_brightness_flag = "~~add-brightness-*-~~"
@@ -177,7 +177,9 @@ while cd_:
 
 	if getflag(dont_delete_flag, cd_):
 		DONT_DELETE = True
-		tp(f"{dont_delete_flag!r} found in {cd_!r} DONT_DELETE={DONT_DELETE!r}")
+		tp(
+			f"{dont_delete_flag!r} found in {cd_!r} DONT_DELETE={DONT_DELETE!r}"
+		)
 		break
 
 	last_cd = cd_
@@ -1740,7 +1742,7 @@ class Application(tk.Frame):
 		del_status = ""
 		if not DONT_DELETE:
 			del_status = " (удаляем файлы)"
-			
+
 		self.end_title = (
 			" - Всего: "
 			+ duration_fmt((total_duration, None))
