@@ -2221,4 +2221,5 @@ if __name__ == "__main__":
 
 	main()
 	saymod.TS_ACTIVE = False
+	os.system("report-videos &")
 	EXIT()
