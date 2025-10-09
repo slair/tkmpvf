@@ -1269,6 +1269,8 @@ class Application(tk.Frame):
 		# ~ logd("self.fp_video=%r", self.fp_video)
 		# ~ logd("self.player_pid=%r", self.player_pid)
 		self.lVideoTitle["text"] = title
+		_cmd = f'osd -m 1 -p 1 -d 7000 -fo 5000 "{title}" &'
+		os.system(_cmd)  # nosec
 		self.lVideoTitle["fg"] = COLOR_FG_TITLE
 		self.lVideoTitle["bg"] = COLOR_BG_TITLE
 		count_videos = len(self.videos)
@@ -1828,7 +1830,7 @@ class Application(tk.Frame):
 		self.lClock.pack(side="right", anchor="n", pady=4)
 
 		self.lStatus = tk.Label(
-			self.uf, text="", font=("Impact", 48), fg="#804000"
+			self.uf, text="<<Статус>>", font=("Impact", 48), fg="#804000"
 		)
 
 		self.lStatus.bind(
@@ -2221,5 +2223,5 @@ if __name__ == "__main__":
 
 	main()
 	saymod.TS_ACTIVE = False
-	os.system("report-videos &")
+	os.system("report-videos &")  # nosec
 	EXIT()
