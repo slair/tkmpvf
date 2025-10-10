@@ -1269,6 +1269,7 @@ class Application(tk.Frame):
 		# ~ logd("self.fp_video=%r", self.fp_video)
 		# ~ logd("self.player_pid=%r", self.player_pid)
 		self.lVideoTitle["text"] = title
+		logd("title=%r", title)
 		_cmd = f'osd -m 1 -p 1 -fi 200 -d 5000 -fo 5000 -n "tkmpvf" "{title}" &'
 		os.system(_cmd)  # nosec
 		self.lVideoTitle["fg"] = COLOR_FG_TITLE
