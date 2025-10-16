@@ -1471,16 +1471,18 @@ class Application(tk.Frame):
 
 		elif self.my_state == STOPPED:
 			if not self.need_to_exit:
+				if getattr(self, "osd_launched", False) == False:
+					os.system("report-videos &")  # nosec
+					self.osd_launched = True
+
 				snd_play_async(SND_CLICK)
 				state_duration = tpc() - self.my_state_start
-
 				self.lVideoTitle["text"] = "выход через %.1f" % (
 					TIME_TO_EXIT - state_duration
 				)
 
 				self.lStatus["text"] = "Нет video"
 				if state_duration > TIME_TO_EXIT:
-					os.system("report-videos &")  # nosec
 					snd_play(SND_DRUM, ep=True)
 					# ~ self.master.destroy()
 					self.on_close_master()
