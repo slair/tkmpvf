@@ -1270,7 +1270,9 @@ class Application(tk.Frame):
 		# ~ logd("self.player_pid=%r", self.player_pid)
 		self.lVideoTitle["text"] = title
 		logd("title=%r", title)
-		_cmd = f'osd -m 1 -p 1 -fi 200 -d 5000 -fo 5000 -n "tkmpvf" "{title}" &'
+		_cmd = (
+			f'osd -m 1 -p 1 -fi 200 -d 5000 -fo 5000 -n "tkmpvf" "{title}" &'
+		)
 		os.system(_cmd)  # nosec
 		self.lVideoTitle["fg"] = COLOR_FG_TITLE
 		self.lVideoTitle["bg"] = COLOR_BG_TITLE
@@ -1478,6 +1480,7 @@ class Application(tk.Frame):
 
 				self.lStatus["text"] = "Нет video"
 				if state_duration > TIME_TO_EXIT:
+					os.system("report-videos &")  # nosec
 					snd_play(SND_DRUM, ep=True)
 					# ~ self.master.destroy()
 					self.on_close_master()
@@ -2224,5 +2227,4 @@ if __name__ == "__main__":
 
 	main()
 	saymod.TS_ACTIVE = False
-	os.system("report-videos &")  # nosec
 	EXIT()
