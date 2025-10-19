@@ -224,7 +224,7 @@ def get_TPL_PLAY_CMD():
 				"--audio-normalize-downmix=yes",
 				"--fs-screen=%s",
 				"--volume-max=500",
-				"--volume=90",
+				# ~ "--volume=90",
 				"--brightness=16" if ADD_BRIGHTNESS else "",
 				"--speed=1.33" if FASTER_SPEED else "",
 				"--",
@@ -1471,7 +1471,7 @@ class Application(tk.Frame):
 
 		elif self.my_state == STOPPED:
 			if not self.need_to_exit:
-				if getattr(self, "osd_launched", False) == False:
+				if not getattr(self, "osd_launched", False):
 					os.system("report-videos &")  # nosec
 					self.osd_launched = True
 
