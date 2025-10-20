@@ -305,11 +305,10 @@ MY_NAME = os.path.splitext(os.path.basename(MY_FILE_NAME))[0]
 try:
 	import saymod
 	from saymod import (
-		say_async,
+		say_mp_riat,
 		say,
 		say_mp,
-		snd_play_async,
-		snd_play,
+		snd_play_mp_riat,
 		saymod_setup_log,
 		say_with_queue,
 		run_talk_server,
@@ -318,17 +317,17 @@ try:
 	saymod_setup_log(MY_NAME)
 except ModuleNotFoundError:
 
-	def say_async(*args, **kwargs):  # noqa
-		dp("! say_async(", *args, ")")
+	def say_mp_riat(*args, **kwargs):  # noqa
+		dp("! say_mp_riat(", *args, ")")
 
 	def say(*args, **kwargs):  # noqa
 		dp("! say(", *args, ")")
 
-	def snd_play_async(*args, **kwargs):  # noqa
-		dp("! snd_play_async(", *args, ")")
+	def snd_play_mp_riat(*args, **kwargs):  # noqa
+		dp("! snd_play_mp_riat(", *args, ")")
 
-	def snd_play(*args, **kwargs):  # noqa
-		dp("! snd_play(", *args, ")")
+	# ~ def snd_play(*args, **kwargs):  # noqa
+	# ~ dp("! snd_play(", *args, ")")
 
 
 BASELOGFORMAT = "%(message)s"
@@ -1224,7 +1223,7 @@ class Application(tk.Frame):
 		seen_files = glob.glob("*.seen")
 		if seen_files:
 			if DONT_DELETE:
-				say_async("Не буду удалять файлы из этого каталога")
+				say_mp_riat("Не буду удалять файлы из этого каталога")
 				return
 
 			if int(self.i_delseen.get()) == 1 or messagebox.askyesnocancel(
@@ -1408,6 +1407,7 @@ class Application(tk.Frame):
 						color_fg_renamed = COLOR_RENAMED_FG_FAILED
 						color_bg_renamed = COLOR_RENAMED_BG_FAILED
 
+					# fp: переименовывает vtt файлы
 					fp_name, ext = os.path.splitext(self.fp_video)
 					vtt_fp = fp_name + ".ru.vtt"
 					if os.path.exists(vtt_fp):
@@ -1475,7 +1475,7 @@ class Application(tk.Frame):
 					os.system("report-videos &")  # nosec
 					self.osd_launched = True
 
-				snd_play_async(SND_CLICK)
+				snd_play_mp_riat(SND_CLICK)
 				state_duration = tpc() - self.my_state_start
 				self.lVideoTitle["text"] = "выход через %.1f" % (
 					TIME_TO_EXIT - state_duration
@@ -1483,7 +1483,7 @@ class Application(tk.Frame):
 
 				self.lStatus["text"] = "Нет video"
 				if state_duration > TIME_TO_EXIT:
-					snd_play(SND_DRUM, ep=True)
+					snd_play_mp_riat(SND_DRUM)
 					# ~ self.master.destroy()
 					self.on_close_master()
 
@@ -1565,7 +1565,7 @@ class Application(tk.Frame):
 				self.update_splash()
 				say_with_queue(numsuf, narrator=narrator)
 			else:
-				say_async(
+				say_mp_riat(
 					"А здесь нет вид^осов",
 					narrator=random.choice(narrators),  # nosec
 				)
@@ -1596,7 +1596,6 @@ class Application(tk.Frame):
 			if not any(e[0] == fn for e in self.videos):
 				# ~ dp("! adding", fn)
 
-				# fixme: падает, если не нашли ни одного файла
 				if not ope(fn):
 					continue
 
@@ -2215,16 +2214,15 @@ if __name__ == "__main__":
 		folder = sys.argv[1]
 		if folder[0] != "-":
 			os.chdir(folder)
-			# fixme: надо ли проверить наличие dont_delete_flag
 
 	logi("Starting %r in %r", " ".join(sys.argv), os.getcwd())
 
 	if DONT_DELETE:
-		say_mp("Не буду удалять файлы из этого каталога", mpv_volume=120)
+		say_mp("Не буду удалять файлы из этого каталога", mpv_volume=110)
 	else:
 		say_mp(
 			"Просмотренные файлы будут удалены из этого каталога",
-			mpv_volume=120,
+			mpv_volume=110,
 		)
 
 	main()
