@@ -308,7 +308,8 @@ try:
 		say_mp_riat,
 		say,
 		say_mp,
-		snd_play_mp_riat,
+		snd_play_mp,
+		# ~ snd_play_mp_riat,
 		saymod_setup_log,
 		say_with_queue,
 		run_talk_server,
@@ -323,8 +324,8 @@ except ModuleNotFoundError:
 	def say(*args, **kwargs):  # noqa
 		dp("! say(", *args, ")")
 
-	def snd_play_mp_riat(*args, **kwargs):  # noqa
-		dp("! snd_play_mp_riat(", *args, ")")
+	# ~ def snd_play_mp_riat(*args, **kwargs):  # noqa
+		# ~ dp("! snd_play_mp_riat(", *args, ")")
 
 	# ~ def snd_play(*args, **kwargs):  # noqa
 	# ~ dp("! snd_play(", *args, ")")
@@ -1475,7 +1476,7 @@ class Application(tk.Frame):
 					os.system("report-videos &")  # nosec
 					self.osd_launched = True
 
-				snd_play_mp_riat(SND_CLICK)
+				snd_play_mp(SND_CLICK)
 				state_duration = tpc() - self.my_state_start
 				self.lVideoTitle["text"] = "выход через %.1f" % (
 					TIME_TO_EXIT - state_duration
@@ -1483,7 +1484,7 @@ class Application(tk.Frame):
 
 				self.lStatus["text"] = "Нет video"
 				if state_duration > TIME_TO_EXIT:
-					snd_play_mp_riat(SND_DRUM)
+					snd_play_mp(SND_DRUM)
 					# ~ self.master.destroy()
 					self.on_close_master()
 
@@ -2218,11 +2219,11 @@ if __name__ == "__main__":
 	logi("Starting %r in %r", " ".join(sys.argv), os.getcwd())
 
 	if DONT_DELETE:
-		say_mp("Не буду удалять файлы из этого каталога", mpv_volume=110)
+		say_mp("Не буду удалять файлы из этого каталога", mpv_volume=100)
 	else:
 		say_mp(
 			"Просмотренные файлы будут удалены из этого каталога",
-			mpv_volume=110,
+			mpv_volume=100,
 		)
 
 	main()
