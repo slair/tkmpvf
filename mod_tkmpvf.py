@@ -325,7 +325,7 @@ except ModuleNotFoundError:
 		dp("! say(", *args, ")")
 
 	# ~ def snd_play_mp_riat(*args, **kwargs):  # noqa
-		# ~ dp("! snd_play_mp_riat(", *args, ")")
+	# ~ dp("! snd_play_mp_riat(", *args, ")")
 
 	# ~ def snd_play(*args, **kwargs):  # noqa
 	# ~ dp("! snd_play(", *args, ")")
