@@ -1515,7 +1515,8 @@ class Application(tk.Frame):
 		logd("e=%r", e)
 
 		if e.keysym == "Escape":
-			self.on_close_master()
+			# ~ self.on_close_master()
+			pass
 		elif e.keysym == "F12":
 			self.i_exit.set(not self.i_exit.get())
 			self.i_delseen.set(not self.i_delseen.get())
