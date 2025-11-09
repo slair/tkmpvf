@@ -335,7 +335,7 @@ except ModuleNotFoundError:
 BASELOGFORMAT = "%(message)s"
 BASEDTFORMAT = "%d.%m.%y %H:%M:%S"
 FLN = "[%(levelname)9s %(asctime)s] %(funcName)s %(filename)s:%(lineno)d "
-FLNC = "%(filename)s:%(lineno)d:%(levelname)9s %(asctime)s %(funcName)s "
+FLNC = "%(filename)s:%(lineno)d:%(levelname)9s %(asctime)s %(funcName)s\n"
 logger = logging.getLogger(MY_NAME)
 logger.setLevel(logging.DEBUG)
 logd = logger.debug
@@ -551,12 +551,13 @@ def get_duration(fp) -> tuple[Any, int]:
 
 
 logi("Starting ")
-logd(
+"""logd(
 	"add_brightness=%r, add_brightness_list=%r",
 	ADD_BRIGHTNESS,
 	add_brightness_list,
 )
 logd("DONT_DELETE=%r, DONT_DELETE_list=%r", DONT_DELETE, dont_delete_list)
+"""
 
 
 def my_tk_excepthook(*args):
@@ -1202,18 +1203,25 @@ class Application(tk.Frame):
 		if not self.ready:
 			return
 
+		if e.widget != self.master:
+			return
+
+		# ~ logd("+e=%r", e)
 		if not self.hover:
 			self.hover = True
-			# ~ logd("e=%r", e)
 			self.on_hover_change(self.hover)
 
 	def on_end_hover(self, e=None):
 		if not self.ready:
 			return
 
-		# ~ if self.hover:
-		# ~ self.hover = False
-		# ~ logd("e=%r", e)
+		if e.widget != self.master:
+			return
+
+		# ~ logd("-e=%r", e, )
+		if self.hover:
+			self.hover = False
+			self.on_hover_change(self.hover)
 
 	def geometry_to_config(self):
 		g = self.master.geometry()
@@ -1272,7 +1280,7 @@ class Application(tk.Frame):
 		self.lVideoTitle["text"] = title
 		logd("title=%r", title)
 		_cmd = (
-			f'osd -m 1 -p 1 -fi 200 -d 5000 -fo 5000 -n "tkmpvf" "{title}" &'
+			f'osd -m 1 -p 7 -fi 200 -d 5000 -fo 5000 -n "tkmpvf" "{title}" &'
 		)
 		logd("\n!_cmd=%r", _cmd)
 		os.system(_cmd)  # nosec
@@ -2202,7 +2210,21 @@ def main():
 	app.mainloop()
 
 
+def isRunningFromSciTE() -> bool:
+	p = psutil.Process(os.getppid())
+	with p.oneshot():
+		# ~ tp("p.name()=%r", p.name())
+		if p.name() == "SciTE":
+			return True
+	return False
+
+
 if __name__ == "__main__":
+	if isRunningFromSciTE():
+		ST = True
+	else:
+		ST = False
+
 	if already_running(TS_PORT):
 		loge("ALREADY_RUNNING TS_PORT=%r", TS_PORT)
 		EXIT(121, "cache")
