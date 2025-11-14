@@ -935,10 +935,10 @@ def EXIT(rc=0, _actions: str = ""):
 	save_config()
 	save_cache(DUR_CACHE_FP, dur_cache)
 	# note: wait for all threads to complete
-	threads = None
+	threads = threading.enumerate()
 	while not threads or len(threads) > 1:
 		threads = threading.enumerate()
-		# ~ logd("%r", " ".join(t.name for t in threads))
+		logd("%r", " ".join(t.name for t in threads))
 	logi("Exiting rc=%r\n\n\n\n\n\n\n\n", rc)
 	sys.exit(rc)
 
