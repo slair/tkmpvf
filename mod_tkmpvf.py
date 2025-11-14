@@ -561,7 +561,7 @@ logd("DONT_DELETE=%r, DONT_DELETE_list=%r", DONT_DELETE, dont_delete_list)
 
 
 def my_tk_excepthook(*args):
-	logc("\n! args=%r", args, exc_info=args)
+	logc("\n! args=%r", args, exc_info=args[1:])
 	# ~ logc("args= %r", args, exc_info=args)
 
 	pid_fp = os.path.join(TMPDIR, os.path.basename(__file__) + ".pid")
@@ -1342,13 +1342,15 @@ class Application(tk.Frame):
 		_start = tpc()
 		# ~ logd("self.my_state=%r, duration=%r"
 		# ~ , self.my_state, tpc()-self.my_state_start)
+		if hasattr(self, "splash"):
+			logd("self.splash.working=%r", self.splash.working)
 
 		now = datetime.now()
 		try:
 			self.lClock["text"] = now.strftime("%H:%M:%S")
 		except Exception as e:  # noqa
 			# ~ if _DEBUG:
-			# ~ loge("error", exc_info=e)
+			loge("error", exc_info=e)
 			self.splash.working = None
 			logd("self.splash.working=%r", self.splash.working)
 			htk.random_disappearance(self.splash.master)
