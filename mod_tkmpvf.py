@@ -1740,7 +1740,7 @@ class Application(tk.Frame):
 		save_cache(DUR_CACHE_FP, dur_cache)
 
 		logd(
-			"! announce=%r, self.splash.working=%r",
+			"\n! announce=%r, self.splash.working=%r",
 			announce,
 			self.splash.working,
 		)
@@ -1748,9 +1748,10 @@ class Application(tk.Frame):
 			logd("closing %r", self.splash)
 			self.splash.close()
 
-		logd("> fn_count=%r", fn_count)
+			logd("\n> fn_count=%r", fn_count)
 
-		self.say_count_videos(fn_count)
+			self.say_count_videos(fn_count)
+			
 		# ~ if fn_count == 0:
 		# ~ # todo: сказать здесь файлов нет
 		# ~ logd("Exiting fn_count=%r", fn_count)
