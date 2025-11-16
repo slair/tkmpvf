@@ -4,24 +4,27 @@ from __future__ import annotations
 from typing import Any, Callable, Dict, List, Optional, Union  # noqa:F401
 
 import os
-import sys
-import random
-import glob
-import tempfile
-import time
 import re
+import sys
+import glob
+import time
+import random
 import socket
-import logging
-import subprocess  # nosec
-import configparser
 import shutil
 import gettext
-import tkinter as tk
-from tkinter import ttk, messagebox
-from datetime import datetime, timedelta
+import logging
+import tempfile
 import threading
 
+# ~ import traceback
+import subprocess  # nosec
+import configparser
+import tkinter as tk
+
 import psutil
+
+from tkinter import ttk, messagebox
+from datetime import datetime, timedelta
 
 # ~ from tinytag import TinyTag
 from subprocess import check_output  # nosec
@@ -201,6 +204,7 @@ PLAYER_BINARY = shutil.which(PLAYER)
 PID_FP = os.path.join(TMPDIR, os.path.basename(__file__) + ".pid")
 EXIT_THREAD = False
 
+
 def get_TPL_PLAY_CMD():
 	if WIN32:
 		res = " ".join(
@@ -308,9 +312,9 @@ MY_NAME = os.path.splitext(os.path.basename(MY_FILE_NAME))[0]
 try:
 	import saymod
 	from saymod import (
-		say_mp_riat,
-		say,
-		say_mp,
+		# ~ say_mp_riat,
+		# ~ say,
+		# ~ say_mp,
 		snd_play_mp,
 		# ~ snd_play_mp_riat,
 		saymod_setup_log,
@@ -579,21 +583,39 @@ def del_pid_file():
 
 def my_excepthook(excType, excValue, tb):
 	# ~ for arg in args:
-		# ~ logd("type(arg)=%r, arg=%r", type(arg), arg)
+	# ~ logd("type(arg)=%r, arg=%r", type(arg), arg)
 
 	if excType.__name__ == "KeyboardInterrupt":
 		print("Ctrl+C pressed")
 	else:
 		logc("Logging an uncaught exception", exc_info=(excType, excValue, tb))
 		# ~ say("^упс, мы уп^али!", narrator=random.choice(NARRATORS))  # nosec
-		
+
 	del_pid_file()
 	EXIT()
 
-def TKINTERERROR(tkinterLibrary, errorClass, finalErrorMessage, tracebackObject):
-	'''Prints stack trace of Tkinter error and enters Python debugger.'''
-	print('\n' + str(errorClass) + ':\n' + traceback.format_exc() + '\n' + str(finalErrorMessage) + '\n')
-	import pdb; pdb.post_mortem(tracebackObject)
+
+def TKINTERERROR(
+	_tkinterLibrary, errorClass, finalErrorMessage, _tracebackObject
+):
+	# ~ print(
+	# ~ "\n"
+	# ~ + str(errorClass)
+	# ~ + ":\n"
+	# ~ + traceback.format_exc()
+	# ~ + "\n"
+	# ~ + str(finalErrorMessage)
+	# ~ + "\n"
+	# ~ )
+	# ~ import pdb; pdb.post_mortem(tracebackObject)
+	logc(
+		"Logging an uncaught Tk exception in %r",
+		_tkinterLibrary,
+		exc_info=(errorClass, finalErrorMessage, _tracebackObject),
+	)
+	del_pid_file()
+	EXIT()
+
 
 sys.excepthook = my_excepthook
 # ~ tk.Tk.report_callback_exception = my_tk_excepthook
@@ -948,6 +970,14 @@ class Splash(tk.Frame):
 			htk.random_disappearance(self.master)
 			self.master.destroy()
 
+	def close(self):
+		if not getattr(self, "destroyed", False):
+			self.destroyed = True
+			logd("! destroying splash=%r", self)
+			self.master.destroy()
+		else:
+			logd("! splash=%r already destroyed", self)
+
 
 def EXIT(rc=0, _actions: str = ""):
 	# done: Сохранение настроек
@@ -956,7 +986,7 @@ def EXIT(rc=0, _actions: str = ""):
 
 	# note: wait for all threads to complete
 	THREAD_KILL_SEC = 2
-	EXIT_THREAD = True
+	# ~ EXIT_THREAD = True
 	saymod.TS_ACTIVE = False
 	st = tpc()
 	threads = threading.enumerate()
@@ -1129,7 +1159,7 @@ class Application(tk.Frame):
 
 		geometry = config["global"].get("normal_geometry", None)
 		if geometry is not None:
-			tp("geometry=%r", geometry)
+			# ~ tp("geometry=%r", geometry)
 			if "-" in geometry:
 				geometry = "960x1025+2239+0"
 			self.to_ = htk.geometry2list(geometry)
@@ -1148,13 +1178,12 @@ class Application(tk.Frame):
 		self.hidden_pos = list(self.normal_pos[:])
 		self.hidden_pos[0] += self.normal_pos[2] - 16
 		self.hidden_pos[1] += self.normal_pos[3] - 16
-		logd(
-			"\n< self.normal_pos=%r, self.hidden_pos=%r, self.wid=0x%0x",
-			self.normal_pos,
-			self.hidden_pos,
-			self.wid,
-		)
-		# ~ self.on_hover_change(True)
+		# ~ logd(
+			# ~ "< self.normal_pos=%r, self.hidden_pos=%r, self.wid=0x%0x",
+			# ~ self.normal_pos,
+			# ~ self.hidden_pos,
+			# ~ self.wid,
+		# ~ )
 		htk.anim_window(
 			self.master,
 			(*htk.geometry2tuple(self.master.geometry()), MIN_ALPHA),
@@ -1287,6 +1316,7 @@ class Application(tk.Frame):
 		self.geometry_to_config()
 		self.ask_for_delete()
 		htk.random_disappearance(self.master)
+		self.splash.close()
 		self.master.destroy()
 
 	def refresh(self):
@@ -1386,7 +1416,7 @@ class Application(tk.Frame):
 			self.splash.working = None
 			logd("self.splash.working=%r", self.splash.working)
 			htk.random_disappearance(self.splash.master)
-			self.splash.master.destroy()
+			self.splash.close()
 			self.after(REPINT_MSEC, self.on_every_second)
 			return
 			# ~ self.master.deiconify()
@@ -1493,10 +1523,11 @@ class Application(tk.Frame):
 					self.sort_videos(self.first_run)
 					if self.first_run:
 						self.first_run = None
-						self.splash.working = None
 						logd("self.splash.working=%r", self.splash.working)
-						htk.random_disappearance(self.splash.master)
-						self.splash.master.destroy()
+						self.splash.working = None
+						if not getattr(self.splash, "destroyed", False):
+							htk.random_disappearance(self.splash.master)
+							self.splash.close()
 						self.master.deiconify()
 						# ~ logd("self.splash.working=%r", self.splash.working)
 						# ~ logd("\n! start appearance")
@@ -1517,7 +1548,7 @@ class Application(tk.Frame):
 		elif self.my_state == STOPPED:
 			if not self.need_to_exit:
 				if not getattr(self, "osd_launched", False):
-					os.system("report-videos &")  # nosec
+					os.system("report-videos >/dev/null 2>&1 &")  # nosec
 					self.osd_launched = True
 
 				snd_play_mp(SND_CLICK)
@@ -1559,6 +1590,7 @@ class Application(tk.Frame):
 		logd("e=%r", e)
 
 		if e.keysym == "Escape":
+			logd("! Нажали Escape. Выход.")
 			self.on_close_master()
 		elif e.keysym == "F12":
 			self.i_exit.set(not self.i_exit.get())
@@ -1586,6 +1618,19 @@ class Application(tk.Frame):
 			else:
 				logd("e=%r", e)
 
+	def say_count_videos(self, count_videos):
+		narrator = random.choice(narrators)  # nosec
+		if count_videos > 0:
+			suffix = random.choice(ann_suffixes)  # nosec
+			numsuf = num2text(count_videos, (suffix, "m"))  # .split()
+			say_with_queue(numsuf, narrator=narrator)
+		else:
+			say_with_queue("А здесь нет вид^осов", narrator=narrator)
+			# ~ say_mp_riat(
+			# ~ "А здесь нет вид^осов",
+			# ~ narrator=random.choice(narrators),  # nosec
+			# ~ )
+
 	def get_videos(self, announce=None):
 		folder = self.video_folder
 		# ~ logd("os.getcwd()= %r", os.getcwd())
@@ -1599,22 +1644,15 @@ class Application(tk.Frame):
 		# ~ logd("len(_)=%r", len(_))
 
 		if announce:
-			count_videos = len(_)
-			if count_videos > 0:
-				self.splash = Splash(tk.Tk())
-				suffix = random.choice(ann_suffixes)  # nosec
-				numsuf = num2text(count_videos, (suffix, "m"))  # .split()
-				narrator = random.choice(narrators)  # nosec
-				self.splash.l_fn["text"] = ""
-				self.splash.l_progress["text"] = ""
-				self.update_splash()
-				say_with_queue(numsuf, narrator=narrator)
-			else:
-				say_mp_riat(
-					"А здесь нет вид^осов",
-					narrator=random.choice(narrators),  # nosec
-				)
-				# ~ self.bring_to_front()
+			# ~ count_videos = len(_)
+			# ~ self.say_count_videos(count_videos)
+			# ~ self.bring_to_front()
+
+			# fp: создаём Splash()
+			self.splash = Splash(tk.Tk())
+			self.splash.l_fn["text"] = ""
+			self.splash.l_progress["text"] = ""
+			self.update_splash()
 
 		# ~ dp("> checking for deleted videos")
 		# ~ logd("self.videos=%r", self.videos)
@@ -1635,14 +1673,15 @@ class Application(tk.Frame):
 			if fn in self.prop_skipped:
 				continue
 
-			# считаем без self.prop_skipped, градусник не доходит до 100%
-			fn_count += 1
-
 			if not any(e[0] == fn for e in self.videos):
 				# ~ dp("! adding", fn)
 
 				if not ope(fn):
+					logd("- not exists fn=%r", fn)
 					continue
+
+				# считаем без self.prop_skipped, градусник не доходит до 100%
+				fn_count += 1
 
 				fsize = os.stat(fn).st_size
 				if fsize == 0:
@@ -1673,7 +1712,7 @@ class Application(tk.Frame):
 					_fsize += fsize
 
 					if announce and self.splash.working:
-						# ~ logd("fn=%r", fn)
+						logd("fn=%r", fn)
 						if fn[0] == ".":
 							self.splash.l_fn["text"] = fn[2:]
 						perc = fn_count / fn_total * 100.0
@@ -1699,6 +1738,24 @@ class Application(tk.Frame):
 						EXIT(16)
 
 		save_cache(DUR_CACHE_FP, dur_cache)
+
+		logd(
+			"! announce=%r, self.splash.working=%r",
+			announce,
+			self.splash.working,
+		)
+		if announce and self.splash.working:
+			logd("closing %r", self.splash)
+			self.splash.close()
+
+		logd("> fn_count=%r", fn_count)
+
+		self.say_count_videos(fn_count)
+		# ~ if fn_count == 0:
+		# ~ # todo: сказать здесь файлов нет
+		# ~ logd("Exiting fn_count=%r", fn_count)
+		# ~ else:
+		# ~ # todo: сказать здесь столько-то файлов нет
 
 	def clear_lb_videos(self):
 		self.lbVideosDurations.delete(0, tk.END)
@@ -1815,7 +1872,7 @@ class Application(tk.Frame):
 			try:
 				self.splash.update()
 			except tk.TclError as e:  # noqa: F841
-				# ~ logd("Не успели :(", exc_info=e)
+				logd("tk.TclError", exc_info=e)
 				# ~ logd("Не успели :(")
 				pass
 
@@ -2282,9 +2339,11 @@ if __name__ == "__main__":
 	logi("Starting %r in %r", " ".join(sys.argv), os.getcwd())
 
 	if DONT_DELETE:
-		say_mp("Не буду удалять файлы из этого каталога", mpv_volume=100)
+		say_with_queue(
+			"Не буду удалять файлы из этого каталога", mpv_volume=100
+		)
 	else:
-		say_mp(
+		say_with_queue(
 			"Просмотренные файлы будут удалены из этого каталога",
 			mpv_volume=100,
 		)
