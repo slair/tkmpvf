@@ -619,7 +619,7 @@ def TKINTERERROR(
 
 sys.excepthook = my_excepthook
 # ~ tk.Tk.report_callback_exception = my_tk_excepthook
-tk.Tk.report_callback_exception = TKINTERERROR
+tk.Tk.report_callback_exception = TKINTERERROR  # type: ignore[assignment]
 
 
 def load_config():
@@ -1072,6 +1072,34 @@ def on_start_video(fp):
 	)
 
 
+ACT_WINDOW = None
+
+
+def on_video_started(pid: int):
+	global FASTER_SPEED, ADD_BRIGHTNESS, ACT_WINDOW
+	FASTER_SPEED = False
+	ADD_BRIGHTNESS = False
+	if ACT_WINDOW:
+		logd("\n>>> активируем ACT_WINDOW=%r", ACT_WINDOW)
+		time.sleep(0.1)
+		subprocess.run(["xdotool", "windowactivate", "--sync", ACT_WINDOW])  # nosec
+		ACT_WINDOW = None
+	else:
+		logd("\n>>> нечего активировать ACT_WINDOW=%r", ACT_WINDOW)
+
+
+def get_active_window_xdotool():
+	"""Получить ID активного окна через xdotool"""
+	try:
+		result = subprocess.run(  # nosec
+			["xdotool", "getactivewindow"], capture_output=True, text=True
+		)
+		return result.stdout.strip()
+	except Exception as e:
+		loge("Получить ID активного окна через xdotool", exc_info=e)
+		return None
+
+
 class Application(tk.Frame):
 	my_state = None
 	player_pid = None
@@ -1179,10 +1207,10 @@ class Application(tk.Frame):
 		self.hidden_pos[0] += self.normal_pos[2] - 16
 		self.hidden_pos[1] += self.normal_pos[3] - 16
 		# ~ logd(
-			# ~ "< self.normal_pos=%r, self.hidden_pos=%r, self.wid=0x%0x",
-			# ~ self.normal_pos,
-			# ~ self.hidden_pos,
-			# ~ self.wid,
+		# ~ "< self.normal_pos=%r, self.hidden_pos=%r, self.wid=0x%0x",
+		# ~ self.normal_pos,
+		# ~ self.hidden_pos,
+		# ~ self.wid,
 		# ~ )
 		htk.anim_window(
 			self.master,
@@ -1293,7 +1321,7 @@ class Application(tk.Frame):
 		seen_files = glob.glob("*.seen")
 		if seen_files:
 			if DONT_DELETE:
-				say_mp_riat("Не буду удалять файлы из этого каталога")
+				say_with_queue("Не буду удалять файлы из этого каталога")
 				return
 
 			if int(self.i_delseen.get()) == 1 or messagebox.askyesnocancel(
@@ -1325,7 +1353,6 @@ class Application(tk.Frame):
 		self.update_idletasks()
 
 	def start_video(self):
-		global FASTER_SPEED, ADD_BRIGHTNESS
 		self.fp_video = None
 		while not self.fp_video and self.videos:
 			self.fp_video, title, fsize, duration = self.videos.pop(0)
@@ -1369,8 +1396,8 @@ class Application(tk.Frame):
 		logd("_cmd=%r", _cmd)
 		p = do_command_bg(_cmd)
 		self.player_pid = p.pid
-		FASTER_SPEED = False
-		ADD_BRIGHTNESS = False
+
+		on_video_started(self.player_pid)
 
 	def bring_to_front(self):
 		if self.i_bring_to_front.get() == 1:
@@ -1395,6 +1422,7 @@ class Application(tk.Frame):
 			label["font"] = (label_font_name, label_font_size)
 
 	def on_every_second(self):
+		global ACT_WINDOW
 		# ~ self.update()
 		if not self.ready:
 			self.after(REPINT_MSEC, self.on_every_second)
@@ -1452,6 +1480,7 @@ class Application(tk.Frame):
 				self.my_state_start = tpc()
 				self._points_added = 0
 				# ~ if not NO_HIDE_WINDOW:
+				ACT_WINDOW = get_active_window_xdotool()
 				self.on_hover_change(True)
 				# ~ self.bring_to_front()
 
@@ -1751,7 +1780,7 @@ class Application(tk.Frame):
 			logd("\n> fn_count=%r", fn_count)
 
 			self.say_count_videos(fn_count)
-			
+
 		# ~ if fn_count == 0:
 		# ~ # todo: сказать здесь файлов нет
 		# ~ logd("Exiting fn_count=%r", fn_count)
