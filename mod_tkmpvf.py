@@ -1080,12 +1080,12 @@ def on_video_started(pid: int):
 	FASTER_SPEED = False
 	ADD_BRIGHTNESS = False
 	if ACT_WINDOW:
-		logd("\n>>> активируем ACT_WINDOW=%r", ACT_WINDOW)
-		time.sleep(0.1)
+		logd("\n>>>>> активируем ACT_WINDOW=%r", ACT_WINDOW)
+		time.sleep(1)
 		subprocess.run(["xdotool", "windowactivate", "--sync", ACT_WINDOW])  # nosec
 		ACT_WINDOW = None
 	else:
-		logd("\n>>> нечего активировать ACT_WINDOW=%r", ACT_WINDOW)
+		logd("\n>>>>> нечего активировать ACT_WINDOW=%r", ACT_WINDOW)
 
 
 def get_active_window_xdotool():
