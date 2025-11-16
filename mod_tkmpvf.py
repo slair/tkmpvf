@@ -198,6 +198,8 @@ if getflag(faster_speed_flag):
 TPL_PLAY_CMD = None
 PLAYER_BINARY = shutil.which(PLAYER)
 
+PID_FP = os.path.join(TMPDIR, os.path.basename(__file__) + ".pid")
+EXIT_THREAD = False
 
 def get_TPL_PLAY_CMD():
 	if WIN32:
@@ -560,25 +562,42 @@ logd("DONT_DELETE=%r, DONT_DELETE_list=%r", DONT_DELETE, dont_delete_list)
 """
 
 
-def my_tk_excepthook(*args):
-	logc("\n! args=%r", args, exc_info=args[1:])
-	# ~ logc("args= %r", args, exc_info=args)
+def create_pid_file():
+	pass
 
-	pid_fp = os.path.join(TMPDIR, os.path.basename(__file__) + ".pid")
-	if os.path.exists(pid_fp):
+
+def del_pid_file():
+	if os.path.exists(PID_FP):
 		if pid_fd:
 			pid_fd.close()
 		try:
-			os.unlink(pid_fp)
-			logd("Deleted %r", pid_fp)
+			os.unlink(PID_FP)
+			logd("Deleted %r", PID_FP)
 		except PermissionError as e:
-			logw("Deleting %r failed. %r", pid_fp, e)
+			logw("Deleting %r failed. %r", PID_FP, e)
 
+
+def my_excepthook(excType, excValue, tb):
+	# ~ for arg in args:
+		# ~ logd("type(arg)=%r, arg=%r", type(arg), arg)
+
+	if excType.__name__ == "KeyboardInterrupt":
+		print("Ctrl+C pressed")
+	else:
+		logc("Logging an uncaught exception", exc_info=(excType, excValue, tb))
+		# ~ say("^упс, мы уп^али!", narrator=random.choice(NARRATORS))  # nosec
+		
+	del_pid_file()
 	EXIT()
 
+def TKINTERERROR(tkinterLibrary, errorClass, finalErrorMessage, tracebackObject):
+	'''Prints stack trace of Tkinter error and enters Python debugger.'''
+	print('\n' + str(errorClass) + ':\n' + traceback.format_exc() + '\n' + str(finalErrorMessage) + '\n')
+	import pdb; pdb.post_mortem(tracebackObject)
 
-sys.excepthook = my_tk_excepthook
-tk.Tk.report_callback_exception = my_tk_excepthook
+sys.excepthook = my_excepthook
+# ~ tk.Tk.report_callback_exception = my_tk_excepthook
+tk.Tk.report_callback_exception = TKINTERERROR
 
 
 def load_config():
@@ -937,6 +956,8 @@ def EXIT(rc=0, _actions: str = ""):
 
 	# note: wait for all threads to complete
 	THREAD_KILL_SEC = 2
+	EXIT_THREAD = True
+	saymod.TS_ACTIVE = False
 	st = tpc()
 	threads = threading.enumerate()
 	while not threads or len(threads) > 1:
@@ -946,9 +967,11 @@ def EXIT(rc=0, _actions: str = ""):
 			break
 
 		time.sleep(0.1)
-		
+
 	logi("Exiting rc=%r\n\n\n", rc)
 	sys.exit(rc)
+	# ~ mypid = os.getpid()
+	# ~ logi("mypid=%r", mypid)
 
 
 def get_random_color():
@@ -1350,8 +1373,9 @@ class Application(tk.Frame):
 		_start = tpc()
 		# ~ logd("self.my_state=%r, duration=%r"
 		# ~ , self.my_state, tpc()-self.my_state_start)
-		if hasattr(self, "splash"):
-			logd("self.splash.working=%r", self.splash.working)
+
+		# ~ if hasattr(self, "splash"):
+		# ~ logd("self.splash.working=%r", self.splash.working)
 
 		now = datetime.now()
 		try:
@@ -2239,6 +2263,8 @@ if __name__ == "__main__":
 		loge("ALREADY_RUNNING TS_PORT=%r", TS_PORT)
 		EXIT(121, "cache")
 
+	create_pid_file()
+
 	if ope(DUR_CACHE_FP):
 		try:
 			dur_cache = load_cache(DUR_CACHE_FP)
@@ -2248,7 +2274,10 @@ if __name__ == "__main__":
 	if len(sys.argv) > 1:
 		folder = sys.argv[1]
 		if folder[0] != "-":
-			os.chdir(folder)
+			if os.path.isdir(folder):
+				os.chdir(folder)
+			else:
+				logw("Это не каталог - %r", folder)
 
 	logi("Starting %r in %r", " ".join(sys.argv), os.getcwd())
 
@@ -2262,4 +2291,5 @@ if __name__ == "__main__":
 
 	main()
 	saymod.TS_ACTIVE = False
+	del_pid_file()
 	EXIT()
