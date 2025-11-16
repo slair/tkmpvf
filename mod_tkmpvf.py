@@ -934,12 +934,20 @@ def EXIT(rc=0, _actions: str = ""):
 	# done: Сохранение настроек
 	save_config()
 	save_cache(DUR_CACHE_FP, dur_cache)
+
 	# note: wait for all threads to complete
+	THREAD_KILL_SEC = 2
+	st = tpc()
 	threads = threading.enumerate()
 	while not threads or len(threads) > 1:
 		threads = threading.enumerate()
 		logd("%r", " ".join(t.name for t in threads))
-	logi("Exiting rc=%r\n\n\n\n\n\n\n\n", rc)
+		if tpc() - st > THREAD_KILL_SEC:
+			break
+
+		time.sleep(0.1)
+		
+	logi("Exiting rc=%r\n\n\n", rc)
 	sys.exit(rc)
 
 
