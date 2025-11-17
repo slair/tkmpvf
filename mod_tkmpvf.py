@@ -60,6 +60,9 @@ opj = os.path.join
 tpc = time.perf_counter
 _ = gettext.gettext
 
+# taskbar height + window title height + window lower line
+TBWT = 32 + 18 + 5
+
 TS_PORT = 12987
 WIN32 = sys.platform == "win32"
 LINUX = sys.platform == "linux"
@@ -1141,7 +1144,14 @@ class Application(tk.Frame):
 		self._base_title = self.tpl_title
 		# ~ self.master.title(self._base_title)
 		self.pack(side="top", fill="both", expand=True)
+
 		self.monitors = enum_display_monitors(taskbar=False)
+		self.mon1width = self.monitors[0][2]
+		self.mon1height = self.monitors[0][3]
+		self.mon2width = self.monitors[1][2]
+		self.mon2height = self.monitors[1][3]
+		self.p4side = self.mon1width + self.mon2width // 2
+
 		self.display_names = [
 			"%sx%s" % (item[2], item[3]) for item in self.monitors
 		]
@@ -1189,7 +1199,9 @@ class Application(tk.Frame):
 		if geometry is not None:
 			# ~ tp("geometry=%r", geometry)
 			if "-" in geometry:
-				geometry = "960x1025+2239+0"
+				# todo: убрать эту константу 1
+
+				geometry = f"{self.mon2width // 2}x{self.mon2height - TBWT}+{self.p4side}+0"
 			self.to_ = htk.geometry2list(geometry)
 			self.to_.append(1.1)  # alpha
 
@@ -1199,7 +1211,8 @@ class Application(tk.Frame):
 		normal_geometry = config["global"].get("normal_geometry", None)
 		normal_geometry = None
 		if normal_geometry is None:
-			normal_geometry = "960x1025+2240+0"
+			# todo: убрать эту константу 2
+			normal_geometry = f"{self.mon2width // 2}x{self.mon2height - TBWT}+{self.p4side}+0"
 			change_config("global", "normal_geometry", normal_geometry)
 			save_config()
 		self.normal_pos = htk.geometry2tuple(normal_geometry)
