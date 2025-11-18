@@ -1146,6 +1146,7 @@ class Application(tk.Frame):
 		self.pack(side="top", fill="both", expand=True)
 
 		self.monitors = enum_display_monitors(taskbar=False)
+		logd("self.monitors=%r", self.monitors)
 		self.mon1width = self.monitors[0][2]
 		self.mon1height = self.monitors[0][3]
 		self.mon2width = self.monitors[1][2]
