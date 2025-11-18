@@ -1037,14 +1037,14 @@ def fix_filename(fn: str) -> str:
 def wait_for_said(_cb=None):
 	q = os.listdir(saymod.TS_QUEUE_FOLDER)
 	while q:
-		# ~ logd("Waiting os.listdir(saymod.TS_QUEUE_FOLDER)=%r", q)
+		logd("\n>>>>> Waiting os.listdir(saymod.TS_QUEUE_FOLDER)=%r", q)
 		if _cb:
 			_cb()
 		time.sleep(0.1)
 		q = os.listdir(saymod.TS_QUEUE_FOLDER)
 
 	while saymod.TS_BUSY:
-		# ~ logd("Waiting saymod.TS_BUSY=%r", saymod.TS_BUSY)
+		logd("\n>>>>> Waiting saymod.TS_BUSY=%r", saymod.TS_BUSY)
 		if _cb:
 			_cb()
 		time.sleep(0.1)
