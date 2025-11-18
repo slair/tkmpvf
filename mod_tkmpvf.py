@@ -69,6 +69,9 @@ LINUX = sys.platform == "linux"
 TMPDIR = tempfile.gettempdir()
 MIN_ALPHA = 0.25
 MAX_ALPHA = 0.75
+DEFAULT_FONT_SIZE = 10
+DEFAULT_FONT_FAMILY = "Ubuntu Condensed"
+DEFAULT_FONT = (DEFAULT_FONT_FAMILY, DEFAULT_FONT_SIZE)
 
 start_tpc = tpc()
 
@@ -940,7 +943,12 @@ class Splash(tk.Frame):
 		self.master.bind("<KeyPress>", self.on_keypress)
 		self.bind("<KeyPress>", self.on_keypress)
 
-		self.l_fn = tk.Label(self.master, text="<filename>", height=3)
+		self.l_fn = tk.Label(
+			self.master,
+			text="<filename>",
+			height=3,
+			font=DEFAULT_FONT,
+		)
 		self.l_fn.bind(
 			"<Configure>",
 			lambda e: self.l_fn.config(wraplength=self.l_fn.winfo_width()),
@@ -1037,17 +1045,21 @@ def fix_filename(fn: str) -> str:
 def wait_for_said(_cb=None):
 	q = os.listdir(saymod.TS_QUEUE_FOLDER)
 	while q:
-		logd("\n>>>>> Waiting os.listdir(saymod.TS_QUEUE_FOLDER)=%r", q)
+		# ~ logd("\n>>>>> Waiting os.listdir(saymod.TS_QUEUE_FOLDER)=%r", q)
 		if _cb:
 			_cb()
 		time.sleep(0.1)
 		q = os.listdir(saymod.TS_QUEUE_FOLDER)
+		if not saymod.TS_ACTIVE:
+			break
 
 	while saymod.TS_BUSY:
 		logd("\n>>>>> Waiting saymod.TS_BUSY=%r", saymod.TS_BUSY)
 		if _cb:
 			_cb()
 		time.sleep(0.1)
+		if not saymod.TS_ACTIVE:
+			break
 
 
 def on_start_video(fp):
@@ -1633,7 +1645,7 @@ class Application(tk.Frame):
 		logd("e=%r", e)
 
 		if e.keysym == "Escape":
-			logd("! Нажали Escape. Выход.")
+			logd("\n! Нажали Escape. Выход.")
 			self.on_close_master()
 		elif e.keysym == "F12":
 			self.i_exit.set(not self.i_exit.get())
@@ -2006,6 +2018,7 @@ class Application(tk.Frame):
 			text=" Пауза ",
 			command=self.pause_video,
 			highlightthickness=0,
+			font=DEFAULT_FONT,
 		)
 		self.b_pause.pack(side="left", fill="y", expand=False, pady=4, padx=4)
 
@@ -2014,6 +2027,7 @@ class Application(tk.Frame):
 			text=" Пропустить ",
 			command=self.skip_video,
 			highlightthickness=0,
+			font=DEFAULT_FONT,
 		)
 		self.b_skip.pack(side="left", fill="y", expand=False, pady=4, padx=4)
 
@@ -2031,6 +2045,7 @@ class Application(tk.Frame):
 			relief="raised",
 			highlightthickness=0,
 			command=self.cb_fullscreen_changed,
+			font=DEFAULT_FONT,
 		)
 		self.cb_fullscreen.pack(
 			side="left", fill="y", padx=4, pady=4, ipady=4, ipadx=4
@@ -2048,6 +2063,7 @@ class Application(tk.Frame):
 			state="readonly",
 			textvariable=self.sv_player_display,
 			values=self.display_names,
+			font=DEFAULT_FONT,
 		)
 		self.cb_display.pack(side="left", fill="y", pady=4, padx=4)
 		self.cb_display.bind("<<ComboboxSelected>>", self.display_selected)
@@ -2066,6 +2082,7 @@ class Application(tk.Frame):
 			bd=1,
 			relief="raised",
 			command=self.cb_bring_to_front_changed,
+			font=DEFAULT_FONT,
 		)
 		self.cb_bring_to_front.pack(
 			side="left", fill="y", pady=4, padx=4, ipady=4, ipadx=4
@@ -2085,6 +2102,7 @@ class Application(tk.Frame):
 			bd=1,
 			relief="raised",
 			command=self.cb_exit_changed,
+			font=DEFAULT_FONT,
 		)
 		self.cb_exit.pack(
 			side="left", fill="y", pady=4, padx=4, ipady=4, ipadx=4
@@ -2104,6 +2122,7 @@ class Application(tk.Frame):
 			bd=1,
 			relief="raised",
 			command=self.cb_delseen_changed,
+			font=DEFAULT_FONT,
 		)
 		self.cb_delseen.pack(
 			side="left", fill="y", pady=4, padx=4, ipady=4, ipadx=4
@@ -2115,6 +2134,7 @@ class Application(tk.Frame):
 			text=self.tpl_clear_skipped % len(self.prop_skipped),
 			highlightthickness=0,
 			command=self.clear_skipped,
+			font=DEFAULT_FONT,
 		)
 		self.b_clear_skipped.pack(
 			side="right", fill="y", expand=False, pady=4, padx=4
