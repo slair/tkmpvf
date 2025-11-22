@@ -1094,11 +1094,42 @@ def on_video_started(pid: int):
 		logd("\n>>>>> нечего активировать ACT_WINDOW=%r", ACT_WINDOW)
 
 
+def get_wm_class_name(wid):
+	wmclass, wmname = None, None
+	try:
+		result = subprocess.run(  # nosec
+			["/usr/bin/xprop", "-id", wid], capture_output=True, text=True
+		)
+		for line in result.stdout.split("\n"):
+			line = line.strip()
+			if not line:
+				continue
+
+			if line.startswith("\x1b["):
+				continue
+			elif line.startswith("WM_CLASS(STRING) ="):
+				_hernya, wmclass = line.split("=", maxsplit=1)
+				wmclass = (
+					wmclass.replace(", ", ".").strip('" ').replace('"."', ".")
+				)
+			elif line.startswith("WM_NAME(STRING) ="):
+				_hernya, wmname = line.split("=", maxsplit=1)
+				wmname = wmname.strip('" ')
+			# ~ else:
+			# ~ logd("line=%r", line)
+		return wmclass, wmname
+	except Exception as e:
+		loge("Получить имена окна через xprop e=%r", e, exc_info=e)
+		return wmclass, wmname
+
+
 def get_active_window_xdotool():
 	"""Получить ID активного окна через xdotool"""
 	try:
 		result = subprocess.run(  # nosec
-			["xdotool", "getactivewindow"], capture_output=True, text=True
+			["/usr/bin/xdotool", "getactivewindow"],
+			capture_output=True,
+			text=True,
 		)
 		return result.stdout.strip()
 	except Exception as e:
@@ -1497,7 +1528,23 @@ class Application(tk.Frame):
 				self.my_state_start = tpc()
 				self._points_added = 0
 				# ~ if not NO_HIDE_WINDOW:
+
 				ACT_WINDOW = get_active_window_xdotool()
+				WMCLASS, WMNAME = None, None
+				if ACT_WINDOW:
+					WMCLASS, WMNAME = get_wm_class_name(ACT_WINDOW)
+				if WMCLASS == "tk.Tk" and " - mod_tkmpvf" in WMNAME:
+					# fp: наше собственное окно, его активировать не будем
+					ACT_WINDOW = None
+				else:
+					logd(
+						"\n>>>>> сохранили ACT_WINDOW=%r, "
+						"WMCLASS=%r, WMNAME=%r",
+						ACT_WINDOW,
+						WMCLASS,
+						WMNAME,
+					)
+
 				self.on_hover_change(True)
 				# ~ self.bring_to_front()
 
