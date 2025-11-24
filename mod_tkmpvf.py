@@ -1416,7 +1416,7 @@ class Application(tk.Frame):
 		self.lVideoTitle["text"] = title
 		logd("title=%r", title)
 		_cmd = (
-			f'osd -m 1 -p 7 -fi 200 -d 5000 -fo 5000 -n "tkmpvf" "{title}" &'
+			f'osd -m 1 -p 7 -fi 200 -d 5000 -fo 8000 -n "tkmpvf" "{title}" &'
 		)
 		logd("\n!_cmd=%r", _cmd)
 		os.system(_cmd)  # nosec
