@@ -1159,6 +1159,7 @@ class Application(tk.Frame):
 	paused = False
 	hover = True
 	normal_pos = None
+	need_hide = False
 
 	KP_Enter_pressed = tpc()
 	not_announced = True
@@ -1205,6 +1206,7 @@ class Application(tk.Frame):
 
 		self.master.bind("<FocusIn>", self.on_focus_in)
 		self.master.bind("<FocusOut>", self.on_focus_out)
+		self.master.bind("<Motion>", self.on_mouse_move)
 
 		self.master.focus_set()
 		self.b_skip.focus_set()
@@ -1267,6 +1269,11 @@ class Application(tk.Frame):
 		)
 		self.ready = True
 
+	def on_mouse_move(self, e):
+		# ~ logd("--- e=%r", e)
+		# ~ self.mx, self.my = e.x, e.y
+		pass
+
 	def on_hover_change(self, _hover=None):
 		if not self.ready:
 			return
@@ -1316,24 +1323,41 @@ class Application(tk.Frame):
 			self.ready = True
 
 	def on_focus_in(self, e=None):
+		self.need_hide=False
+		self.update_idletasks()
+		logd("--- e.widget=%r", e.widget)
 		if not self.ready:
 			return
 
 		self.focus_out_tpc = None
 
 	def go_hide(self):
+		self.update_idletasks()
 		# ~ logd("self.focus_out_tpc=%r", self.focus_out_tpc)
+		
+		# ~ if self.need_hide:
+			# ~ return
+			
 		if self.focus_out_tpc:
+			logd("self.hover=%r", self.hover)
 			if self.hover:
 				self.hover = False
 				self.on_hover_change(self.hover)
 
 	def on_focus_out(self, e=None):
+		self.update_idletasks()
 		if not self.ready:
 			return
 
-		self.focus_out_tpc = tpc()
-		self.after(500, self.go_hide)
+		if e.widget == self.master:
+			logd("! ПРЯЧЕМСЯ! e.widget=%r", e.widget)
+			# ~ mx, my = e.x_root, e.y_root
+			# ~ wx, wy = e.widget.winfo_x(), e.widget.winfo_y()
+			# ~ logd("m(%r, %r) w(%r, %r)", mx, my, wx, wy)
+			self.need_hide=True
+			self.focus_out_tpc = tpc()
+			self.after(500, self.go_hide)
+			self.update_idletasks()
 
 	def on_start_hover(self, e=None):
 		if not self.ready:
@@ -1416,7 +1440,8 @@ class Application(tk.Frame):
 		self.lVideoTitle["text"] = title
 		logd("title=%r", title)
 		_cmd = (
-			f'osd -m 1 -p 7 -fi 200 -d 5000 -fo 8000 -n "tkmpvf" "{title}" &'
+			f'osd -m 1 -p 7 -fi 200 -d 5000 -fo 8000 -n "tkmpvf"'
+			f' "{title}" >/dev/null 2>&1 &'
 		)
 		logd("\n!_cmd=%r", _cmd)
 		os.system(_cmd)  # nosec
