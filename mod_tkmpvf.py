@@ -1323,7 +1323,7 @@ class Application(tk.Frame):
 			self.ready = True
 
 	def on_focus_in(self, e=None):
-		self.need_hide=False
+		self.need_hide = False
 		self.update_idletasks()
 		logd("--- e.widget=%r", e.widget)
 		if not self.ready:
@@ -1334,10 +1334,10 @@ class Application(tk.Frame):
 	def go_hide(self):
 		self.update_idletasks()
 		# ~ logd("self.focus_out_tpc=%r", self.focus_out_tpc)
-		
+
 		# ~ if self.need_hide:
-			# ~ return
-			
+		# ~ return
+
 		if self.focus_out_tpc:
 			logd("self.hover=%r", self.hover)
 			if self.hover:
@@ -1354,7 +1354,7 @@ class Application(tk.Frame):
 			# ~ mx, my = e.x_root, e.y_root
 			# ~ wx, wy = e.widget.winfo_x(), e.widget.winfo_y()
 			# ~ logd("m(%r, %r) w(%r, %r)", mx, my, wx, wy)
-			self.need_hide=True
+			self.need_hide = True
 			self.focus_out_tpc = tpc()
 			self.after(500, self.go_hide)
 			self.update_idletasks()
@@ -1669,7 +1669,7 @@ class Application(tk.Frame):
 					os.system("report-videos >/dev/null 2>&1 &")  # nosec
 					self.osd_launched = True
 
-				snd_play_queue(SND_CLICK)
+				snd_play_queue(SND_CLICK, mpv_volume=75)
 				state_duration = tpc() - self.my_state_start
 				self.lVideoTitle["text"] = "выход через %.1f" % (
 					TIME_TO_EXIT - state_duration
@@ -1677,7 +1677,7 @@ class Application(tk.Frame):
 
 				self.lStatus["text"] = "Нет video"
 				if state_duration > TIME_TO_EXIT:
-					snd_play_queue(SND_DRUM)
+					snd_play_queue(SND_DRUM, mpv_volume=75)
 					# ~ self.master.destroy()
 					self.on_close_master()
 
