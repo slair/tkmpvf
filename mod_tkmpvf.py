@@ -1079,16 +1079,27 @@ def on_start_video(fp):
 
 
 ACT_WINDOW = None
-
+CHANGE_FOCUS = False
 
 def on_video_started(pid: int):
 	global FASTER_SPEED, ADD_BRIGHTNESS, ACT_WINDOW
 	FASTER_SPEED = False
 	ADD_BRIGHTNESS = False
+	if not CHANGE_FOCUS:
+		logd("\n>>>>> смена фокуса отключена CHANGE_FOCUS=%r", CHANGE_FOCUS)
+		return
+
 	if ACT_WINDOW:
 		logd("\n>>>>> активируем ACT_WINDOW=%r", ACT_WINDOW)
 		time.sleep(1)
-		subprocess.run(["xdotool", "windowactivate", "--sync", ACT_WINDOW])  # nosec
+		subprocess.run(  # nosec
+			[
+				"xdotool",
+				"windowactivate",
+				"--sync",
+				ACT_WINDOW,
+			]
+		)
 		ACT_WINDOW = None
 	else:
 		logd("\n>>>>> нечего активировать ACT_WINDOW=%r", ACT_WINDOW)
@@ -2137,7 +2148,7 @@ class Application(tk.Frame):
 
 		self.cb_bring_to_front = tk.Checkbutton(
 			self.f_video,
-			text=_("Bring to front after playing"),
+			text=_("Всплывать после видоса"),
 			highlightthickness=0,
 			variable=self.i_bring_to_front,
 			onvalue=1,
@@ -2148,6 +2159,26 @@ class Application(tk.Frame):
 			font=DEFAULT_FONT,
 		)
 		self.cb_bring_to_front.pack(
+			side="left", fill="y", pady=4, padx=4, ipady=4, ipadx=4
+		)
+
+		self.i_change_focus = tk.IntVar(
+			value=int(config["global"].get("change_focus", "1"))
+		)
+
+		self.cb_change_focus = tk.Checkbutton(
+			self.f_video,
+			text=_("Менять фокус"),
+			highlightthickness=0,
+			variable=self.i_change_focus,
+			onvalue=1,
+			offvalue=0,
+			bd=1,
+			relief="raised",
+			command=self.cb_change_focus_changed,
+			font=DEFAULT_FONT,
+		)
+		self.cb_change_focus.pack(
 			side="left", fill="y", pady=4, padx=4, ipady=4, ipadx=4
 		)
 
@@ -2358,6 +2389,14 @@ class Application(tk.Frame):
 		change_config(
 			"global", "bring_to_front", str(self.i_bring_to_front.get())
 		)
+
+	def cb_change_focus_changed(self):
+		global CHANGE_FOCUS
+		change_config(
+			"global", "change_focus", str(self.i_change_focus.get())
+		)
+		CHANGE_FOCUS = bool(self.i_change_focus.get())
+		logd("CHANGE_FOCUS=%r", CHANGE_FOCUS)
 
 	def cb_exit_changed(self):
 		# ~ change_config("global", "exit_after_play"
