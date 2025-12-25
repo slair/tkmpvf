@@ -72,6 +72,7 @@ MAX_ALPHA = 0.75
 DEFAULT_FONT_SIZE = 10
 DEFAULT_FONT_FAMILY = "Ubuntu Condensed"
 DEFAULT_FONT = (DEFAULT_FONT_FAMILY, DEFAULT_FONT_SIZE)
+CHANGE_FOCUS = False
 
 start_tpc = tpc()
 
@@ -1079,7 +1080,7 @@ def on_start_video(fp):
 
 
 ACT_WINDOW = None
-CHANGE_FOCUS = False
+
 
 def on_video_started(pid: int):
 	global FASTER_SPEED, ADD_BRIGHTNESS, ACT_WINDOW
@@ -1721,6 +1722,8 @@ class Application(tk.Frame):
 		if e.keysym == "Escape":
 			logd("\n! Нажали Escape. Выход.")
 			self.on_close_master()
+		elif e.keysym == "F9":
+			self.i_change_focus.set(not self.i_change_focus.get())
 		elif e.keysym == "F12":
 			self.i_exit.set(not self.i_exit.get())
 			self.i_delseen.set(not self.i_delseen.get())
@@ -2165,6 +2168,7 @@ class Application(tk.Frame):
 		self.i_change_focus = tk.IntVar(
 			value=int(config["global"].get("change_focus", "1"))
 		)
+		self.i_change_focus.trace_add("write", self.on_i_change_focus_change)
 
 		self.cb_change_focus = tk.Checkbutton(
 			self.f_video,
@@ -2175,7 +2179,7 @@ class Application(tk.Frame):
 			offvalue=0,
 			bd=1,
 			relief="raised",
-			command=self.cb_change_focus_changed,
+			# ~ command=self.cb_change_focus_changed,
 			font=DEFAULT_FONT,
 		)
 		self.cb_change_focus.pack(
@@ -2345,6 +2349,12 @@ class Application(tk.Frame):
 		# ~ w.bind("<KeyPress>", self.on_keypress)
 		# ~ w.bind("<KeyRelease>", self.on_keyup)
 
+	def on_i_change_focus_change(self, var, index, mode):
+		logd("var=%r, index=%r, mode=%r", var, index, mode)
+		global CHANGE_FOCUS
+		CHANGE_FOCUS = bool(self.i_change_focus.get())
+		logd("\n>>>>> смена фокуса изменена CHANGE_FOCUS=%r", CHANGE_FOCUS)
+
 	def stop_player(self):
 		self.my_state = STOPPED
 		self.my_state_start = tpc()
@@ -2391,12 +2401,10 @@ class Application(tk.Frame):
 		)
 
 	def cb_change_focus_changed(self):
-		global CHANGE_FOCUS
-		change_config(
-			"global", "change_focus", str(self.i_change_focus.get())
-		)
-		CHANGE_FOCUS = bool(self.i_change_focus.get())
-		logd("CHANGE_FOCUS=%r", CHANGE_FOCUS)
+		# ~ global CHANGE_FOCUS
+		change_config("global", "change_focus", str(self.i_change_focus.get()))
+		# ~ CHANGE_FOCUS = bool(self.i_change_focus.get())
+		# ~ logd("CHANGE_FOCUS=%r", CHANGE_FOCUS)
 
 	def cb_exit_changed(self):
 		# ~ change_config("global", "exit_after_play"
