@@ -391,7 +391,7 @@ SND_FOLDER = opj(ENV_HOME, "share", "sounds")  # type:ignore[arg-type]
 SND_CLICK = opj(SND_FOLDER, "click-06.wav")
 SND_DRUM = opj(SND_FOLDER, "drum.wav")
 
-# note: кэш, чтобы не сканировать файлы каждый раз
+# fp: кэш, чтобы не сканировать файлы каждый раз
 dur_cache = dict()  # type:ignore[var-annotated]
 dur_cache_changed = False
 
@@ -987,7 +987,7 @@ def EXIT(rc=0, _actions: str = ""):
 	save_config()
 	save_cache(DUR_CACHE_FP, dur_cache)
 
-	# note: wait for all threads to complete
+	# fp: wait for all threads to complete
 	THREAD_KILL_SEC = 2
 	# ~ EXIT_THREAD = True
 	saymod.TS_ACTIVE = False
@@ -1147,6 +1147,36 @@ def get_active_window_xdotool():
 	except Exception as e:
 		loge("Получить ID активного окна через xdotool", exc_info=e)
 		return None
+
+
+def ask_centered(title, message, parent=None):
+	"""
+	Показать центрированный диалог askyesnocancel
+	"""
+	we_create_parent = False
+	if parent is None:
+		# Создаем скрытое окно, если родитель не указан
+		we_create_parent = True
+		parent = tk.Tk()
+		parent.withdraw()
+		parent.attributes("-alpha", 0.1)  # Полностью прозрачное
+
+		# Устанавливаем на весь экран
+		screen_width = parent.winfo_screenwidth()
+		screen_height = parent.winfo_screenheight()
+		parent.geometry(f"{screen_width}x{screen_height}+0+0")
+
+	# Обновляем геометрию
+	parent.update_idletasks()
+
+	# Показываем диалог
+	response = messagebox.askyesnocancel(title, message, parent=parent)
+
+	# Закрываем временное окно
+	if we_create_parent:
+		parent.destroy()
+
+	return response
 
 
 class Application(tk.Frame):
@@ -1408,7 +1438,7 @@ class Application(tk.Frame):
 				say_with_queue("Не буду удалять файлы из этого каталога")
 				return
 
-			if int(self.i_delseen.get()) == 1 or messagebox.askyesnocancel(
+			if int(self.i_delseen.get()) == 1 or ask_centered(
 				"Просмотренные файлы", "Удалить просмотренные файлы?"
 			):
 				cwd = os.getcwd()
@@ -1468,7 +1498,7 @@ class Application(tk.Frame):
 			self.exit_by_self = True  # сами назначили выход
 			self.i_delseen.set(True)
 
-		# note: ждёт без нарисованных интерфейсов, пока не произнесёт фразы
+		# fp: ждёт без нарисованных интерфейсов, пока не произнесёт фразы
 		wait_for_said(lambda: self.refresh())
 
 		on_start_video(self.fp_video)
@@ -1661,7 +1691,7 @@ class Application(tk.Frame):
 						self.master.deiconify()
 						# ~ logd("self.splash.working=%r", self.splash.working)
 						# ~ logd("\n! start appearance")
-						# note: show window
+						# fp: show window
 						htk.random_appearance_to(
 							self.master, self.to_, duration=0.2
 						)
@@ -2353,6 +2383,7 @@ class Application(tk.Frame):
 		logd("var=%r, index=%r, mode=%r", var, index, mode)
 		global CHANGE_FOCUS
 		CHANGE_FOCUS = bool(self.i_change_focus.get())
+		change_config("global", "change_focus", str(self.i_change_focus.get()))
 		logd("\n>>>>> смена фокуса изменена CHANGE_FOCUS=%r", CHANGE_FOCUS)
 
 	def stop_player(self):
@@ -2399,12 +2430,6 @@ class Application(tk.Frame):
 		change_config(
 			"global", "bring_to_front", str(self.i_bring_to_front.get())
 		)
-
-	def cb_change_focus_changed(self):
-		# ~ global CHANGE_FOCUS
-		change_config("global", "change_focus", str(self.i_change_focus.get()))
-		# ~ CHANGE_FOCUS = bool(self.i_change_focus.get())
-		# ~ logd("CHANGE_FOCUS=%r", CHANGE_FOCUS)
 
 	def cb_exit_changed(self):
 		# ~ change_config("global", "exit_after_play"
