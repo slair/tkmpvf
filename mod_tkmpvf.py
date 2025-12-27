@@ -1365,65 +1365,67 @@ class Application(tk.Frame):
 			self.ready = True
 
 	def on_focus_in(self, e=None):
-		self.need_hide = False
+		if e.widget == self.master:
+			logd("\n> on_focus_in e.widget=%r", e.widget)
+		'''self.need_hide = False
+		logd("\n>>> НЕ ПРЯЧЕМСЯ! e.widget=%r", e.widget)
 		self.update_idletasks()
 		logd("--- e.widget=%r", e.widget)
 		if not self.ready:
 			return
 
-		self.focus_out_tpc = None
+		self.focus_out_tpc = None'''
 
 	def go_hide(self):
 		self.update_idletasks()
+		# ~ logd("\n> on_focus_out e=%r", e)
 		# ~ logd("self.focus_out_tpc=%r", self.focus_out_tpc)
 
 		# ~ if self.need_hide:
 		# ~ return
 
-		if self.focus_out_tpc:
-			logd("self.hover=%r", self.hover)
-			if self.hover:
-				self.hover = False
-				self.on_hover_change(self.hover)
+		# ~ if self.focus_out_tpc:
+		# ~ logd("self.hover=%r", self.hover)
+		if self.hover and self.need_hide:
+			logd("\n>>>> Поехали ПРЯТАТЬСЯ! %r", self.hover and self.need_hide)
+			self.hover = False
+			self.on_hover_change(self.hover)
+			self.need_hide = False
 
 	def on_focus_out(self, e=None):
-		self.update_idletasks()
+		if e.widget == self.master:
+			logd("\n> on_focus_out e.widget=%r", e.widget)
+		'''self.update_idletasks()
 		if not self.ready:
 			return
 
 		if e.widget == self.master:
-			logd("! ПРЯЧЕМСЯ! e.widget=%r", e.widget)
-			# ~ mx, my = e.x_root, e.y_root
-			# ~ wx, wy = e.widget.winfo_x(), e.widget.winfo_y()
-			# ~ logd("m(%r, %r) w(%r, %r)", mx, my, wx, wy)
+			logd("\n>>> ПРЯЧЕМСЯ! e.widget=%r", e.widget)
 			self.need_hide = True
 			self.focus_out_tpc = tpc()
 			self.after(500, self.go_hide)
-			self.update_idletasks()
+			self.update_idletasks()'''
 
 	def on_start_hover(self, e=None):
-		if not self.ready:
-			return
-
-		if e.widget != self.master:
-			return
-
-		# ~ logd("+e=%r", e)
-		if not self.hover:
-			self.hover = True
-			self.on_hover_change(self.hover)
+		if e.widget == self.master:
+			logd("\n> on_start_hover e.widget=%r", e.widget)
+			if not self.ready:
+				return
+			self.need_hide = True
+			if not self.hover:
+				self.hover = True
+				self.on_hover_change(self.hover)
 
 	def on_end_hover(self, e=None):
-		if not self.ready:
-			return
+		if e.widget == self.master:
+			logd("\n> on_end_hover e.widget=%r self.need_hide=%r", e.widget, self.need_hide)
+			if not self.ready:
+				return
 
-		if e.widget != self.master:
-			return
-
-		# ~ logd("-e=%r", e, )
-		if self.hover:
-			self.hover = False
-			self.on_hover_change(self.hover)
+			if self.hover and self.need_hide:
+				self.hover = False
+				self.on_hover_change(self.hover)
+			self.need_hide = False
 
 	def geometry_to_config(self):
 		g = self.master.geometry()
@@ -1588,6 +1590,7 @@ class Application(tk.Frame):
 			self.b_skip["state"] = "normal"
 			# ~ if not psutil.pid_exists(self.player_pid):
 			if not get_pids_by_fn(self.fp_video):
+				# fp: PLAY_FINISHED видос закончился
 				self.player_pid = None
 				self.b_pause["state"] = "disabled"
 				self.b_skip["state"] = "disabled"
@@ -1611,9 +1614,9 @@ class Application(tk.Frame):
 						WMCLASS,
 						WMNAME,
 					)
-
-				self.on_hover_change(True)
-				# ~ self.bring_to_front()
+				if self.i_bring_to_front.get():
+					self.bring_to_front()
+					self.on_hover_change(True)
 
 		if self.my_state == PLAY_FINISHED:
 			if (
@@ -2380,6 +2383,7 @@ class Application(tk.Frame):
 		# ~ w.bind("<KeyRelease>", self.on_keyup)
 
 	def on_i_change_focus_change(self, var, index, mode):
+		self.need_hide = False
 		logd("var=%r, index=%r, mode=%r", var, index, mode)
 		global CHANGE_FOCUS
 		CHANGE_FOCUS = bool(self.i_change_focus.get())
@@ -2417,6 +2421,7 @@ class Application(tk.Frame):
 		self.my_state_start = tpc()
 
 	def cb_fullscreen_changed(self):
+		self.need_hide = False
 		value = self.i_fullscreen.get()
 		config_changed = change_config("global", "fullscreen", str(value))
 		if config_changed:
@@ -2427,6 +2432,7 @@ class Application(tk.Frame):
 				self.send_key_to_player("G")
 
 	def cb_bring_to_front_changed(self):
+		self.need_hide = False
 		change_config(
 			"global", "bring_to_front", str(self.i_bring_to_front.get())
 		)
@@ -2434,7 +2440,7 @@ class Application(tk.Frame):
 	def cb_exit_changed(self):
 		# ~ change_config("global", "exit_after_play"
 		# ~ , str(self.i_exit.get()))
-		pass
+		self.need_hide = False
 
 	def cb_delseen_changed(self):
 		# ~ change_config("global", "delete_seen_files"
