@@ -1367,14 +1367,14 @@ class Application(tk.Frame):
 	def on_focus_in(self, e=None):
 		if e.widget == self.master:
 			logd("\n> on_focus_in e.widget=%r", e.widget)
-		'''self.need_hide = False
+		"""self.need_hide = False
 		logd("\n>>> НЕ ПРЯЧЕМСЯ! e.widget=%r", e.widget)
 		self.update_idletasks()
 		logd("--- e.widget=%r", e.widget)
 		if not self.ready:
 			return
 
-		self.focus_out_tpc = None'''
+		self.focus_out_tpc = None"""
 
 	def go_hide(self):
 		self.update_idletasks()
@@ -1386,16 +1386,23 @@ class Application(tk.Frame):
 
 		# ~ if self.focus_out_tpc:
 		# ~ logd("self.hover=%r", self.hover)
-		if self.hover and self.need_hide:
-			logd("\n>>>> Поехали ПРЯТАТЬСЯ! %r", self.hover and self.need_hide)
+		# ~ if self.hover and self.need_hide:
+		if self.need_hide:
+			logd("\n>>>> Поехали ПРЯТАТЬСЯ! self.need_hide=%r", self.need_hide)
 			self.hover = False
 			self.on_hover_change(self.hover)
 			self.need_hide = False
+		else:
+			logd(
+				"\n>>>> НЕ поехали ПРЯТАТЬСЯ! self.hover=%r, self.need_hide=%r",
+				self.hover,
+				self.need_hide,
+			)
 
 	def on_focus_out(self, e=None):
 		if e.widget == self.master:
 			logd("\n> on_focus_out e.widget=%r", e.widget)
-		'''self.update_idletasks()
+		self.update_idletasks()
 		if not self.ready:
 			return
 
@@ -1404,28 +1411,37 @@ class Application(tk.Frame):
 			self.need_hide = True
 			self.focus_out_tpc = tpc()
 			self.after(500, self.go_hide)
-			self.update_idletasks()'''
+			# ~ self.update_idletasks()
 
 	def on_start_hover(self, e=None):
 		if e.widget == self.master:
-			logd("\n> on_start_hover e.widget=%r", e.widget)
+			logd("\n>>> on_start_hover e.widget=%r", e.widget)
 			if not self.ready:
 				return
-			self.need_hide = True
+			self.need_hide = False
 			if not self.hover:
 				self.hover = True
 				self.on_hover_change(self.hover)
 
 	def on_end_hover(self, e=None):
+		if not self.ready:
+			return
+
 		if e.widget == self.master:
-			logd("\n> on_end_hover e.widget=%r self.need_hide=%r", e.widget, self.need_hide)
-			if not self.ready:
-				return
+			self.need_hide = True
+			logd(
+				"\n>>> on_end_hover e.widget=%r self.need_hide=%r",
+				e.widget,
+				self.need_hide,
+			)
 
 			if self.hover and self.need_hide:
 				self.hover = False
-				self.on_hover_change(self.hover)
-			self.need_hide = False
+				# ~ self.on_hover_change(self.hover)
+				logd("\n>>> ПРЯЧЕМСЯ! self.need_hide=%r", self.need_hide)
+				self.focus_out_tpc = tpc()
+				self.after(500, self.go_hide)
+			# ~ self.need_hide = False
 
 	def geometry_to_config(self):
 		g = self.master.geometry()
