@@ -173,6 +173,13 @@ NO_HIDE_WINDOW = any([a in cd for a in no_hide_window_list])
 
 DONT_DELETE = False
 
+IS_FOLDER_TG = False
+IS_FOLDER_NEWS = False
+IS_FOLDER_GAMES = False
+
+if cd.endswith("/_tg all"):
+	IS_FOLDER_TG = True
+
 for item in dont_delete_list:
 	if item in cd:
 		DONT_DELETE = True
@@ -2197,6 +2204,11 @@ class Application(tk.Frame):
 		self.i_bring_to_front = tk.IntVar(
 			value=int(config["global"].get("bring_to_front", "1"))
 		)
+		self.i_bring_to_front.trace_add(
+			"write", self.on_i_change_bring_to_front
+		)
+		if IS_FOLDER_TG:
+			self.i_bring_to_front.set("0")
 
 		self.cb_bring_to_front = tk.Checkbutton(
 			self.f_video,
@@ -2218,6 +2230,8 @@ class Application(tk.Frame):
 			value=int(config["global"].get("change_focus", "1"))
 		)
 		self.i_change_focus.trace_add("write", self.on_i_change_focus_change)
+		if IS_FOLDER_TG:
+			self.i_change_focus.set("1")
 
 		self.cb_change_focus = tk.Checkbutton(
 			self.f_video,
@@ -2405,6 +2419,16 @@ class Application(tk.Frame):
 		CHANGE_FOCUS = bool(self.i_change_focus.get())
 		change_config("global", "change_focus", str(self.i_change_focus.get()))
 		logd("\n>>>>> смена фокуса изменена CHANGE_FOCUS=%r", CHANGE_FOCUS)
+
+	def on_i_change_bring_to_front(self, var, index, mode):
+		self.need_hide = False
+		logd("var=%r, index=%r, mode=%r", var, index, mode)
+		# ~ global CHANGE_FOCUS
+		# ~ CHANGE_FOCUS = bool(self.i_change_focus.get())
+		change_config(
+			"global", "bring_to_front", str(self.i_bring_to_front.get())
+		)
+		# ~ logd("\n>>>>> смена фокуса изменена CHANGE_FOCUS=%r", CHANGE_FOCUS)
 
 	def stop_player(self):
 		self.my_state = STOPPED
