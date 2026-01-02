@@ -2209,6 +2209,8 @@ class Application(tk.Frame):
 		)
 		if IS_FOLDER_TG:
 			self.i_bring_to_front.set("0")
+		else:
+			self.i_bring_to_front.set("1")
 
 		self.cb_bring_to_front = tk.Checkbutton(
 			self.f_video,
@@ -2230,8 +2232,11 @@ class Application(tk.Frame):
 			value=int(config["global"].get("change_focus", "1"))
 		)
 		self.i_change_focus.trace_add("write", self.on_i_change_focus_change)
+
 		if IS_FOLDER_TG:
 			self.i_change_focus.set("1")
+		else:
+			self.i_change_focus.set("0")
 
 		self.cb_change_focus = tk.Checkbutton(
 			self.f_video,
