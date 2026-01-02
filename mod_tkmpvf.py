@@ -330,6 +330,7 @@ try:
 		saymod_setup_log,
 		say_with_queue,
 		run_talk_server,
+		say_mp_riat,
 	)
 
 	saymod_setup_log(MY_NAME)
@@ -978,12 +979,15 @@ class Splash(tk.Frame):
 		if e.keysym == "Escape":
 			self.working = False
 			htk.random_disappearance(self.master)
+			say_with_queue("Гасим проигрыватель")
+			snd_play_mp_riat("squeezing-toy.wav")
 			self.master.destroy()
 
 	def close(self):
 		if not getattr(self, "destroyed", False):
 			self.destroyed = True
 			logd("! destroying splash=%r", self)
+			# ~ say_mp_riat("Гасим проигрыватель")
 			self.master.destroy()
 		else:
 			logd("! splash=%r already destroyed", self)
@@ -1484,6 +1488,8 @@ class Application(tk.Frame):
 		self.ask_for_delete()
 		htk.random_disappearance(self.master)
 		self.splash.close()
+		snd_play_mp_riat("squeezing-toy.wav")
+		say_with_queue("Гасим проигрыватель")
 		self.master.destroy()
 
 	def refresh(self):
@@ -1922,6 +1928,8 @@ class Application(tk.Frame):
 						self.update_splash()
 
 					if not self.splash.working and self.first_run:
+						say_with_queue("Гасим проигрыватель")
+						snd_play_mp_riat("squeezing-toy.wav")
 						self.master.destroy()
 						EXIT(16)
 
