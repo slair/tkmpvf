@@ -325,12 +325,13 @@ MY_NAME = os.path.splitext(os.path.basename(MY_FILE_NAME))[0]
 
 try:
 	import saymod
-	from saymod import (
+	from saymod import (  # noqa: F401
 		snd_play_queue,
 		saymod_setup_log,
 		say_with_queue,
 		run_talk_server,
-		say_mp_riat,
+		# ~ say_mp_riat,
+		snd_play_mp_riat,
 	)
 
 	saymod_setup_log(MY_NAME)
@@ -1160,6 +1161,24 @@ def get_active_window_xdotool():
 		return None
 
 
+def get_active_window():
+	res = get_active_window_xdotool()
+	WMCLASS, WMNAME = None, None
+	if res:
+		WMCLASS, WMNAME = get_wm_class_name(res)
+	if WMCLASS == "tk.Tk" and " - mod_tkmpvf" in WMNAME:
+		# fp: наше собственное окно, его активировать не будем
+		res = None
+	else:
+		logd(
+			"\n>>>>> сохранили res=%r, WMCLASS=%r, WMNAME=%r",
+			res,
+			WMCLASS,
+			WMNAME,
+		)
+	return res
+
+
 def ask_centered(title, message, parent=None):
 	"""
 	Показать центрированный диалог askyesnocancel
@@ -1374,6 +1393,16 @@ class Application(tk.Frame):
 
 			self.master.update_idletasks()
 			self.ready = True
+			if CHANGE_FOCUS:
+				if ACT_WINDOW:
+					subprocess.run(  # nosec
+						[
+							"xdotool",
+							"windowactivate",
+							"--sync",
+							ACT_WINDOW,
+						]
+					)
 
 	def on_focus_in(self, e=None):
 		if e.widget == self.master:
@@ -1628,21 +1657,8 @@ class Application(tk.Frame):
 				self._points_added = 0
 				# ~ if not NO_HIDE_WINDOW:
 
-				ACT_WINDOW = get_active_window_xdotool()
-				WMCLASS, WMNAME = None, None
-				if ACT_WINDOW:
-					WMCLASS, WMNAME = get_wm_class_name(ACT_WINDOW)
-				if WMCLASS == "tk.Tk" and " - mod_tkmpvf" in WMNAME:
-					# fp: наше собственное окно, его активировать не будем
-					ACT_WINDOW = None
-				else:
-					logd(
-						"\n>>>>> сохранили ACT_WINDOW=%r, "
-						"WMCLASS=%r, WMNAME=%r",
-						ACT_WINDOW,
-						WMCLASS,
-						WMNAME,
-					)
+				ACT_WINDOW = get_active_window()
+
 				if self.i_bring_to_front.get():
 					self.bring_to_front()
 					self.on_hover_change(True)
