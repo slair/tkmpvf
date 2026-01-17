@@ -1496,7 +1496,8 @@ class Application(tk.Frame):
 				say_with_queue("Не буду удалять файлы из этого каталога")
 				return
 
-			if int(self.i_delseen.get()) == 1 or ask_centered(
+			# ~ if int(self.i_delseen.get()) == 1 or ask_centered(
+			if ask_centered(
 				"Просмотренные файлы", "Удалить просмотренные файлы?"
 			):
 				cwd = os.getcwd()
