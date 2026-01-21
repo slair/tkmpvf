@@ -1036,7 +1036,7 @@ def fix_filename(fn: str) -> str:
 
 	for c in escape_chars:
 		if c in res:
-			# ~ res = res.resplace(c, "\\" + c)
+			# ~ res = res.replace(c, "\\" + c)
 			res = res.replace(c, "")
 			changed = True
 
@@ -1180,9 +1180,8 @@ def get_active_window():
 
 
 def ask_centered(title, message, parent=None):
-	"""
-	Показать центрированный диалог askyesnocancel
-	"""
+	# fixme: 1 нарисовать полноценный диалог с вопросом и кнопками
+	# fixme: 2 показывать поверх всех в центре активного монитора
 	we_create_parent = False
 	if parent is None:
 		# Создаем скрытое окно, если родитель не указан
@@ -1201,6 +1200,7 @@ def ask_centered(title, message, parent=None):
 
 	# Показываем диалог
 	response = messagebox.askyesnocancel(title, message, parent=parent)
+	logd("response=%r", response)
 
 	# Закрываем временное окно
 	if we_create_parent:
@@ -1497,9 +1497,10 @@ class Application(tk.Frame):
 				return
 
 			# ~ if int(self.i_delseen.get()) == 1 or ask_centered(
-			if ask_centered(
+			if answer := ask_centered(
 				"Просмотренные файлы", "Удалить просмотренные файлы?"
 			):
+				logd("answer=%r", answer)
 				cwd = os.getcwd()
 				logd("cwd=%r", cwd)
 				for item in seen_files:
