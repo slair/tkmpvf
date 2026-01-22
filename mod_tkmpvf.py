@@ -32,6 +32,8 @@ from subprocess import check_output  # nosec
 # ~ # pylint:disable=E0611
 from transliterate import translit  # , get_available_language_codes
 
+from tkmessagebox import askyesno
+
 # ~ get_available_language_codes()	 # без этого заменяются языки
 import translit_pikabu_lp  # noqa добавляем свой язык
 from num2t4ru import num2text  # , num2text_VP
@@ -1497,7 +1499,8 @@ class Application(tk.Frame):
 				return
 
 			# ~ if int(self.i_delseen.get()) == 1 or ask_centered(
-			if answer := ask_centered(
+			# ~ if answer := ask_centered(
+			if answer := askyesno(
 				"Просмотренные файлы", "Удалить просмотренные файлы?"
 			):
 				logd("answer=%r", answer)
