@@ -1191,11 +1191,17 @@ def ask_centered(title, message, parent=None):
 		parent = tk.Tk()
 		parent.withdraw()
 		parent.attributes("-alpha", 0.1)  # Полностью прозрачное
+		parent.attributes("-topmost", True)  # type:ignore[attr-defined]
 
-		# Устанавливаем на весь экран
-		screen_width = parent.winfo_screenwidth()
-		screen_height = parent.winfo_screenheight()
-		parent.geometry(f"{screen_width}x{screen_height}+0+0")
+	# Устанавливаем на весь экран
+	screen_width = parent.winfo_screenwidth()
+	screen_height = parent.winfo_screenheight()
+	geometry = f"{screen_width}x{screen_height}+0+0"
+	logd(geometry)
+	parent.master.geometry(geometry)
+	parent.master.attributes("-alpha", 0.1)  # Полностью прозрачное
+	parent.master.attributes("-topmost", True)  # type:ignore[attr-defined]
+	# ~ parent.master.withdraw()
 
 	# Обновляем геометрию
 	parent.update_idletasks()
@@ -1499,9 +1505,11 @@ class Application(tk.Frame):
 				return
 
 			# ~ if int(self.i_delseen.get()) == 1 or ask_centered(
-			# ~ if answer := ask_centered(
-			if answer := askyesno(
-				"Просмотренные файлы", "Удалить просмотренные файлы?"
+			if answer := ask_centered(
+				# ~ if answer := askyesno(
+				"Просмотренные файлы",
+				"Удалить просмотренные файлы?",
+				parent=self,
 			):
 				logd("answer=%r", answer)
 				cwd = os.getcwd()
