@@ -32,7 +32,7 @@ from subprocess import check_output  # nosec
 # ~ # pylint:disable=E0611
 from transliterate import translit  # , get_available_language_codes
 
-from tkmessagebox import askyesno
+# ~ from tkmessagebox import askyesno
 
 # ~ get_available_language_codes()	 # без этого заменяются языки
 import translit_pikabu_lp  # noqa добавляем свой язык
@@ -912,6 +912,59 @@ def get_pids_by_fn(fn):
 	return res
 
 
+def do_command(_cmd, _enc=None, _errors="strict"):
+	if isinstance(_cmd, list):
+		sp_cmd = " ".join(_cmd)
+	elif isinstance(_cmd, tuple):
+		sp_cmd = " ".join(_cmd)
+	else:
+		sp_cmd = _cmd
+
+	enc = None
+	if _enc is None:
+		if WIN32:
+			enc = "cp866"
+		elif LINUX:
+			enc = "utf-8"
+	else:
+		enc = _enc
+
+	try:
+		logd("cmd = %r", sp_cmd)  # noqa: E701
+	except NameError:
+		pass  # noqa: E701
+
+	if not isinstance(sp_cmd, str):
+		print("!", "sp_cmd (%r) is not string!!!" % sp_cmd)
+
+	p = subprocess.Popen(
+		sp_cmd,
+		shell=True,  # nosec
+		stdin=subprocess.PIPE,
+		stdout=subprocess.PIPE,
+		stderr=subprocess.PIPE,
+	)
+
+	child_stdout, child_stderr = p.communicate()
+	lines = str(child_stdout, enc, errors=_errors).split("\n")
+	errlines = str(child_stderr, enc, errors=_errors).split("\n")
+
+	lines = [line.strip() for line in lines if line.strip()]
+	errlines = [line.strip() for line in errlines if line.strip()]
+
+	try:
+		logd(  # noqa: E701
+			"stdout %r line(s), stderr %r line(s), exitcode = %r",
+			len(lines),
+			len(errlines),
+			p.returncode,
+		)
+	except NameError:
+		pass  # noqa: E701
+
+	return lines, errlines, p.returncode
+
+
 def do_command_bg(cmd):
 	proc = None
 	if WIN32:
@@ -1181,40 +1234,17 @@ def get_active_window():
 	return res
 
 
-def ask_centered(title, message, parent=None):
+def ask_centered(title, message):
 	# fixme: 1 нарисовать полноценный диалог с вопросом и кнопками
-	# fixme: 2 показывать поверх всех в центре активного монитора
-	we_create_parent = False
-	if parent is None:
-		# Создаем скрытое окно, если родитель не указан
-		we_create_parent = True
-		parent = tk.Tk()
-		parent.withdraw()
-		parent.attributes("-alpha", 0.1)  # Полностью прозрачное
-		parent.attributes("-topmost", True)  # type:ignore[attr-defined]
-
-	# Устанавливаем на весь экран
-	screen_width = parent.winfo_screenwidth()
-	screen_height = parent.winfo_screenheight()
-	geometry = f"{screen_width}x{screen_height}+0+0"
-	logd(geometry)
-	parent.master.geometry(geometry)
-	parent.master.attributes("-alpha", 0.1)  # Полностью прозрачное
-	parent.master.attributes("-topmost", True)  # type:ignore[attr-defined]
-	# ~ parent.master.withdraw()
-
-	# Обновляем геометрию
-	parent.update_idletasks()
-
-	# Показываем диалог
-	response = messagebox.askyesnocancel(title, message, parent=parent)
-	logd("response=%r", response)
-
-	# Закрываем временное окно
-	if we_create_parent:
-		parent.destroy()
-
-	return response
+	_cmd = (
+		f'zenity --question --title "tkmpvf" --text "{message}" '
+		' --icon-name "user-trash-full"'
+	)
+	stdout, stderr, ec = do_command(_cmd)
+	# ~ stop("ec=%r", ec)
+	if ec == 0:
+		return True
+	return False
 
 
 class Application(tk.Frame):
@@ -1509,7 +1539,6 @@ class Application(tk.Frame):
 				# ~ if answer := askyesno(
 				"Просмотренные файлы",
 				"Удалить просмотренные файлы?",
-				parent=self,
 			):
 				logd("answer=%r", answer)
 				cwd = os.getcwd()
