@@ -1236,9 +1236,20 @@ def get_active_window():
 
 def ask_centered(title, message):
 	# fixme: 1 нарисовать полноценный диалог с вопросом и кнопками
+	# ~ _cmd = (
+		# ~ f'zenity --question --title "tkmpvf" --text "{message}" '
+		# ~ ' --icon-name "user-trash-full"'
+	# ~ )
 	_cmd = (
-		f'zenity --question --title "tkmpvf" --text "{message}" '
-		' --icon-name "user-trash-full"'
+		'yad --question --title="tkmpvf" --use-markup '
+		'--image="user-trash-full" '
+		f'--text=\'<span size="xx-large">{message}</span>\' --mouse --on-top '
+		'--button="<span size=\'xx-large\'>Да</span>:0" '
+		'--button="<span size=\'large\'>Нет</span>:1" '
+		'--buttons-layout=center '
+		# ~ '--width=400 --height=200 '
+		'--window-icon="/home/slair/share/icons/_png/'
+		'question-exclamation-green-128x128.png" '
 	)
 	stdout, stderr, ec = do_command(_cmd)
 	# ~ stop("ec=%r", ec)
