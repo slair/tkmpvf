@@ -637,11 +637,11 @@ def load_config():
 		config.read(CONFIG_FILE_PATH, encoding="utf-8")
 	else:
 		logw("File %r not found", CONFIG_FILE_PATH)
-	config.my_changed = False
+	config.my_changed = False  # type:ignore[attr-defined]
 
 
 def save_config():
-	if config.my_changed:
+	if config.my_changed:  # type:ignore[attr-defined]
 		with open(CONFIG_FILE_PATH, "w", encoding="utf-8") as f:
 			logi("Writing %r", CONFIG_FILE_PATH)
 			config.write(f)
@@ -1237,16 +1237,16 @@ def get_active_window():
 def ask_centered(title, message):
 	# fixme: 1 нарисовать полноценный диалог с вопросом и кнопками
 	# ~ _cmd = (
-		# ~ f'zenity --question --title "tkmpvf" --text "{message}" '
-		# ~ ' --icon-name "user-trash-full"'
+	# ~ f'zenity --question --title "tkmpvf" --text "{message}" '
+	# ~ ' --icon-name "user-trash-full"'
 	# ~ )
 	_cmd = (
 		'yad --question --title="tkmpvf" --use-markup '
 		'--image="user-trash-full" '
-		f'--text=\'<span size="xx-large">{message}</span>\' --mouse --on-top '
-		'--button="<span size=\'xx-large\'>Да</span>:0" '
-		'--button="<span size=\'large\'>Нет</span>:1" '
-		'--buttons-layout=center '
+		f"--text='<span size=\"xx-large\">{message}</span>' --mouse --on-top "
+		"--button=\"<span size='xx-large'>Да</span>:0\" "
+		"--button=\"<span size='large'>Нет</span>:1\" "
+		"--buttons-layout=center "
 		# ~ '--width=400 --height=200 '
 		'--window-icon="/home/slair/share/icons/_png/'
 		'question-exclamation-green-128x128.png" '
@@ -1572,6 +1572,7 @@ class Application(tk.Frame):
 		self.splash.close()
 		snd_play_mp_riat("squeezing-toy.wav")
 		say_with_queue("Гасим проигрыватель")
+		os.system("report-videos >/dev/null 2>&1 &")  # nosec
 		self.master.destroy()
 
 	def refresh(self):
@@ -1809,7 +1810,7 @@ class Application(tk.Frame):
 		elif self.my_state == STOPPED:
 			if not self.need_to_exit:
 				if not getattr(self, "osd_launched", False):
-					os.system("report-videos >/dev/null 2>&1 &")  # nosec
+					# ~ os.system("report-videos >/dev/null 2>&1 &")  # nosec
 					self.osd_launched = True
 
 				snd_play_queue(SND_CLICK, mpv_volume=75)
