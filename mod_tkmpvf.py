@@ -645,7 +645,7 @@ def save_config():
 		with open(CONFIG_FILE_PATH, "w", encoding="utf-8") as f:
 			logi("Writing %r", CONFIG_FILE_PATH)
 			config.write(f)
-		config.my_changed = False
+		config.my_changed = False  # type:ignore[attr-defined]
 
 
 def change_config(section, option, value):
@@ -659,8 +659,8 @@ def change_config(section, option, value):
 		)
 
 		config[section][option] = value
-		config.my_changed = True
-	return config.my_changed
+		config.my_changed = True  # type:ignore[attr-defined]
+	return config.my_changed  # type:ignore[attr-defined]
 
 
 def all_children(wid):
@@ -708,11 +708,11 @@ def untranslit_word(w):
 
 
 def untranslit(s):
-	res = []
+	_res = []
 	words = s.split()
 	for word in words:
-		res.append(untranslit_word(word))
-	res = " ".join(res)
+		_res.append(untranslit_word(word))
+	res = " ".join(_res)
 	if res:
 		return res[0].upper() + res[1:]
 	else:
@@ -994,7 +994,7 @@ class Splash(tk.Frame):
 		self.master = master
 		self.pack(side="top", fill=tk.BOTH, expand=True)
 		self._title = "Загрузка...    "
-		self.master.title(self._title)
+		self.master.title(self._title)  # type:ignore[attr-defined]
 
 		self.master.bind("<KeyPress>", self.on_keypress)
 		self.bind("<KeyPress>", self.on_keypress)
@@ -1221,7 +1221,7 @@ def get_active_window():
 	WMCLASS, WMNAME = None, None
 	if res:
 		WMCLASS, WMNAME = get_wm_class_name(res)
-	if WMCLASS == "tk.Tk" and " - mod_tkmpvf" in WMNAME:
+	if WMCLASS == "tk.Tk" and " - mod_tkmpvf" in WMNAME:  # type:ignore[operator]
 		# fp: наше собственное окно, его активировать не будем
 		res = None
 	else:
@@ -1316,7 +1316,7 @@ class Application(tk.Frame):
 		self.create_widgets()
 
 		self.master.bind("<KeyRelease>", self.on_keyup)
-		self.master.protocol("WM_DELETE_WINDOW", self.on_close_master)
+		self.master.protocol("WM_DELETE_WINDOW", self.on_close_master)  # type:ignore[attr-defined]
 		# ~ self.master.bind('<Enter>'
 		# ~ , lambda *args: logd("<Enter> args=%r", args))
 		# ~ self.master.bind('<Leave>'
@@ -1349,9 +1349,9 @@ class Application(tk.Frame):
 		logd("Starts in %r, self.sort_by=%r", os.getcwd(), self.sort_by)
 
 		htk.hide_window(self.master)
-		self.master.geometry("+5000+5000")
+		self.master.geometry("+5000+5000")  # type:ignore[attr-defined]
 		self.master.update()
-		self.master.withdraw()
+		self.master.withdraw()  # type:ignore[attr-defined]
 
 		geometry = config["global"].get("normal_geometry", None)
 		if geometry is not None:
@@ -1374,9 +1374,9 @@ class Application(tk.Frame):
 			change_config("global", "normal_geometry", normal_geometry)
 			save_config()
 		self.normal_pos = htk.geometry2tuple(normal_geometry)
-		self.hidden_pos = list(self.normal_pos[:])
-		self.hidden_pos[0] += self.normal_pos[2] - 16
-		self.hidden_pos[1] += self.normal_pos[3] - 16
+		self.hidden_pos = list(self.normal_pos[:])  # type:ignore[index]
+		self.hidden_pos[0] += self.normal_pos[2] - 16  # type:ignore[index]
+		self.hidden_pos[1] += self.normal_pos[3] - 16  # type:ignore[index]
 		# ~ logd(
 		# ~ "< self.normal_pos=%r, self.hidden_pos=%r, self.wid=0x%0x",
 		# ~ self.normal_pos,
@@ -1385,8 +1385,8 @@ class Application(tk.Frame):
 		# ~ )
 		htk.anim_window(
 			self.master,
-			(*htk.geometry2tuple(self.master.geometry()), MIN_ALPHA),
-			(*self.normal_pos, MAX_ALPHA),
+			(*htk.geometry2tuple(self.master.geometry()), MIN_ALPHA),  # type:ignore[attr-defined]
+			(*self.normal_pos, MAX_ALPHA),  # type:ignore[misc]
 		)
 		self.ready = True
 
@@ -1399,20 +1399,20 @@ class Application(tk.Frame):
 		if not self.ready:
 			return
 
-		current_pos = htk.geometry2tuple(self.master.geometry())
+		current_pos = htk.geometry2tuple(self.master.geometry())  # type:ignore[attr-defined]
 		logd("current_pos=%r", current_pos)
 		if _hover:
 			# возврат в нормальную позицию
 			self.ready = False
 			self.hover = True
-			self.master.attributes("-topmost", True)
+			self.master.attributes("-topmost", True)  # type:ignore[attr-defined]
 			logd(f"showing from {current_pos!r} to {self.normal_pos!r}")
 			self.bring_to_front()
 			# ~ self.master.overrideredirect(False)
 			htk.anim_window(
 				self.master,
 				(*current_pos, MIN_ALPHA),
-				(*self.normal_pos, MAX_ALPHA),
+				(*self.normal_pos, MAX_ALPHA),  # type:ignore[misc]
 				bounce=False,
 			)
 			self.ready = True
@@ -1420,7 +1420,7 @@ class Application(tk.Frame):
 			# скрываем окно
 			self.ready = False
 			self.hover = False
-			self.master.attributes("-topmost", True)
+			self.master.attributes("-topmost", True)  # type:ignore[attr-defined]
 			logd(f"hiding from {current_pos} to {self.hidden_pos!r}")
 
 			if NO_HIDE_WINDOW:
@@ -1431,7 +1431,7 @@ class Application(tk.Frame):
 					(*current_pos, MIN_ALPHA),
 					bounce=False,
 				)
-				self.master.attributes("-topmost", False)
+				self.master.attributes("-topmost", False)  # type:ignore[attr-defined]
 			else:
 				htk.anim_window(
 					self.master,
@@ -1533,7 +1533,7 @@ class Application(tk.Frame):
 			# ~ self.need_hide = False
 
 	def geometry_to_config(self):
-		g = self.master.geometry()
+		g = self.master.geometry()  # type:ignore[attr-defined]
 		# ~ logd("g=%r", g)
 		if not g.startswith("1x1+"):
 			change_config("global", "geometry", g)
@@ -1630,7 +1630,7 @@ class Application(tk.Frame):
 
 	def bring_to_front(self):
 		if self.i_bring_to_front.get() == 1:
-			self.master.state("normal")
+			self.master.state("normal")  # type:ignore[attr-defined]
 			self.b_skip.focus_force()
 			self.master.lift()
 			# ~ self.master.after_idle(self.master.attributes, '-topmost', False)
@@ -1670,7 +1670,7 @@ class Application(tk.Frame):
 		except Exception as e:  # noqa
 			# ~ if _DEBUG:
 			loge("error", exc_info=e)
-			self.splash.working = None
+			self.splash.working = None  # type:ignore[assignment]
 			logd("self.splash.working=%r", self.splash.working)
 			htk.random_disappearance(self.splash.master)
 			self.splash.close()
@@ -1691,7 +1691,7 @@ class Application(tk.Frame):
 		title = self._base_title + self.end_title
 		# ~ logd("self._base_title=%r, self.end_title=%r"
 		# ~ , self._base_title, self.end_title)
-		self.master.title(title)
+		self.master.title(title)  # type:ignore[attr-defined]
 
 		self.change_label_height(
 			self.lVideoTitle, min_height=100, max_height=200
@@ -1720,7 +1720,7 @@ class Application(tk.Frame):
 		if self.my_state == PLAY_FINISHED:
 			if (
 				tpc() - self.my_state_start > (TIME_TO_RENAME + 1.0)
-				and self._points_added >= TIME_TO_RENAME
+				and self._points_added >= TIME_TO_RENAME  # type:ignore[has-type]
 			):
 				if (
 					self.fp_video
@@ -1766,13 +1766,13 @@ class Application(tk.Frame):
 					self.lVideoTitle["bg"] = color_bg_renamed
 
 				self.my_state = VIDEO_RENAMED
-				self.my_state_start = tpc()
+				self.my_state_start = tpc()  # type:ignore[assignment]
 				self.after(REPINT_MSEC, self.on_every_second)
 				return
 
-			if self._points_added <= TIME_TO_RENAME:
+			if self._points_added <= TIME_TO_RENAME:  # type:ignore[has-type]
 				self.lVideoTitle["text"] += "."
-				self._points_added += 1
+				self._points_added += 1  # type:ignore[has-type]
 
 		elif self.my_state == VIDEO_RENAMED:
 			if tpc() - self.my_state_start > TIME_TO_START:
@@ -1784,13 +1784,13 @@ class Application(tk.Frame):
 				if self.videos and int(self.i_exit.get()) == 0:
 					self.sort_videos(self.first_run)
 					if self.first_run:
-						self.first_run = None
+						self.first_run = None  # type:ignore[assignment]
 						logd("self.splash.working=%r", self.splash.working)
-						self.splash.working = None
+						self.splash.working = None  # type:ignore[assignment]
 						if not getattr(self.splash, "destroyed", False):
 							htk.random_disappearance(self.splash.master)
 							self.splash.close()
-						self.master.deiconify()
+						self.master.deiconify()  # type:ignore[attr-defined]
 						# ~ logd("self.splash.working=%r", self.splash.working)
 						# ~ logd("\n! start appearance")
 						# fp: show window
@@ -1801,10 +1801,10 @@ class Application(tk.Frame):
 					if not self.paused:
 						self.start_video()
 						self.my_state = PLAYING
-						self.my_state_start = tpc()
+						self.my_state_start = tpc()  # type:ignore[assignment]
 				else:
 					self.my_state = STOPPED
-					self.my_state_start = tpc()
+					self.my_state_start = tpc()  # type:ignore[assignment]
 					# ~ self.clear_lb_videos()
 
 		elif self.my_state == STOPPED:
@@ -1988,7 +1988,7 @@ class Application(tk.Frame):
 							"%.2f %%" % self.splash.pb["value"]
 						)
 
-						self.splash.master.title(
+						self.splash.master.title(  # type:ignore[attr-defined]
 							self.splash._title
 							+ duration_fmt((_duration,))
 							+ "    "
@@ -2515,12 +2515,12 @@ class Application(tk.Frame):
 
 	def stop_player(self):
 		self.my_state = STOPPED
-		self.my_state_start = tpc()
+		self.my_state_start = tpc()  # type:ignore[assignment]
 		if WIN32:
 			self.send_key_to_player(chr(27))
 		elif LINUX:
 			os.system(
-				"wmctrl -v -x -c gl || wmctrl -v -x  -c xv || wmctrl -v -x  -c mpv || killall mpv"
+				"wmctrl -v -x -c gl || wmctrl -v -x  -c xv || wmctrl -v -x  -c mpv || killall mpv || killall -9 mpv"
 			)  # nosec
 		start_exit = tpc()
 		# ~ while self.player_pid and psutil.pid_exists(self.player_pid):
@@ -2541,7 +2541,7 @@ class Application(tk.Frame):
 	def restart_player(self):
 		self.stop_player()
 		self.my_state = VIDEO_RENAMED
-		self.my_state_start = tpc()
+		self.my_state_start = tpc()  # type:ignore[assignment]
 
 	def cb_fullscreen_changed(self):
 		self.need_hide = False
