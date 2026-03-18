@@ -2286,8 +2286,8 @@ class Application(tk.Frame):
 			"write", self.on_i_change_bring_to_front
 		)
 		if IS_FOLDER_TG:
-			self.i_bring_to_front.set("0")
-		else:
+			# ~ self.i_bring_to_front.set("0")
+			# ~ else:
 			self.i_bring_to_front.set("1")
 
 		self.cb_bring_to_front = tk.Checkbutton(
@@ -2312,8 +2312,8 @@ class Application(tk.Frame):
 		self.i_change_focus.trace_add("write", self.on_i_change_focus_change)
 
 		if IS_FOLDER_TG:
-			self.i_change_focus.set("1")
-		else:
+			# ~ self.i_change_focus.set("1")
+			# ~ else:
 			self.i_change_focus.set("0")
 
 		self.cb_change_focus = tk.Checkbutton(
