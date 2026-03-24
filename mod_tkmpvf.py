@@ -25,6 +25,7 @@ import psutil
 
 from tkinter import ttk, messagebox
 from datetime import datetime, timedelta
+from threading import Thread
 
 # ~ from tinytag import TinyTag
 from subprocess import check_output  # nosec
@@ -1147,14 +1148,58 @@ def on_start_video(fp):
 
 
 ACT_WINDOW = None
+first_video = True
+
+
+def riat(func):
+	def wrapper(*args, **kwargs):
+		thr = Thread(target=func, args=args, kwargs=kwargs)
+		thr.start()
+
+	return wrapper
+
+
+@riat
+def delay_send_keys(pid: int):
+	global first_video
+	time.sleep(1)
+	sMPV_WINDOW = get_active_window_xdotool_by_class("mpv")
+	if sMPV_WINDOW:
+		for k in (
+			"space",
+			"f",
+		):
+			time.sleep(0.1)
+			_cmd = ["xdotool", "key", "--window", sMPV_WINDOW, k]
+			logd("_cmd=%r", _cmd)
+			subprocess.run(_cmd)  # nosec
+
+		if first_video:
+			time.sleep(7)
+			first_video = False
+		else:
+			time.sleep(0.1)
+
+		_cmd = ["xdotool", "key", "--window", sMPV_WINDOW, "space"]
+		logd("_cmd=%r", _cmd)
+		subprocess.run(_cmd)  # nosec
+	else:
+		logd("Не нашли окно sMPV_WINDOW=%r pid=%r", sMPV_WINDOW, pid)
 
 
 def on_video_started(pid: int):
 	global FASTER_SPEED, ADD_BRIGHTNESS, ACT_WINDOW
 	FASTER_SPEED = False
 	ADD_BRIGHTNESS = False
+
+	delay_send_keys(pid)
+
 	if not CHANGE_FOCUS:
-		logd("\n>>>>> смена фокуса отключена CHANGE_FOCUS=%r", CHANGE_FOCUS)
+		logd(
+			"\n>>>>> смена фокуса отключена CHANGE_FOCUS=%r ACT_WINDOW=%r",
+			CHANGE_FOCUS,
+			ACT_WINDOW,
+		)
 		return
 
 	if ACT_WINDOW:
@@ -1207,6 +1252,32 @@ def get_active_window_xdotool():
 	try:
 		result = subprocess.run(  # nosec
 			["/usr/bin/xdotool", "getactivewindow"],
+			capture_output=True,
+			text=True,
+		)
+		return result.stdout.strip()
+	except Exception as e:
+		loge("Получить ID активного окна через xdotool", exc_info=e)
+		return None
+
+
+def get_active_window_xdotool_by_pid(pid: int):
+	try:
+		result = subprocess.run(  # nosec
+			["/usr/bin/xdotool", "search", "--pid", f"{pid}"],
+			capture_output=True,
+			text=True,
+		)
+		return result.stdout.strip()
+	except Exception as e:
+		loge("Получить ID активного окна через xdotool", exc_info=e)
+		return None
+
+
+def get_active_window_xdotool_by_class(c: str):
+	try:
+		result = subprocess.run(  # nosec
+			["/usr/bin/xdotool", "search", "--class", f"{c}"],
 			capture_output=True,
 			text=True,
 		)
