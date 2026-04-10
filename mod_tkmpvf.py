@@ -800,6 +800,7 @@ def get_video_title(s):
 	s = s.strip()
 
 	channel = None
+	dt = None
 
 	if s.count(PARTSEP) == 3:
 		dt, channel, title, _ = s.split(PARTSEP)
@@ -813,6 +814,9 @@ def get_video_title(s):
 		_pnap = PARTSEP + _na + PARTSEP
 		if title == _na and s.startswith(_pnap):
 			title = s[len(_pnap) :].strip()
+		elif title == "NA":
+			title = _
+
 		# ~ loge("\n< s=%r, dt=%r, title=%r", s, dt, title)
 
 	elif s.count(PARTSEP) == 1:
@@ -832,6 +836,9 @@ def get_video_title(s):
 
 	if channel and channel not in ("NA",):
 		return channel + "\n" + title
+
+	if title.strip() == "":
+		title = f"<без названия>   {dt}"
 
 	return title
 
