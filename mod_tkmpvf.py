@@ -1106,7 +1106,10 @@ def fix_filename(fn: str) -> str:
 
 	if changed:
 		logd("%r -> %r", fn, res)
-		os.rename(fn, res)
+		try:
+			os.rename(fn, res)
+		except FileNotFoundError:
+			return fn
 	return res
 
 
