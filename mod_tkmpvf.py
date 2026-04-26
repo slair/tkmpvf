@@ -1186,14 +1186,16 @@ def delay_send_keys(pid: int):
 			subprocess.run(_cmd)  # nosec
 
 		if first_video:
-			time.sleep(7)
+			time.sleep(5)
 			first_video = False
 		else:
 			time.sleep(0.1)
 
-		_cmd = ["xdotool", "key", "--window", sMPV_WINDOW, "space"]
-		logd("_cmd=%r", _cmd)
-		subprocess.run(_cmd)  # nosec
+		sMPV_WINDOW = get_active_window_xdotool_by_class("mpv")
+		if sMPV_WINDOW:
+			_cmd = ["xdotool", "key", "--window", sMPV_WINDOW, "space"]
+			logd("_cmd=%r", _cmd)
+			subprocess.run(_cmd)  # nosec
 	else:
 		logd("Не нашли окно sMPV_WINDOW=%r pid=%r", sMPV_WINDOW, pid)
 
