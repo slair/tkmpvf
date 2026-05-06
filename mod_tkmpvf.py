@@ -1680,7 +1680,7 @@ class Application(tk.Frame):
 		self.lVideoTitle["text"] = title
 		logd("title=%r", title)
 		_cmd = (
-			f'osd -m 1 -p 7 -fi 200 -d 5000 -fo 8000 -n "tkmpvf"'
+			f'osd -m 0 -p 7 -fi 200 -d 5000 -fo 8000 -f 24 -n "tkmpvf"'
 			f' "{title}" >/dev/null 2>&1 &'
 		)
 		logd("\n!_cmd=%r", _cmd)
