@@ -181,8 +181,13 @@ IS_FOLDER_TG = False
 IS_FOLDER_NEWS = False
 IS_FOLDER_GAMES = False
 
+BASE_TPL_VOLUME = 90
+TG_VOLUME = 120
+TPL_VOLUME = BASE_TPL_VOLUME
+
 if cd.endswith("/_tg all"):
 	IS_FOLDER_TG = True
+	TPL_VOLUME = TG_VOLUME
 
 for item in dont_delete_list:
 	if item in cd:
@@ -232,7 +237,8 @@ def get_TPL_PLAY_CMD():
 				# ~ "--audio-channels=stereo",
 				# ~ "--audio-normalize-downmix=yes",
 				"--fs-screen=%s",
-				# ~ "--softvol-max=500",
+				"--softvol-max=500",
+				f"--volume={TPL_VOLUME}",
 				"--speed=1.33" if FASTER_SPEED else "",
 				"--brightness=16" if ADD_BRIGHTNESS else "",
 				"--",
@@ -248,8 +254,8 @@ def get_TPL_PLAY_CMD():
 				# ~ "--audio-channels=stereo",
 				# ~ "--audio-normalize-downmix=yes",
 				"--fs-screen=%s",
-				# ~ "--volume-max=500",
-				# ~ "--volume=90",
+				"--volume-max=500",
+				f"--volume={TPL_VOLUME}",
 				"--brightness=16" if ADD_BRIGHTNESS else "",
 				"--speed=1.33" if FASTER_SPEED else "",
 				"--",
