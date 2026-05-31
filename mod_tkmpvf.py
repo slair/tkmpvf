@@ -77,6 +77,7 @@ DEFAULT_FONT_SIZE = 10
 DEFAULT_FONT_FAMILY = "Ubuntu Condensed"
 DEFAULT_FONT = (DEFAULT_FONT_FAMILY, DEFAULT_FONT_SIZE)
 CHANGE_FOCUS = False
+EXIT_CODE = -1
 
 start_tpc = tpc()
 
@@ -1083,6 +1084,10 @@ def EXIT(rc=0, _actions: str = ""):
 
 		time.sleep(0.1)
 
+	if EXIT_CODE != -1:
+		logd("Меняем rc=%r <- EXIT_CODE=%r", rc, EXIT_CODE)
+		rc = EXIT_CODE
+
 	logi("Exiting rc=%r\n\n\n", rc)
 	sys.exit(rc)
 	# ~ mypid = os.getpid()
@@ -1406,7 +1411,7 @@ class Application(tk.Frame):
 		self.create_widgets()
 
 		self.master.bind("<KeyRelease>", self.on_keyup)
-		self.master.protocol("WM_DELETE_WINDOW", self.on_close_master)  # type:ignore[attr-defined]
+		self.master.protocol("WM_DELETE_WINDOW", self.do_close_master)  # type:ignore[attr-defined]
 		# ~ self.master.bind('<Enter>'
 		# ~ , lambda *args: logd("<Enter> args=%r", args))
 		# ~ self.master.bind('<Leave>'
@@ -1649,7 +1654,7 @@ class Application(tk.Frame):
 						logw("Deleting %r", item)
 						os.unlink(item)
 
-	def on_close_master(self, *args, **kwargs):  # noqa
+	def do_close_master(self, *args, **kwargs):  # noqa
 		if not self.ready:
 			return
 
@@ -1663,6 +1668,8 @@ class Application(tk.Frame):
 		snd_play_mp_riat("squeezing-toy.wav")
 		say_with_queue("Гасим проигрыватель")
 		os.system("report-videos >/dev/null 2>&1 &")  # nosec
+		global EXIT_CODE
+		EXIT_CODE = len(self.videos)
 		self.master.destroy()
 
 	def refresh(self):
@@ -1913,7 +1920,7 @@ class Application(tk.Frame):
 				if state_duration > TIME_TO_EXIT:
 					snd_play_queue(SND_DRUM, mpv_volume=75)
 					# ~ self.master.destroy()
-					self.on_close_master()
+					self.do_close_master()
 
 		_duration = tpc() - _start
 		if _duration * 1000 > REPINT_MSEC:
@@ -1943,7 +1950,7 @@ class Application(tk.Frame):
 
 		if e.keysym == "Escape":
 			logd("\n! Нажали Escape. Выход.")
-			self.on_close_master()
+			self.do_close_master()
 		elif e.keysym == "F9":
 			self.i_change_focus.set(not self.i_change_focus.get())
 		elif e.keysym == "F12":
