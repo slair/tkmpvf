@@ -259,6 +259,8 @@ def get_TPL_PLAY_CMD():
 				f"--volume={TPL_VOLUME}",
 				"--brightness=16" if ADD_BRIGHTNESS else "",
 				"--speed=1.33" if FASTER_SPEED else "",
+				"--screen=0" if IS_FOLDER_TG else "",
+				"--fs-screen=0" if IS_FOLDER_TG else "",
 				"--",
 				"'%s'",
 			)
