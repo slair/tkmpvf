@@ -1399,6 +1399,8 @@ class Application(tk.Frame):
 		self.pack(side="top", fill="both", expand=True)
 
 		self.monitors = enum_display_monitors(taskbar=False)
+		global MONITOR_INDEX
+		MONITOR_INDEX = len(self.monitors)
 		logd("self.monitors=%r", self.monitors)
 		self.mon1width = self.monitors[0][2]
 		self.mon1height = self.monitors[0][3]
@@ -1695,7 +1697,8 @@ class Application(tk.Frame):
 		self.lVideoTitle["text"] = title
 		logd("title=%r", title)
 		_cmd = (
-			f'osd -m 0 -p 7 -fi 200 -d 5000 -fo 8000 -f 24 -n "tkmpvf"'
+			f"osd -m {MONITOR_INDEX} -p 7 -fi 200 -d 5000 "
+			'-fo 8000 -f 24 -n "tkmpvf"'
 			f' "{title}" >/dev/null 2>&1 &'
 		)
 		logd("\n!_cmd=%r", _cmd)
