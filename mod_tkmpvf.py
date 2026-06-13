@@ -79,6 +79,9 @@ DEFAULT_FONT = (DEFAULT_FONT_FAMILY, DEFAULT_FONT_SIZE)
 CHANGE_FOCUS = False
 EXIT_CODE = -1
 
+ACT_WINDOW = None
+first_video = True
+
 start_tpc = tpc()
 
 
@@ -168,6 +171,20 @@ add_brightness_flag = ("~~add-brightness~~", ".~~add-brightness~~")
 # ~ faster_speed_flag = "~~faster-speed-*-~~"
 faster_speed_flag = ("~~faster-speed~~", ".~~faster-speed~~")
 
+
+def isRunningFromSciTE() -> bool:
+	p = psutil.Process(os.getppid())
+	with p.oneshot():
+		# ~ tp("p.name()=%r", p.name())
+		if p.name() == "SciTE":
+			return True
+	return False
+
+
+if isRunningFromSciTE():
+	os.chdir("/home/slair/videos/_tg all")
+
+
 cd = os.getcwd()
 # ~ FASTER_SPEED = cd.endswith("_news")
 FASTER_SPEED = False
@@ -185,6 +202,8 @@ IS_FOLDER_GAMES = False
 BASE_TPL_VOLUME = 90
 TG_VOLUME = 110
 TPL_VOLUME = BASE_TPL_VOLUME
+
+TG_MONITOR = 1
 
 if cd.endswith("/_tg all"):
 	IS_FOLDER_TG = True
@@ -259,8 +278,8 @@ def get_TPL_PLAY_CMD():
 				f"--volume={TPL_VOLUME}",
 				"--brightness=16" if ADD_BRIGHTNESS else "",
 				"--speed=1.33" if FASTER_SPEED else "",
-				"--screen=0" if IS_FOLDER_TG else "",
-				"--fs-screen=0" if IS_FOLDER_TG else "",
+				f"--screen={TG_MONITOR}" if IS_FOLDER_TG else "",
+				f"--fs-screen={TG_MONITOR}" if IS_FOLDER_TG else "",
 				"--",
 				"'%s'",
 			)
@@ -439,6 +458,8 @@ if not mi_bin:
 	sys.exit(100)
 
 run_talk_server()
+
+logd("IS_FOLDER_TG=%r", IS_FOLDER_TG)
 
 
 def save_cache(fp: str, cache: dict, datasep: str = "|"):
@@ -1171,10 +1192,6 @@ def on_start_video(fp):
 	)
 
 
-ACT_WINDOW = None
-first_video = True
-
-
 def riat(func):
 	def wrapper(*args, **kwargs):
 		thr = Thread(target=func, args=args, kwargs=kwargs)
@@ -1213,13 +1230,13 @@ def delay_send_keys(pid: int):
 		logd("Не нашли окно sMPV_WINDOW=%r pid=%r", sMPV_WINDOW, pid)
 
 
-def on_video_started(pid: int):
-	global FASTER_SPEED, ADD_BRIGHTNESS, ACT_WINDOW
-	FASTER_SPEED = False
-	ADD_BRIGHTNESS = False
+def focus_store():
+	global ACT_WINDOW
+	ACT_WINDOW = get_active_window()
 
-	delay_send_keys(pid)
 
+def focus_restore():
+	global ACT_WINDOW
 	if not CHANGE_FOCUS:
 		logd(
 			"\n>>>>> смена фокуса отключена CHANGE_FOCUS=%r ACT_WINDOW=%r",
@@ -1242,6 +1259,17 @@ def on_video_started(pid: int):
 		ACT_WINDOW = None
 	else:
 		logd("\n>>>>> нечего активировать ACT_WINDOW=%r", ACT_WINDOW)
+
+
+def on_video_started(pid: int):
+	global FASTER_SPEED, ADD_BRIGHTNESS
+	FASTER_SPEED = False
+	ADD_BRIGHTNESS = False
+
+	if not IS_FOLDER_TG:
+		delay_send_keys(pid)
+
+	focus_restore()
 
 
 def get_wm_class_name(wid):
@@ -1320,10 +1348,16 @@ def get_active_window():
 		WMCLASS, WMNAME = get_wm_class_name(res)
 	if WMCLASS == "tk.Tk" and " - mod_tkmpvf" in WMNAME:  # type:ignore[operator]
 		# fp: наше собственное окно, его активировать не будем
+		logd(
+			"\n>>> нашли сами себя res=%r, WMCLASS=%r, WMNAME=%r",
+			res,
+			WMCLASS,
+			WMNAME,
+		)
 		res = None
 	else:
 		logd(
-			"\n>>>>> сохранили res=%r, WMCLASS=%r, WMNAME=%r",
+			"\n>>>>> нашли res=%r, WMCLASS=%r, WMNAME=%r",
 			res,
 			WMCLASS,
 			WMNAME,
@@ -1400,7 +1434,7 @@ class Application(tk.Frame):
 
 		self.monitors = enum_display_monitors(taskbar=False)
 		global MONITOR_INDEX
-		MONITOR_INDEX = len(self.monitors)
+		MONITOR_INDEX = len(self.monitors) - 1  # type:ignore[name-defined]
 		logd("self.monitors=%r", self.monitors)
 		self.mon1width = self.monitors[0][2]
 		self.mon1height = self.monitors[0][3]
@@ -1454,11 +1488,11 @@ class Application(tk.Frame):
 
 		geometry = config["global"].get("normal_geometry", None)
 		if geometry is not None:
-			# ~ tp("geometry=%r", geometry)
-			if "-" in geometry:
-				# todo: убрать эту константу 1
+			logd("geometry=%r", geometry)
+			# ~ if "-" in geometry:
+			# todo: убрать эту константу 1
 
-				geometry = f"{self.mon2width // 2}x{self.mon2height - TBWT}+{self.p4side}+0"
+			# ~ geometry = f"{self.mon2width // 2}x{self.mon2height - TBWT}+{self.p4side}+0"
 			self.to_ = htk.geometry2list(geometry)
 			self.to_.append(1.1)  # alpha
 
@@ -1466,22 +1500,22 @@ class Application(tk.Frame):
 		self.on_every_second()
 		self.wid = mod_xdotool.win_active()
 		normal_geometry = config["global"].get("normal_geometry", None)
-		normal_geometry = None
-		if normal_geometry is None:
-			# todo: убрать эту константу 2
-			normal_geometry = f"{self.mon2width // 2}x{self.mon2height - TBWT}+{self.p4side}+0"
-			change_config("global", "normal_geometry", normal_geometry)
-			save_config()
+		# ~ normal_geometry = None
+		# ~ if normal_geometry is None:
+		# todo: убрать эту константу 2
+		# ~ normal_geometry = f"{self.mon2width // 2}x{self.mon2height - TBWT}+{self.p4side}+0"
+		# ~ change_config("global", "normal_geometry", normal_geometry)
+		# ~ save_config()
 		self.normal_pos = htk.geometry2tuple(normal_geometry)
 		self.hidden_pos = list(self.normal_pos[:])  # type:ignore[index]
 		self.hidden_pos[0] += self.normal_pos[2] - 16  # type:ignore[index]
 		self.hidden_pos[1] += self.normal_pos[3] - 16  # type:ignore[index]
-		# ~ logd(
-		# ~ "< self.normal_pos=%r, self.hidden_pos=%r, self.wid=0x%0x",
-		# ~ self.normal_pos,
-		# ~ self.hidden_pos,
-		# ~ self.wid,
-		# ~ )
+		logd(
+			"\n< self.normal_pos=%r\n< self.hidden_pos=%r\n< self.wid=0x%0x",
+			self.normal_pos,
+			self.hidden_pos,
+			self.wid,
+		)
 		htk.anim_window(
 			self.master,
 			(*htk.geometry2tuple(self.master.geometry()), MIN_ALPHA),  # type:ignore[attr-defined]
@@ -1501,12 +1535,13 @@ class Application(tk.Frame):
 		current_pos = htk.geometry2tuple(self.master.geometry())  # type:ignore[attr-defined]
 		logd("current_pos=%r", current_pos)
 		if _hover:
-			# возврат в нормальную позицию
+			# fp: окно показываем (возврат в нормальную позицию)
 			self.ready = False
 			self.hover = True
 			self.master.attributes("-topmost", True)  # type:ignore[attr-defined]
-			logd(f"showing from {current_pos!r} to {self.normal_pos!r}")
-			self.bring_to_front()
+			focus_store()
+			logd(f"\n!showing from {current_pos!r} to {self.normal_pos!r}")
+			self.bring_to_front(force=True)
 			# ~ self.master.overrideredirect(False)
 			htk.anim_window(
 				self.master,
@@ -1516,11 +1551,11 @@ class Application(tk.Frame):
 			)
 			self.ready = True
 		else:
-			# скрываем окно
+			# fp: окно скрываем
 			self.ready = False
 			self.hover = False
 			self.master.attributes("-topmost", True)  # type:ignore[attr-defined]
-			logd(f"hiding from {current_pos} to {self.hidden_pos!r}")
+			logd(f"\n!hiding from {current_pos} to {self.hidden_pos!r}")
 
 			if NO_HIDE_WINDOW:
 				# остаёмся на месте
@@ -1542,15 +1577,7 @@ class Application(tk.Frame):
 			self.master.update_idletasks()
 			self.ready = True
 			if CHANGE_FOCUS:
-				if ACT_WINDOW:
-					subprocess.run(  # nosec
-						[
-							"xdotool",
-							"windowactivate",
-							"--sync",
-							ACT_WINDOW,
-						]
-					)
+				focus_restore()
 
 	def on_focus_in(self, e=None):
 		if e.widget == self.master:
@@ -1697,7 +1724,7 @@ class Application(tk.Frame):
 		self.lVideoTitle["text"] = title
 		logd("title=%r", title)
 		_cmd = (
-			f"osd -m {MONITOR_INDEX} -p 7 -fi 200 -d 5000 "
+			f"osd -m {MONITOR_INDEX} -p 7 -fi 200 -d 5000 "  # type:ignore[name-defined]
 			'-fo 8000 -f 24 -n "tkmpvf"'
 			f' "{title}" >/dev/null 2>&1 &'
 		)
@@ -1730,8 +1757,8 @@ class Application(tk.Frame):
 
 		on_video_started(self.player_pid)
 
-	def bring_to_front(self):
-		if self.i_bring_to_front.get() == 1:
+	def bring_to_front(self, force=False):
+		if self.i_bring_to_front.get() == 1 or force:
 			self.master.state("normal")  # type:ignore[attr-defined]
 			self.b_skip.focus_force()
 			self.master.lift()
@@ -1753,7 +1780,6 @@ class Application(tk.Frame):
 			label["font"] = (label_font_name, label_font_size)
 
 	def on_every_second(self):
-		global ACT_WINDOW
 		# ~ self.update()
 		if not self.ready:
 			self.after(REPINT_MSEC, self.on_every_second)
@@ -1813,7 +1839,7 @@ class Application(tk.Frame):
 				self._points_added = 0
 				# ~ if not NO_HIDE_WINDOW:
 
-				ACT_WINDOW = get_active_window()
+				focus_store()
 
 				if self.i_bring_to_front.get():
 					self.bring_to_front()
@@ -2065,20 +2091,20 @@ class Application(tk.Frame):
 				else:
 					fn_duration = get_duration(fn)
 					new_video = (fn, get_video_title(fn), fsize, fn_duration)
-					logd("adding %r", new_video)
+					# ~ logd("adding %r", new_video)
 					self.videos.append(new_video)
 					if self.exit_by_self:
 						# отменяем выход, если назначили его сами
 						self.i_exit.set(False)
 						self.exit_by_self = False
-					logd("self.i_exit.get()=%r", self.i_exit.get())
+					# ~ logd("self.i_exit.get()=%r", self.i_exit.get())
 					# ~ logd("self.videos=%r", self.videos)
 
 					_duration += fn_duration[0]
 					_fsize += fsize
 
 					if announce and self.splash.working:
-						logd("fn=%r", fn)
+						# ~ logd("fn=%r", fn)
 						if fn[0] == ".":
 							self.splash.l_fn["text"] = fn[2:]
 						perc = fn_count / fn_total * 100.0
@@ -2729,15 +2755,6 @@ def main():
 	else:
 		app = Application(root)
 	app.mainloop()
-
-
-def isRunningFromSciTE() -> bool:
-	p = psutil.Process(os.getppid())
-	with p.oneshot():
-		# ~ tp("p.name()=%r", p.name())
-		if p.name() == "SciTE":
-			return True
-	return False
 
 
 if __name__ == "__main__":
