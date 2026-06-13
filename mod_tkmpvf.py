@@ -1409,16 +1409,17 @@ def get_active_window():
 		WMCLASS, WMNAME = get_wm_class_name(res)
 	if WMCLASS == "tk.Tk" and " - mod_tkmpvf" in WMNAME:  # type:ignore[operator]
 		# fp: наше собственное окно, его активировать не будем
-		logd(
-			"\n>>> нашли сами себя res=%r, WMCLASS=%r, WMNAME=%r",
-			res,
-			WMCLASS,
-			WMNAME,
-		)
+		# ~ logd(
+		# ~ "\n>>> нашли сами себя res=%r, WMCLASS=%r, WMNAME=%r",
+		# ~ res,
+		# ~ WMCLASS,
+		# ~ WMNAME,
+		# ~ )
+		logd("\n< кроме себя никого не нашли")
 		res = None
 	else:
 		logd(
-			"\n>>>>> нашли res=%r, WMCLASS=%r, WMNAME=%r",
+			"\n< нашли res=%r, WMCLASS=%r, WMNAME=%r",
 			res,
 			WMCLASS,
 			WMNAME,
