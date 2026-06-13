@@ -3,6 +3,8 @@
 from __future__ import annotations
 from typing import Any, Callable, Dict, List, Optional, Union  # noqa:F401
 
+# mypy: disable-error-code="name-defined"
+
 import os
 import re
 import sys
@@ -82,6 +84,8 @@ EXIT_CODE = -1
 ACT_WINDOW = None
 first_video = True
 FPL_VIDEO = None
+
+hide_cooldown = 4.0  # секунды
 
 start_tpc = tpc()
 
@@ -1250,13 +1254,16 @@ def focus_store():
 	gaw = get_active_window()
 	if gaw:
 		ACT_WINDOW = gaw
-	logd("/n>>>>>ACT_WINDOW=%r", ACT_WINDOW)
+	logd(
+		"\n>>>>>ACT_WINDOW=%r, WMCLASS=%r, WMNAME=%r",
+		ACT_WINDOW,
+		WMCLASS,
+		WMNAME,
+	)
 
 
 def focus_restore():
-	global ACT_WINDOW
-	
-	'''
+	"""
 	if not CHANGE_FOCUS:
 		logd(
 			"\n>>>>> смена фокуса отключена CHANGE_FOCUS=%r ACT_WINDOW=%r",
@@ -1264,10 +1271,15 @@ def focus_restore():
 			ACT_WINDOW,
 		)
 		return
-	'''
+	"""
 
 	if ACT_WINDOW:
-		logd("\n>>>>> активируем ACT_WINDOW=%r", ACT_WINDOW)
+		logd(
+			"\n>>>>> активируем ACT_WINDOW=%r, WMCLASS=%r, WMNAME=%r",
+			ACT_WINDOW,
+			WMCLASS,
+			WMNAME,
+		)
 		time.sleep(1)
 		subprocess.run(  # nosec
 			[
@@ -1277,7 +1289,6 @@ def focus_restore():
 				ACT_WINDOW,
 			]
 		)
-		ACT_WINDOW = None
 	else:
 		logd("\n>>>>> нечего активировать ACT_WINDOW=%r", ACT_WINDOW)
 
@@ -1392,6 +1403,7 @@ def get_active_window_xdotool_by_class(c: str):
 
 def get_active_window():
 	res = get_active_window_xdotool()
+	global WMCLASS, WMNAME
 	WMCLASS, WMNAME = None, None
 	if res:
 		WMCLASS, WMNAME = get_wm_class_name(res)
@@ -1468,6 +1480,8 @@ class Application(tk.Frame):
 	def __init__(self, master=None, sort_by="fsize_desc"):
 		super().__init__(master)
 		# ~ logd("sort_by=%r", sort_by)
+
+		self.tpc_hide = 0.0
 
 		# если сами задумаем выйти после последнего видоса
 		self.exit_by_self = False
@@ -1600,6 +1614,15 @@ class Application(tk.Frame):
 			)
 			self.ready = True
 		else:
+			time_hidden = tpc() - self.tpc_hide
+			if time_hidden < hide_cooldown:
+				logd(
+					"time_hidden=%r < hide_cooldown=%r",
+					time_hidden,
+					hide_cooldown,
+				)
+				return
+
 			# fp: окно скрываем
 			self.ready = False
 			self.hover = False
@@ -1628,8 +1651,9 @@ class Application(tk.Frame):
 				)
 
 			self.master.update_idletasks()
-			self.ready = True
 			focus_restore()
+			self.tpc_hide = tpc()
+			self.ready = True
 
 	def on_focus_in(self, e=None):
 		if e.widget == self.master:
