@@ -1221,8 +1221,9 @@ def delay_send_keys(
 				_cmd = ["winmove.py", "--down"]
 			else:
 				_cmd = ["xdotool", "key", "--window", window_id, k]
-			logd("_cmd=%r", _cmd)
+			logd("starting _cmd=%r", _cmd)
 			subprocess.run(_cmd)  # nosec
+			logd("finished _cmd=%r", _cmd)
 
 	time.sleep(1)
 	sMPV_WINDOW = get_active_window_xdotool_by_class("mpv")
@@ -1254,6 +1255,8 @@ def focus_store():
 
 def focus_restore():
 	global ACT_WINDOW
+	
+	'''
 	if not CHANGE_FOCUS:
 		logd(
 			"\n>>>>> смена фокуса отключена CHANGE_FOCUS=%r ACT_WINDOW=%r",
@@ -1261,6 +1264,7 @@ def focus_restore():
 			ACT_WINDOW,
 		)
 		return
+	'''
 
 	if ACT_WINDOW:
 		logd("\n>>>>> активируем ACT_WINDOW=%r", ACT_WINDOW)
@@ -1600,7 +1604,11 @@ class Application(tk.Frame):
 			self.ready = False
 			self.hover = False
 			self.master.attributes("-topmost", True)  # type:ignore[attr-defined]
-			logd(f"\n!hiding from {current_pos} to {self.hidden_pos!r}")
+			logd(
+				f"\n!hiding from {current_pos} to"
+				f" {self.hidden_pos!r} ACT_WINDOW=%r",
+				ACT_WINDOW,
+			)
 
 			if NO_HIDE_WINDOW:
 				# остаёмся на месте
@@ -1621,8 +1629,7 @@ class Application(tk.Frame):
 
 			self.master.update_idletasks()
 			self.ready = True
-			if CHANGE_FOCUS:
-				focus_restore()
+			focus_restore()
 
 	def on_focus_in(self, e=None):
 		if e.widget == self.master:
