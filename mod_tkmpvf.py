@@ -1208,27 +1208,36 @@ def delay_send_keys(
 	pid: int, first_sequence: list | tuple, second_sequence: list | tuple
 ):
 	global first_video
-	time.sleep(1)
-	sMPV_WINDOW = get_active_window_xdotool_by_class("mpv")
-	if sMPV_WINDOW:
-		for k in first_sequence:
-			time.sleep(0.1)
-			_cmd = ["xdotool", "key", "--window", sMPV_WINDOW, k]
+
+	seq_sleep = 0.2
+	big_sleep = 5.0
+
+	def send_sequence(sequence, window_id):
+		for k in sequence:
+			time.sleep(seq_sleep)
+			if k == "ctrl+alt+right":
+				_cmd = ["winmove.py", "--right"]
+			elif k == "ctrl+alt+down":
+				_cmd = ["winmove.py", "--down"]
+			else:
+				_cmd = ["xdotool", "key", "--window", window_id, k]
 			logd("_cmd=%r", _cmd)
 			subprocess.run(_cmd)  # nosec
 
+	time.sleep(1)
+	sMPV_WINDOW = get_active_window_xdotool_by_class("mpv")
+	if sMPV_WINDOW:
+		send_sequence(first_sequence, sMPV_WINDOW)
+
 		if first_video:
-			time.sleep(5)
+			time.sleep(big_sleep)
 			first_video = False
 		else:
-			time.sleep(0.1)
+			time.sleep(seq_sleep)
 
 		sMPV_WINDOW = get_active_window_xdotool_by_class("mpv")
 		if sMPV_WINDOW:
-			for k in second_sequence:
-				_cmd = ["xdotool", "key", "--window", sMPV_WINDOW, k]
-				logd("_cmd=%r", _cmd)
-				subprocess.run(_cmd)  # nosec
+			send_sequence(second_sequence, sMPV_WINDOW)
 		else:
 			logd("Не нашли окно sMPV_WINDOW=%r pid=%r", sMPV_WINDOW, pid)
 	else:
@@ -1237,7 +1246,10 @@ def delay_send_keys(
 
 def focus_store():
 	global ACT_WINDOW
-	ACT_WINDOW = get_active_window()
+	gaw = get_active_window()
+	if gaw:
+		ACT_WINDOW = gaw
+	logd("/n>>>>>ACT_WINDOW=%r", ACT_WINDOW)
 
 
 def focus_restore():
@@ -1288,8 +1300,10 @@ def on_video_started(pid: int):
 	if not IS_FOLDER_TG:
 		fs.append("space")
 		fs.append("f")
+		fs.append("ctrl+alt+right")
 
 		ss.append("space")
+		ss.append("ctrl+alt+down")
 
 	if (
 		IS_FOLDER_NEWS
