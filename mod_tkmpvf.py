@@ -81,6 +81,7 @@ EXIT_CODE = -1
 
 ACT_WINDOW = None
 first_video = True
+FPL_VIDEO = None
 
 start_tpc = tpc()
 
@@ -1171,6 +1172,8 @@ def on_start_video(fp):
 	global FASTER_SPEED, ADD_BRIGHTNESS
 	# ~ stop("fp=%r", fp)
 	fpl = fp.lower()
+	global FPL_VIDEO
+	FPL_VIDEO = fpl
 
 	ADD_BRIGHTNESS = any([a in cd for a in add_brightness_list])
 
@@ -1201,15 +1204,14 @@ def riat(func):
 
 
 @riat
-def delay_send_keys(pid: int):
+def delay_send_keys(
+	pid: int, first_sequence: list | tuple, second_sequence: list | tuple
+):
 	global first_video
 	time.sleep(1)
 	sMPV_WINDOW = get_active_window_xdotool_by_class("mpv")
 	if sMPV_WINDOW:
-		for k in (
-			"space",
-			"f",
-		):
+		for k in first_sequence:
 			time.sleep(0.1)
 			_cmd = ["xdotool", "key", "--window", sMPV_WINDOW, k]
 			logd("_cmd=%r", _cmd)
@@ -1223,9 +1225,12 @@ def delay_send_keys(pid: int):
 
 		sMPV_WINDOW = get_active_window_xdotool_by_class("mpv")
 		if sMPV_WINDOW:
-			_cmd = ["xdotool", "key", "--window", sMPV_WINDOW, "space"]
-			logd("_cmd=%r", _cmd)
-			subprocess.run(_cmd)  # nosec
+			for k in second_sequence:
+				_cmd = ["xdotool", "key", "--window", sMPV_WINDOW, k]
+				logd("_cmd=%r", _cmd)
+				subprocess.run(_cmd)  # nosec
+		else:
+			logd("Не нашли окно sMPV_WINDOW=%r pid=%r", sMPV_WINDOW, pid)
 	else:
 		logd("Не нашли окно sMPV_WINDOW=%r pid=%r", sMPV_WINDOW, pid)
 
@@ -1266,8 +1271,34 @@ def on_video_started(pid: int):
 	FASTER_SPEED = False
 	ADD_BRIGHTNESS = False
 
+	fs = []
+	ss = []
+
+	logd(
+		"\n>>>IS_FOLDER_TG=%r"
+		"\n>>>IS_FOLDER_NEWS=%r"
+		"\n>>>IS_FOLDER_GAMES=%r"
+		"\n>>>>FPL_VIDEO=%r",
+		IS_FOLDER_TG,
+		IS_FOLDER_NEWS,
+		IS_FOLDER_GAMES,
+		FPL_VIDEO,
+	)
+
 	if not IS_FOLDER_TG:
-		delay_send_keys(pid)
+		fs.append("space")
+		fs.append("f")
+
+		ss.append("space")
+
+	if (
+		IS_FOLDER_NEWS
+		and FPL_VIDEO
+		and "информатор" in os.path.basename(FPL_VIDEO)
+	):
+		fs.append("o")
+
+	delay_send_keys(pid, fs, ss)
 
 	focus_restore()
 
