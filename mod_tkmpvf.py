@@ -1401,13 +1401,25 @@ def get_active_window_xdotool_by_class(c: str):
 		return None
 
 
+MY_WINDOW_ID = None
+
+
 def get_active_window():
 	res = get_active_window_xdotool()
 	global WMCLASS, WMNAME
 	WMCLASS, WMNAME = None, None
 	if res:
 		WMCLASS, WMNAME = get_wm_class_name(res)
-	if WMCLASS == "tk.Tk" and " - mod_tkmpvf" in WMNAME:  # type:ignore[operator]
+	# ~ if WMCLASS == "tk.Tk" and " - mod_tkmpvf" in WMNAME:  # type:ignore[operator]
+	ires = int(res)
+	logd(
+		"\n< ires=%r(0x%08x), MY_WINDOW_ID=%r(0x%08x)",
+		ires,
+		ires,
+		MY_WINDOW_ID,
+		MY_WINDOW_ID,
+	)
+	if ires == MY_WINDOW_ID:
 		# fp: наше собственное окно, его активировать не будем
 		# ~ logd(
 		# ~ "\n>>> нашли сами себя res=%r, WMCLASS=%r, WMNAME=%r",
@@ -1415,7 +1427,11 @@ def get_active_window():
 		# ~ WMCLASS,
 		# ~ WMNAME,
 		# ~ )
-		logd("\n< кроме себя никого не нашли")
+		logd(
+			"\n< кроме себя никого не нашли, остаётся ACT_WINDOW=%r",
+			ACT_WINDOW,
+		)
+		WMCLASS, WMNAME = None, None
 		res = None
 	else:
 		logd(
@@ -1585,6 +1601,8 @@ class Application(tk.Frame):
 			(*htk.geometry2tuple(self.master.geometry()), MIN_ALPHA),  # type:ignore[attr-defined]
 			(*self.normal_pos, MAX_ALPHA),  # type:ignore[misc]
 		)
+		global MY_WINDOW_ID
+		MY_WINDOW_ID = get_real_parent_window_id(self.master)
 		self.ready = True
 
 	def on_mouse_move(self, e):
@@ -2804,11 +2822,28 @@ class Application(tk.Frame):
 			self.b_clear_skipped["state"] = "disabled"
 
 
+def get_real_parent_window_id(widget):
+	child_id = widget.winfo_id()
+	# Получаем hex с префиксом 0x как любят иксы
+	child_hex = f"0x{child_id:x}"
+
+	cmd = ["xwininfo", "-id", child_hex, "-tree"]
+	result = subprocess.run(cmd, capture_output=True, text=True)  # nosec
+
+	# Ищем строку "Parent window id: 0x..."
+	match = re.search(r"Parent window id: (0x[0-9a-f]+)", result.stdout)
+	if match:
+		parent_hex = match.group(1)
+		return int(parent_hex, 16)
+	return None
+
+
 def main():
 	# done: Загрузка настроек
 	load_config()
 
 	root = tk.Tk()
+	# ~ MY_WINDOW_ID = root.winfo_id()
 	# ~ root.overrideredirect(1)
 
 	# ~ sw, sh = root.winfo_screenwidth(), root.winfo_screenheight()
@@ -2831,6 +2866,7 @@ def main():
 		app = Application(root, sys.argv[1][1:])
 	else:
 		app = Application(root)
+	# ~ MY_WINDOW_ID = app.winfo_id()
 	app.mainloop()
 
 
