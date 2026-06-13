@@ -1220,9 +1220,9 @@ def delay_send_keys(
 		for k in sequence:
 			time.sleep(seq_sleep)
 			if k == "ctrl+alt+right":
-				_cmd = ["winmove.py", "--right"]
+				_cmd = ["winmove.py", "--right", "--id", window_id]
 			elif k == "ctrl+alt+down":
-				_cmd = ["winmove.py", "--down"]
+				_cmd = ["winmove.py", "--down", "--id", window_id]
 			else:
 				_cmd = ["xdotool", "key", "--window", window_id, k]
 			logd("starting _cmd=%r", _cmd)
