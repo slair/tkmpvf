@@ -1410,8 +1410,13 @@ def get_active_window():
 	WMCLASS, WMNAME = None, None
 	if res:
 		WMCLASS, WMNAME = get_wm_class_name(res)
-	# ~ if WMCLASS == "tk.Tk" and " - mod_tkmpvf" in WMNAME:  # type:ignore[operator]
-	ires = int(res)
+
+	try:
+		ires = int(res)
+	except Exception:
+		logd("\n!Косяк int(res=%r)", res)
+		return None
+
 	logd(
 		"\n< ires=%r(0x%08x), MY_WINDOW_ID=%r(0x%08x)",
 		ires,
@@ -1419,14 +1424,8 @@ def get_active_window():
 		MY_WINDOW_ID,
 		MY_WINDOW_ID,
 	)
+
 	if ires == MY_WINDOW_ID:
-		# fp: наше собственное окно, его активировать не будем
-		# ~ logd(
-		# ~ "\n>>> нашли сами себя res=%r, WMCLASS=%r, WMNAME=%r",
-		# ~ res,
-		# ~ WMCLASS,
-		# ~ WMNAME,
-		# ~ )
 		logd(
 			"\n< кроме себя никого не нашли, остаётся ACT_WINDOW=%r",
 			ACT_WINDOW,
@@ -1818,13 +1817,16 @@ class Application(tk.Frame):
 		# ~ logd("self.player_pid=%r", self.player_pid)
 		self.lVideoTitle["text"] = title
 		logd("title=%r", title)
-		_cmd = (
-			f"osd -m {MONITOR_INDEX} -p 7 -fi 200 -d 5000 "  # type:ignore[name-defined]
-			'-fo 8000 -f 24 -n "tkmpvf"'
-			f' "{title}" >/dev/null 2>&1 &'
-		)
-		logd("\n!_cmd=%r", _cmd)
-		os.system(_cmd)  # nosec
+		for MI in range(len(self.monitors)):
+			logfilename=f"/mnt/sda1-video/osd-{MI}.log"
+			_cmd = (
+				f"osd -m {MI} -p 7 -fi 200 -d 5000 "
+				'-fo 8000 -f 24 -K -n "tkmpvf"'
+				f' "{title}" >>{logfilename}  2>&1 &'
+			)
+			logd("\n!_cmd=%r", _cmd)
+			os.system(_cmd)  # nosec
+			# ~ time.sleep(0.5)
 		self.lVideoTitle["fg"] = COLOR_FG_TITLE
 		self.lVideoTitle["bg"] = COLOR_BG_TITLE
 		count_videos = len(self.videos)
