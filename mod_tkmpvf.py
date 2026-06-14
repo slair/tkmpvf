@@ -1588,7 +1588,7 @@ class Application(tk.Frame):
 		self.normal_pos = htk.geometry2tuple(normal_geometry)
 		self.hidden_pos = list(self.normal_pos[:])  # type:ignore[index]
 		self.hidden_pos[0] += self.normal_pos[2] - 16  # type:ignore[index]
-		self.hidden_pos[1] += self.normal_pos[3] - 16  # type:ignore[index]
+		self.hidden_pos[1] -= self.normal_pos[3] - 16  # type:ignore[index]
 		logd(
 			"\n< self.normal_pos=%r\n< self.hidden_pos=%r\n< self.wid=0x%0x",
 			self.normal_pos,
