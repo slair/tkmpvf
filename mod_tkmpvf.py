@@ -1312,7 +1312,8 @@ def on_video_started(pid: int):
 		FPL_VIDEO,
 	)
 
-	if not IS_FOLDER_TG:
+	# ~ if not IS_FOLDER_TG:
+	if True:  # noqa
 		fs.append("space")
 		fs.append("f")
 		fs.append("ctrl+alt+right")
@@ -1818,7 +1819,7 @@ class Application(tk.Frame):
 		self.lVideoTitle["text"] = title
 		logd("title=%r", title)
 		for MI in range(len(self.monitors)):
-			logfilename=f"/mnt/sda1-video/osd-{MI}.log"
+			logfilename = f"/mnt/sda1-video/osd-{MI}.log"
 			_cmd = (
 				f"osd -m {MI} -p 7 -fi 200 -d 5000 "
 				'-fo 8000 -f 24 -K -n "tkmpvf"'
