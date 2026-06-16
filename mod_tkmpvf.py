@@ -1215,6 +1215,7 @@ def delay_send_keys(
 
 	seq_sleep = 0.2
 	big_sleep = 5.0
+	player_classes = ("mpv", "gl.mpv")
 
 	def send_sequence(sequence, window_id):
 		for k in sequence:
@@ -1230,7 +1231,7 @@ def delay_send_keys(
 			logd("finished _cmd=%r", _cmd)
 
 	time.sleep(1)
-	sMPV_WINDOW = get_active_window_xdotool_by_class("mpv")
+	sMPV_WINDOW = get_active_window_xdotool_by_class(player_classes)
 	if sMPV_WINDOW:
 		send_sequence(first_sequence, sMPV_WINDOW)
 
@@ -1240,7 +1241,7 @@ def delay_send_keys(
 		else:
 			time.sleep(seq_sleep)
 
-		sMPV_WINDOW = get_active_window_xdotool_by_class("mpv")
+		sMPV_WINDOW = get_active_window_xdotool_by_class(player_classes)
 		if sMPV_WINDOW:
 			send_sequence(second_sequence, sMPV_WINDOW)
 		else:
@@ -1389,17 +1390,29 @@ def get_active_window_xdotool_by_pid(pid: int):
 		return None
 
 
-def get_active_window_xdotool_by_class(c: str):
-	try:
-		result = subprocess.run(  # nosec
-			["/usr/bin/xdotool", "search", "--class", f"{c}"],
-			capture_output=True,
-			text=True,
-		)
-		return result.stdout.strip()
-	except Exception as e:
-		loge("Получить ID активного окна через xdotool", exc_info=e)
-		return None
+def get_active_window_xdotool_by_class(c: str | tuple):
+	if not isinstance(c, (list, tuple)):
+		tc = (c,)
+	else:
+		tc = c
+
+	res = None
+	for item in tc:
+		try:
+			result = subprocess.run(  # nosec
+				["/usr/bin/xdotool", "search", "--class", f"{item}"],
+				capture_output=True,
+				text=True,
+			)
+			res = result.stdout.strip()
+			logd("Ищем item=%r, res=%r", item, res)
+			if res:
+				break
+
+		except Exception as e:
+			loge("Получить ID активного окна через xdotool", exc_info=e)
+
+	return res
 
 
 MY_WINDOW_ID = None
