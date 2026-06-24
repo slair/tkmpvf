@@ -2553,7 +2553,7 @@ class Application(tk.Frame):
 		if IS_FOLDER_TG:
 			self.i_change_focus.set("1")
 		else:
-			self.i_change_focus.set("0")
+			self.i_change_focus.set("1")
 
 		self.cb_change_focus = tk.Checkbutton(
 			self.f_video,
