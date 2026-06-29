@@ -205,7 +205,7 @@ IS_FOLDER_NEWS = False
 IS_FOLDER_GAMES = False
 
 BASE_TPL_VOLUME = 90
-TG_VOLUME = 100
+TG_VOLUME = BASE_TPL_VOLUME + 10
 TPL_VOLUME = BASE_TPL_VOLUME
 
 TG_MONITOR = 1
@@ -1263,16 +1263,16 @@ def focus_store():
 	)
 
 
-def focus_restore():
-	"""
-	if not CHANGE_FOCUS:
+def focus_restore(force=False):
+	if not CHANGE_FOCUS and not force:
 		logd(
-			"\n>>>>> смена фокуса отключена CHANGE_FOCUS=%r ACT_WINDOW=%r",
+			"\n>>>>> смена фокуса отключена "
+			"CHANGE_FOCUS=%r ACT_WINDOW=%r force=%r",
 			CHANGE_FOCUS,
 			ACT_WINDOW,
+			force,
 		)
 		return
-	"""
 
 	if ACT_WINDOW:
 		logd(
@@ -1313,7 +1313,6 @@ def on_video_started(pid: int):
 		FPL_VIDEO,
 	)
 
-	# ~ if not IS_FOLDER_TG:
 	if True:  # noqa
 		fs.append("space")
 		fs.append("f")
@@ -1683,7 +1682,7 @@ class Application(tk.Frame):
 				)
 
 			self.master.update_idletasks()
-			focus_restore()
+			focus_restore(force=True)
 			self.tpc_hide = tpc()
 			self.ready = True
 
