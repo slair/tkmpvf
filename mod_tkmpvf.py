@@ -1198,6 +1198,8 @@ def on_start_video(fp):
 		cd,
 	)
 
+	focus_store()
+
 
 def riat(func):
 	def wrapper(*args, **kwargs):
@@ -1256,7 +1258,7 @@ def focus_store():
 	if gaw:
 		ACT_WINDOW = gaw
 	logd(
-		"\n>>>>>ACT_WINDOW=%r, WMCLASS=%r, WMNAME=%r",
+		"\n! ACT_WINDOW=%r, WMCLASS=%r, WMNAME=%r",
 		ACT_WINDOW,
 		WMCLASS,
 		WMNAME,
@@ -1266,7 +1268,7 @@ def focus_store():
 def focus_restore(force=False):
 	if not CHANGE_FOCUS and not force:
 		logd(
-			"\n>>>>> смена фокуса отключена "
+			"\n< смена фокуса отключена "
 			"CHANGE_FOCUS=%r ACT_WINDOW=%r force=%r",
 			CHANGE_FOCUS,
 			ACT_WINDOW,
@@ -1276,7 +1278,7 @@ def focus_restore(force=False):
 
 	if ACT_WINDOW:
 		logd(
-			"\n>>>>> активируем ACT_WINDOW=%r, WMCLASS=%r, WMNAME=%r",
+			"\n! активируем ACT_WINDOW=%r, WMCLASS=%r, WMNAME=%r",
 			ACT_WINDOW,
 			WMCLASS,
 			WMNAME,
@@ -1291,13 +1293,15 @@ def focus_restore(force=False):
 			]
 		)
 	else:
-		logd("\n>>>>> нечего активировать ACT_WINDOW=%r", ACT_WINDOW)
+		logd("\n! нечего активировать ACT_WINDOW=%r", ACT_WINDOW)
 
 
 def on_video_started(pid: int):
 	global FASTER_SPEED, ADD_BRIGHTNESS
 	FASTER_SPEED = False
 	ADD_BRIGHTNESS = False
+
+	focus_restore()
 
 	fs = []
 	ss = []
@@ -1629,11 +1633,11 @@ class Application(tk.Frame):
 		current_pos = htk.geometry2tuple(self.master.geometry())  # type:ignore[attr-defined]
 		logd("current_pos=%r", current_pos)
 		if _hover:
-			# fp: окно показываем (возврат в нормальную позицию)
+			# fp: окно показываем (скрыты, возврат в нормальную позицию)
+			focus_store()
 			self.ready = False
 			self.hover = True
 			self.master.attributes("-topmost", True)  # type:ignore[attr-defined]
-			focus_store()
 			logd(f"\n!showing from {current_pos!r} to {self.normal_pos!r}")
 			self.bring_to_front(force=True)
 			# ~ self.master.overrideredirect(False)
@@ -1645,6 +1649,7 @@ class Application(tk.Frame):
 			)
 			self.ready = True
 		else:
+			# fp: окно скрываем (открыты)
 			time_hidden = tpc() - self.tpc_hide
 			if time_hidden < hide_cooldown:
 				logd(
@@ -1654,7 +1659,6 @@ class Application(tk.Frame):
 				)
 				return
 
-			# fp: окно скрываем
 			self.ready = False
 			self.hover = False
 			self.master.attributes("-topmost", True)  # type:ignore[attr-defined]
@@ -1837,7 +1841,7 @@ class Application(tk.Frame):
 				'-fo 8000 -f 24 -K -n "tkmpvf"'
 				f' "{title}" >>{logfilename}  2>&1 &'
 			)
-			logd("\n!_cmd=%r", _cmd)
+			logd("\n_cmd=%r", _cmd)
 			os.system(_cmd)  # nosec
 			# ~ time.sleep(0.5)
 		self.lVideoTitle["fg"] = COLOR_FG_TITLE
@@ -1869,6 +1873,7 @@ class Application(tk.Frame):
 
 	def bring_to_front(self, force=False):
 		if self.i_bring_to_front.get() == 1 or force:
+			focus_store()
 			self.master.state("normal")  # type:ignore[attr-defined]
 			self.b_skip.focus_force()
 			self.master.lift()
@@ -1941,6 +1946,8 @@ class Application(tk.Frame):
 			# ~ if not psutil.pid_exists(self.player_pid):
 			if not get_pids_by_fn(self.fp_video):
 				# fp: PLAY_FINISHED видос закончился
+				focus_store()
+
 				self.player_pid = None
 				self.b_pause["state"] = "disabled"
 				self.b_skip["state"] = "disabled"
@@ -1948,8 +1955,6 @@ class Application(tk.Frame):
 				self.my_state_start = tpc()
 				self._points_added = 0
 				# ~ if not NO_HIDE_WINDOW:
-
-				focus_store()
 
 				if self.i_bring_to_front.get():
 					self.bring_to_front()
@@ -2244,7 +2249,7 @@ class Application(tk.Frame):
 		save_cache(DUR_CACHE_FP, dur_cache)
 
 		logd(
-			"\n! announce=%r, self.splash.working=%r",
+			"announce=%r, self.splash.working=%r",
 			announce,
 			self.splash.working,
 		)
