@@ -2552,6 +2552,8 @@ class Application(tk.Frame):
 
 		if IS_FOLDER_TG:
 			self.i_change_focus.set("1")
+			global CHANGE_FOCUS
+			CHANGE_FOCUS = bool(self.i_change_focus.get())
 			self.i_bring_to_front.set("0")
 		else:
 			self.i_change_focus.set("0")
