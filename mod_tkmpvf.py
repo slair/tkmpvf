@@ -1835,7 +1835,8 @@ class Application(tk.Frame):
 		self.lVideoTitle["text"] = title
 		logd("title=%r", title)
 		for MI in range(len(self.monitors)):
-			logfilename = f"/mnt/sda1-video/osd-{MI}.log"
+			# ~ logfilename = f"/mnt/sda1-video/osd-{MI}.log"
+			logfilename = "/dev/null"
 			_cmd = (
 				f"osd -m {MI} -p 7 -fi 200 -d 5000 "
 				'-fo 8000 -f 24 -K -n "tkmpvf"'
