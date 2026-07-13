@@ -206,6 +206,7 @@ IS_FOLDER_GAMES = False
 
 BASE_TPL_VOLUME = 90
 TG_VOLUME = BASE_TPL_VOLUME + 10
+DEV_VOLUME = BASE_TPL_VOLUME + 20
 TPL_VOLUME = BASE_TPL_VOLUME
 
 TG_MONITOR = 1
@@ -213,6 +214,9 @@ TG_MONITOR = 1
 if cd.endswith("/_tg all"):
 	IS_FOLDER_TG = True
 	TPL_VOLUME = TG_VOLUME
+
+if "/_dev" in cd:
+	TPL_VOLUME = DEV_VOLUME
 
 for item in dont_delete_list:
 	if item in cd:
