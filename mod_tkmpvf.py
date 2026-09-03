@@ -1259,9 +1259,12 @@ def delay_send_keys(
 
 def focus_store():
 	global ACT_WINDOW
-	gaw = get_active_window()
-	if gaw:
-		ACT_WINDOW = gaw
+	if CHANGE_FOCUS:
+		gaw = get_active_window()
+		if gaw:
+			ACT_WINDOW = gaw
+	else:
+		WMCLASS, WMNAME = None, None
 	logd(
 		"\n! ACT_WINDOW=%r, WMCLASS=%r, WMNAME=%r",
 		ACT_WINDOW,
