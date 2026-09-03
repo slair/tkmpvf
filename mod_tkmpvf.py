@@ -1259,14 +1259,14 @@ def delay_send_keys(
 
 def focus_store():
 	global ACT_WINDOW
+	ACT_WINDOW, WMCLASS, WMNAME = None, None, None
 	if CHANGE_FOCUS:
 		gaw = get_active_window()
 		if gaw:
 			ACT_WINDOW = gaw
-	else:
-		WMCLASS, WMNAME = None, None
 	logd(
-		"\n! ACT_WINDOW=%r, WMCLASS=%r, WMNAME=%r",
+		"\n! CHANGE_FOCUS=%r, ACT_WINDOW=%r, WMCLASS=%r, WMNAME=%r",
+		CHANGE_FOCUS,
 		ACT_WINDOW,
 		WMCLASS,
 		WMNAME,
@@ -1304,7 +1304,8 @@ def focus_restore(force=False):
 		logd("\n! нечего активировать ACT_WINDOW=%r", ACT_WINDOW)
 
 
-def on_video_started(pid: int):
+def on_video_started(pid: int, i_fullscreen=False):
+	logd("\n< i_fullscreen=%r", i_fullscreen)
 	global FASTER_SPEED, ADD_BRIGHTNESS
 	FASTER_SPEED = False
 	ADD_BRIGHTNESS = False
@@ -1325,9 +1326,9 @@ def on_video_started(pid: int):
 		FPL_VIDEO,
 	)
 
-	if True:  # noqa
+	if not i_fullscreen:  # noqa
 		fs.append("space")
-		fs.append("f")
+		# ~ fs.append("f")
 		fs.append("ctrl+alt+right")
 
 		ss.append("space")
@@ -1878,7 +1879,7 @@ class Application(tk.Frame):
 		p = do_command_bg(_cmd)
 		self.player_pid = p.pid
 
-		on_video_started(self.player_pid)
+		on_video_started(self.player_pid, self.i_fullscreen.get())
 
 	def bring_to_front(self, force=False):
 		if self.i_bring_to_front.get() == 1 or force:
@@ -2106,8 +2107,12 @@ class Application(tk.Frame):
 		if e.keysym == "Escape":
 			logd("\n! Нажали Escape. Выход.")
 			self.do_close_master()
+		elif e.keysym == "F8":
+			self.i_bring_to_front.set(not self.i_bring_to_front.get())
 		elif e.keysym == "F9":
 			self.i_change_focus.set(not self.i_change_focus.get())
+		elif e.keysym == "F11":
+			self.i_fullscreen.set(not self.i_fullscreen.get())
 		elif e.keysym == "F12":
 			self.i_exit.set(not self.i_exit.get())
 			self.i_delseen.set(not self.i_delseen.get())
@@ -2495,12 +2500,12 @@ class Application(tk.Frame):
 		self.b_skip.pack(side="left", fill="y", expand=False, pady=4, padx=4)
 
 		self.i_fullscreen = tk.IntVar(
-			value=int(config["global"].get("fullscreen", "1"))
+			value=int(config["global"].get("fullscreen", "0"))
 		)
 
 		self.cb_fullscreen = tk.Checkbutton(
 			self.f_video,
-			text=_("Fullscreen"),
+			text=_("Fullscreen (F11)"),
 			variable=self.i_fullscreen,
 			onvalue=1,
 			offvalue=0,
@@ -2540,7 +2545,7 @@ class Application(tk.Frame):
 
 		self.cb_bring_to_front = tk.Checkbutton(
 			self.f_video,
-			text=_("Всплывать после видоса"),
+			text=_("Всплывать после видоса (F8)"),
 			highlightthickness=0,
 			variable=self.i_bring_to_front,
 			onvalue=1,
@@ -2570,7 +2575,7 @@ class Application(tk.Frame):
 
 		self.cb_change_focus = tk.Checkbutton(
 			self.f_video,
-			text=_("Менять фокус"),
+			text=_("Менять фокус (F9)"),
 			highlightthickness=0,
 			variable=self.i_change_focus,
 			onvalue=1,
@@ -2590,7 +2595,7 @@ class Application(tk.Frame):
 
 		self.cb_exit = tk.Checkbutton(
 			self.f_video,
-			text=_("Exit"),
+			text=_("Exit (F12)"),
 			highlightthickness=0,
 			variable=self.i_exit,
 			onvalue=1,
