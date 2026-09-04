@@ -215,6 +215,9 @@ if cd.endswith("/_tg all"):
 	IS_FOLDER_TG = True
 	TPL_VOLUME = TG_VOLUME
 
+if cd.endswith("/_news"):
+	IS_FOLDER_NEWS = True
+
 if "/_dev" in cd:
 	TPL_VOLUME = DEV_VOLUME
 
