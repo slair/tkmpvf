@@ -255,12 +255,13 @@ if getflag(faster_speed_flag):
 
 TPL_PLAY_CMD = None
 PLAYER_BINARY = shutil.which(PLAYER)
+OSD_BIN = shutil.which("osd")
 
 PID_FP = os.path.join(TMPDIR, os.path.basename(__file__) + ".pid")
 EXIT_THREAD = False
 
 
-def get_TPL_PLAY_CMD():
+"""~ def get_TPL_PLAY_CMD():
 	if WIN32:
 		res = " ".join(
 			(
@@ -300,7 +301,7 @@ def get_TPL_PLAY_CMD():
 		print_unsupported_platform_and_exit()
 		res = None
 
-	return res
+	return res ~"""
 
 
 _DEBUG = True
@@ -1016,7 +1017,7 @@ def do_command(_cmd, _enc=None, _errors="strict"):
 	return lines, errlines, p.returncode
 
 
-def do_command_bg(cmd):
+"""~ def do_command_bg(cmd):
 	proc = None
 	if WIN32:
 		bshell = False
@@ -1033,7 +1034,7 @@ def do_command_bg(cmd):
 		proc = subprocess.Popen(cmd + ">> /dev/null 2>&1 &", shell=bshell)  # nosec  # pylint: disable=
 	else:
 		print_unsupported_platform_and_exit()
-	return proc
+	return proc ~"""
 
 
 class Splash(tk.Frame):
@@ -1140,7 +1141,7 @@ def get_random_color():
 		return None
 
 
-def fix_filename(fn: str) -> str:
+"""~ def fix_filename(fn: str) -> str:
 	res = fn
 	escape_chars = "!'()"
 	changed = None
@@ -1157,7 +1158,7 @@ def fix_filename(fn: str) -> str:
 			os.rename(fn, res)
 		except FileNotFoundError:
 			return fn
-	return res
+	return res ~"""
 
 
 def wait_for_said(_cb=None):
@@ -1846,16 +1847,46 @@ class Application(tk.Frame):
 		# ~ logd("self.player_pid=%r", self.player_pid)
 		self.lVideoTitle["text"] = title
 		logd("title=%r", title)
-		for MI in range(len(self.monitors)):
-			# ~ logfilename = f"/mnt/sda1-video/osd-{MI}.log"
-			logfilename = "/dev/null"
-			_cmd = (
-				f"osd -m {MI} -p 7 -fi 200 -d 5000 "
-				'-fo 8000 -f 24 -K -n "tkmpvf"'
-				f' "{title}" >>{logfilename}  2>&1 &'
-			)
-			logd("\n_cmd=%r", _cmd)
-			os.system(_cmd)  # nosec
+		if OSD_BIN is None:
+			loge("Не могу найти OSD_BIN=%r", OSD_BIN)
+		else:
+			for MI in range(len(self.monitors)):
+				# ~ logfilename = f"/mnt/sda1-video/osd-{MI}.log"
+				"""~ logfilename = "/dev/null"
+				_cmd = (
+					f"osd -m {MI} -p 7 -fi 200 -d 5000 "
+					'-fo 8000 -f 24 -K -n "tkmpvf"'
+					f' "{title}" >>{logfilename}  2>&1 &'
+				)
+				logd("\n_cmd=%r", _cmd)
+				os.system(_cmd)  # nosec ~"""
+
+				_cmd_arr = [
+					OSD_BIN,
+					"-m",
+					str(MI),
+					"-p",
+					"7",
+					"-fi",
+					"200",
+					"-d",
+					"5000",
+					"-fo",
+					"8000",
+					"-f",
+					"24",
+					"-K",
+					"-n",
+					"tkmpvf",
+					title,
+				]
+				subprocess.Popen(  # nosec
+					_cmd_arr,
+					stdout=subprocess.DEVNULL,
+					stderr=subprocess.DEVNULL,
+					start_new_session=True,
+				)
+
 			# ~ time.sleep(0.5)
 		self.lVideoTitle["fg"] = COLOR_FG_TITLE
 		self.lVideoTitle["bg"] = COLOR_BG_TITLE
@@ -1873,14 +1904,64 @@ class Application(tk.Frame):
 
 		on_start_video(self.fp_video)
 
-		_cmd = get_TPL_PLAY_CMD() % (
+		"""~ _cmd = get_TPL_PLAY_CMD() % (
 			"-fs" if self.i_fullscreen.get() == 1 else "",
 			self.display_names.index(self.sv_player_display.get()),
 			self.fp_video,
 		)
 		logd("_cmd=%r", _cmd)
-		p = do_command_bg(_cmd)
-		self.player_pid = p.pid
+		p = do_command_bg(_cmd) ~"""
+
+		if not PLAYER_BINARY:
+			logc("Не могу найти PLAYER_BINARY=%r", PLAYER_BINARY)
+			return
+
+		if not self.fp_video:
+			logc("Не могу найти self.fp_video=%r", self.fp_video)
+			return
+
+		screen = self.display_names.index(self.sv_player_display.get())
+
+		"""~ _cmd_arr = (
+			PLAYER_BINARY,
+			"-fs" if self.i_fullscreen.get() == 1 else "",
+			f"--fs-screen={screen}",
+			"--volume-max=500",
+			f"--volume={TPL_VOLUME}",
+			"--brightness=16" if ADD_BRIGHTNESS else "",
+			"--speed=1.33" if FASTER_SPEED else "",
+			f"--screen={TG_MONITOR}" if IS_FOLDER_TG else "",
+			f"--fs-screen={TG_MONITOR}" if IS_FOLDER_TG else "",
+			"--",
+			self.fp_video,
+		) ~"""
+
+		_cmd_arr = [PLAYER_BINARY]
+		if self.i_fullscreen.get() == 1:
+			_cmd_arr.append("-fs")
+		fs_screen = TG_MONITOR if IS_FOLDER_TG else screen
+		_cmd_arr.append(f"--fs-screen={fs_screen}")
+		_cmd_arr.append("--volume-max=500")
+		_cmd_arr.append(f"--volume={TPL_VOLUME}")
+		if ADD_BRIGHTNESS:
+			_cmd_arr.append("--brightness=16")
+		if FASTER_SPEED:
+			_cmd_arr.append("--speed=1.33")
+		if IS_FOLDER_TG:
+			_cmd_arr.append(f"--screen={TG_MONITOR}")
+		_cmd_arr.append("--")
+		_cmd_arr.append(self.fp_video)
+		logd("_cmd_arr=%r", _cmd_arr)
+
+		po = subprocess.Popen(  # nosec
+			_cmd_arr,
+			stdout=subprocess.DEVNULL,
+			stderr=subprocess.DEVNULL,
+			stdin=subprocess.DEVNULL,
+			start_new_session=True,
+		)
+
+		self.player_pid = po.pid  # type:ignore[assignment]
 
 		on_video_started(self.player_pid, self.i_fullscreen.get())
 
@@ -2192,7 +2273,7 @@ class Application(tk.Frame):
 		_duration = 0
 		_fsize = 0
 		for fn in _:
-			fn = fix_filename(fn)
+			# ~ fn = fix_filename(fn)
 
 			if fn in self.prop_skipped:
 				continue
