@@ -1940,6 +1940,9 @@ class Application(tk.Frame):
 		if self.i_fullscreen.get() == 1:
 			_cmd_arr.append("-fs")
 		fs_screen = TG_MONITOR if IS_FOLDER_TG else screen
+		_cmd_arr.append(
+			"--audio-device=pulse/alsa_output.pci-0000_01_00.1.hdmi-stereo"
+		)
 		_cmd_arr.append(f"--fs-screen={fs_screen}")
 		_cmd_arr.append("--volume-max=500")
 		_cmd_arr.append(f"--volume={TPL_VOLUME}")
