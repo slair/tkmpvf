@@ -208,6 +208,9 @@ BASE_TPL_VOLUME = 90
 TG_VOLUME = BASE_TPL_VOLUME - 10
 DEV_VOLUME = BASE_TPL_VOLUME + 10
 TPL_VOLUME = BASE_TPL_VOLUME
+D_VOLUMES = {
+	70: ("failarmy", "hài vô đối", "holic unknowns"),
+}
 
 TG_MONITOR = 1
 
@@ -1496,6 +1499,24 @@ def ask_centered(title, message):
 	return False
 
 
+
+
+def get_volume(fp: str) -> int:
+	fpl = fp.lower()
+	bnfpl = os.path.basename(fpl)
+	dnfpl = os.path.dirname(fpl)
+	for k, v in D_VOLUMES.items():
+		for item in v:
+			if item in bnfpl:
+				return k
+	
+	if dnfpl.endswith("_tg all"):
+		return TG_VOLUME
+	if dnfpl.endswith("_dev"):
+		return DEV_VOLUME
+	return TPL_VOLUME
+
+
 class Application(tk.Frame):
 	my_state = None
 	player_pid = None
@@ -1851,16 +1872,6 @@ class Application(tk.Frame):
 			loge("Не могу найти OSD_BIN=%r", OSD_BIN)
 		else:
 			for MI in range(len(self.monitors)):
-				# ~ logfilename = f"/mnt/sda1-video/osd-{MI}.log"
-				"""~ logfilename = "/dev/null"
-				_cmd = (
-					f"osd -m {MI} -p 7 -fi 200 -d 5000 "
-					'-fo 8000 -f 24 -K -n "tkmpvf"'
-					f' "{title}" >>{logfilename}  2>&1 &'
-				)
-				logd("\n_cmd=%r", _cmd)
-				os.system(_cmd)  # nosec ~"""
-
 				_cmd_arr = [
 					OSD_BIN,
 					"-m",
@@ -1904,14 +1915,6 @@ class Application(tk.Frame):
 
 		on_start_video(self.fp_video)
 
-		"""~ _cmd = get_TPL_PLAY_CMD() % (
-			"-fs" if self.i_fullscreen.get() == 1 else "",
-			self.display_names.index(self.sv_player_display.get()),
-			self.fp_video,
-		)
-		logd("_cmd=%r", _cmd)
-		p = do_command_bg(_cmd) ~"""
-
 		if not PLAYER_BINARY:
 			logc("Не могу найти PLAYER_BINARY=%r", PLAYER_BINARY)
 			return
@@ -1922,20 +1925,6 @@ class Application(tk.Frame):
 
 		screen = self.display_names.index(self.sv_player_display.get())
 
-		"""~ _cmd_arr = (
-			PLAYER_BINARY,
-			"-fs" if self.i_fullscreen.get() == 1 else "",
-			f"--fs-screen={screen}",
-			"--volume-max=500",
-			f"--volume={TPL_VOLUME}",
-			"--brightness=16" if ADD_BRIGHTNESS else "",
-			"--speed=1.33" if FASTER_SPEED else "",
-			f"--screen={TG_MONITOR}" if IS_FOLDER_TG else "",
-			f"--fs-screen={TG_MONITOR}" if IS_FOLDER_TG else "",
-			"--",
-			self.fp_video,
-		) ~"""
-
 		_cmd_arr = [PLAYER_BINARY]
 		if self.i_fullscreen.get() == 1:
 			_cmd_arr.append("-fs")
@@ -1945,7 +1934,10 @@ class Application(tk.Frame):
 		)
 		_cmd_arr.append(f"--fs-screen={fs_screen}")
 		_cmd_arr.append("--volume-max=500")
-		_cmd_arr.append(f"--volume={TPL_VOLUME}")
+
+		volume_ = get_volume(self.fp_video)
+		_cmd_arr.append(f"--volume={volume_}")
+
 		if ADD_BRIGHTNESS:
 			_cmd_arr.append("--brightness=16")
 		if FASTER_SPEED:
