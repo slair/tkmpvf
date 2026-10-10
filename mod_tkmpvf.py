@@ -204,12 +204,16 @@ IS_FOLDER_TG = False
 IS_FOLDER_NEWS = False
 IS_FOLDER_GAMES = False
 
+
 BASE_TPL_VOLUME = 90
+now = datetime.now().astimezone()
+if now.hour > 21 or now.hour < 9:
+	BASE_TPL_VOLUME = 80
 TG_VOLUME = BASE_TPL_VOLUME - 10
 DEV_VOLUME = BASE_TPL_VOLUME + 10
 TPL_VOLUME = BASE_TPL_VOLUME
 D_VOLUMES = {
-	70: ("failarmy", "hài vô đối", "holic unknowns"),
+	70: ("failarmy", "hài vô đối", "holic unknowns", "funniest animals ever"),
 }
 
 TG_MONITOR = 1
@@ -1499,8 +1503,6 @@ def ask_centered(title, message):
 	return False
 
 
-
-
 def get_volume(fp: str) -> int:
 	fpl = fp.lower()
 	bnfpl = os.path.basename(fpl)
@@ -1509,7 +1511,7 @@ def get_volume(fp: str) -> int:
 		for item in v:
 			if item in bnfpl:
 				return k
-	
+
 	if dnfpl.endswith("_tg all"):
 		return TG_VOLUME
 	if dnfpl.endswith("_dev"):
