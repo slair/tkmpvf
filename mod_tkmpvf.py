@@ -205,16 +205,36 @@ IS_FOLDER_NEWS = False
 IS_FOLDER_GAMES = False
 
 
-BASE_TPL_VOLUME = 90
-now = datetime.now().astimezone()
-if now.hour > 21 or now.hour < 9:
-	BASE_TPL_VOLUME = 80
+BASE_TPL_VOLUME_DAY = 90
+BASE_TPL_VOLUME_NIGHT = 80
+
+BASE_TPL_VOLUME = BASE_TPL_VOLUME_DAY
+
 TG_VOLUME = BASE_TPL_VOLUME - 10
 DEV_VOLUME = BASE_TPL_VOLUME + 10
 TPL_VOLUME = BASE_TPL_VOLUME
+
 D_VOLUMES = {
-	70: ("failarmy", "hài vô đối", "holic unknowns", "funniest animals ever"),
+	60: ("failarmy", "hài vô đối", "holic unknowns", "funniest animals ever"),
 }
+
+
+def set_volume():
+	global BASE_TPL_VOLUME, TG_VOLUME, DEV_VOLUME, TPL_VOLUME
+	now = datetime.now().astimezone()
+	if now.hour > 21 or now.hour < 9:
+		if BASE_TPL_VOLUME != BASE_TPL_VOLUME_NIGHT:
+			BASE_TPL_VOLUME = BASE_TPL_VOLUME_NIGHT
+			TG_VOLUME = BASE_TPL_VOLUME - 10
+			DEV_VOLUME = BASE_TPL_VOLUME + 10
+			TPL_VOLUME = BASE_TPL_VOLUME
+	else:
+		if BASE_TPL_VOLUME != BASE_TPL_VOLUME_DAY:
+			BASE_TPL_VOLUME = BASE_TPL_VOLUME_DAY
+			TG_VOLUME = BASE_TPL_VOLUME - 10
+			DEV_VOLUME = BASE_TPL_VOLUME + 10
+			TPL_VOLUME = BASE_TPL_VOLUME
+
 
 TG_MONITOR = 1
 
@@ -1987,6 +2007,9 @@ class Application(tk.Frame):
 
 	def on_every_second(self):
 		# ~ self.update()
+
+		set_volume()
+
 		if not self.ready:
 			self.after(REPINT_MSEC, self.on_every_second)
 			return
@@ -2010,6 +2033,7 @@ class Application(tk.Frame):
 			self.splash.close()
 			self.after(REPINT_MSEC, self.on_every_second)
 			return
+
 			# ~ self.master.deiconify()
 
 		# приведём title в порядок
@@ -2022,7 +2046,7 @@ class Application(tk.Frame):
 				self.lVideoTitle["text"]
 			)
 
-		title = self._base_title + self.end_title
+		title = self._base_title + self.end_title + f" {BASE_TPL_VOLUME}"
 		# ~ logd("self._base_title=%r, self.end_title=%r"
 		# ~ , self._base_title, self.end_title)
 		self.master.title(title)  # type:ignore[attr-defined]
