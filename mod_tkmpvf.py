@@ -215,7 +215,13 @@ DEV_VOLUME = BASE_TPL_VOLUME + 10
 TPL_VOLUME = BASE_TPL_VOLUME
 
 D_VOLUMES = {
-	60: ("failarmy", "hài vô đối", "holic unknowns", "funniest animals ever"),
+	60: (
+		"failarmy",
+		"hài vô đối",
+		"holic unknowns",
+		"funniest animals ever",
+		# ~ "странное местечко",
+	),
 	# ~ 80: ("kuplinov","marmok","sagaz"),
 }
 
