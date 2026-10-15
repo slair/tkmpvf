@@ -214,20 +214,11 @@ TG_VOLUME = BASE_TPL_VOLUME - 10
 DEV_VOLUME = BASE_TPL_VOLUME + 10
 TPL_VOLUME = BASE_TPL_VOLUME
 
-D_VOLUMES = {
-	60: (
-		"failarmy",
-		"hài vô đối",
-		"holic unknowns",
-		"funniest animals ever",
-		# ~ "странное местечко",
-	),
-	# ~ 80: ("kuplinov","marmok","sagaz"),
-}
+D_VOLUMES = dict()
 
 
 def set_volume():
-	global BASE_TPL_VOLUME, TG_VOLUME, DEV_VOLUME, TPL_VOLUME
+	global BASE_TPL_VOLUME, TG_VOLUME, DEV_VOLUME, TPL_VOLUME, D_VOLUMES
 	now = datetime.now().astimezone()
 	if now.hour > 21 or now.hour < 9:
 		if BASE_TPL_VOLUME != BASE_TPL_VOLUME_NIGHT:
@@ -241,6 +232,21 @@ def set_volume():
 			TG_VOLUME = BASE_TPL_VOLUME - 10
 			DEV_VOLUME = BASE_TPL_VOLUME + 10
 			TPL_VOLUME = BASE_TPL_VOLUME
+
+	D_VOLUMES = {
+		BASE_TPL_VOLUME - 30: (
+			"failarmy",
+			"hài vô đối",
+			"holic unknowns",
+			"funniest animals ever",
+		),
+		BASE_TPL_VOLUME - 20: (
+			"kuplinov",
+			"marmok",
+			"sagaz",
+		),
+		BASE_TPL_VOLUME - 10: ("alexander polyak",),
+	}
 
 
 TG_MONITOR = 1
@@ -1537,6 +1543,7 @@ def get_volume(fp: str) -> int:
 	for k, v in D_VOLUMES.items():
 		for item in v:
 			if item in bnfpl:
+				logd("%r in %r -> %r", item, bnfpl, k)
 				return k
 
 	if dnfpl.endswith("_tg all"):
