@@ -246,7 +246,7 @@ def set_volume():
 			"eugenesagaz",
 			"странное местечко",
 		),
-		BASE_TPL_VOLUME - 10: ("alexander polyak",),
+		BASE_TPL_VOLUME - 10: ("alexander polyak", "vert dider"),
 	}
 
 
