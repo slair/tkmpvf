@@ -220,7 +220,7 @@ D_VOLUMES = dict()
 def set_volume():
 	global BASE_TPL_VOLUME, TG_VOLUME, DEV_VOLUME, TPL_VOLUME, D_VOLUMES
 	now = datetime.now().astimezone()
-	if now.hour > 21 or now.hour < 9:
+	if now.hour >= 21 or now.hour < 9:
 		if BASE_TPL_VOLUME != BASE_TPL_VOLUME_NIGHT:
 			BASE_TPL_VOLUME = BASE_TPL_VOLUME_NIGHT
 			TG_VOLUME = BASE_TPL_VOLUME - 10
@@ -246,7 +246,11 @@ def set_volume():
 			"eugenesagaz",
 			"странное местечко",
 		),
-		BASE_TPL_VOLUME - 10: ("alexander polyak", "vert dider"),
+		BASE_TPL_VOLUME - 10: (
+			"alexander polyak",
+			"vert dider",
+			"доктор гнус",
+		),
 	}
 
 
