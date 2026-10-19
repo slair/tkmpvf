@@ -252,6 +252,7 @@ def set_volume():
 			"доктор гнус",
 			"береста",
 			"центральное телевидение",
+			"brain time",
 		),
 	}
 
@@ -306,50 +307,6 @@ OSD_BIN = shutil.which("osd")
 
 PID_FP = os.path.join(TMPDIR, os.path.basename(__file__) + ".pid")
 EXIT_THREAD = False
-
-
-"""~ def get_TPL_PLAY_CMD():
-	if WIN32:
-		res = " ".join(
-			(
-				PLAYER_BINARY,
-				"%s",
-				# ~ "--audio-channels=stereo",
-				# ~ "--audio-normalize-downmix=yes",
-				"--fs-screen=%s",
-				"--softvol-max=500",
-				f"--volume={TPL_VOLUME}",
-				"--speed=1.33" if FASTER_SPEED else "",
-				"--brightness=16" if ADD_BRIGHTNESS else "",
-				"--",
-				'"%s"',
-			)
-		)
-	elif LINUX:
-		res = " ".join(
-			(
-				PLAYER_BINARY,
-				"%s",
-				# ~ "--vo=gpu",
-				# ~ "--audio-channels=stereo",
-				# ~ "--audio-normalize-downmix=yes",
-				"--fs-screen=%s",
-				"--volume-max=500",
-				f"--volume={TPL_VOLUME}",
-				"--brightness=16" if ADD_BRIGHTNESS else "",
-				"--speed=1.33" if FASTER_SPEED else "",
-				f"--screen={TG_MONITOR}" if IS_FOLDER_TG else "",
-				f"--fs-screen={TG_MONITOR}" if IS_FOLDER_TG else "",
-				"--",
-				"'%s'",
-			)
-		)
-	else:
-		print_unsupported_platform_and_exit()
-		res = None
-
-	return res ~"""
-
 
 _DEBUG = True
 
@@ -520,6 +477,71 @@ if not mi_bin:
 run_talk_server()
 
 logd("IS_FOLDER_TG=%r", IS_FOLDER_TG)
+
+
+FP_MY_ITEMS = dict()
+NEED_RESTART = False
+
+
+def init_restart():
+	for name, module in sys.modules.items():
+		if hasattr(module, "__file__") and module.__file__:
+			fp = module.__file__
+			if WIN32:
+				if not fp.lower().startswith(r"c:\apps\python313"):
+					FP_MY_ITEMS[fp] = -1
+			else:
+				if not fp.startswith("/usr/lib"):
+					FP_MY_ITEMS[fp] = -1
+
+	for k in FP_MY_ITEMS:
+		FP_MY_ITEMS[k] = os.path.getmtime(k)  # type:ignore[assignment]
+		logd("k=%r, %r", k, FP_MY_ITEMS[k])
+
+
+def check_for_restart():
+	global NEED_RESTART
+	for k, v in FP_MY_ITEMS.items():
+		if os.path.getmtime(k) != v:
+			logd("< CHANGED %r", k)
+			NEED_RESTART = True
+			break
+
+	return NEED_RESTART
+
+
+def do_restart():
+	# Сбрасываем буферы вывода, чтобы ничего не потерялось при exec
+	sys.stdout.flush()
+	sys.stderr.flush()
+
+	if WIN32:
+		# На Windows os.execv НЕ заменяет процесс, а спавнит новый и оставляет старый.
+		# Поэтому запускаем отдельный процесс и убиваем текущий.
+		if getattr(sys, "frozen", False):
+			# Для собранного exe (PyInstaller и т.п.)
+			args = sys.argv
+		else:
+			# Обычный запуск: python script.py arg1 arg2...
+			args = [sys.executable] + sys.argv
+
+		subprocess.Popen(  # nosec
+			args,
+			cwd=os.getcwd(),
+			creationflags=subprocess.DETACHED_PROCESS  # type:ignore[attr-defined]
+			| subprocess.CREATE_NEW_PROCESS_GROUP,  # type:ignore[attr-defined]
+			close_fds=True,
+			stdin=subprocess.DEVNULL,
+			stdout=subprocess.DEVNULL,
+			stderr=subprocess.DEVNULL,
+		)
+		os._exit(0)  # Жёсткий выход, чтобы не сработали atexit / finally
+	else:
+		# Unix (Linux/macOS): execv заменяет текущий процесс, PID сохраняется.
+		if getattr(sys, "frozen", False):
+			os.execv(sys.executable, sys.argv)  # nosec
+		else:
+			os.execv(sys.executable, [sys.executable] + sys.argv)  # nosec
 
 
 def save_cache(fp: str, cache: dict, datasep: str = "|"):
@@ -1591,6 +1613,8 @@ class Application(tk.Frame):
 		super().__init__(master)
 		# ~ logd("sort_by=%r", sort_by)
 
+		init_restart()
+
 		self.tpc_hide = 0.0
 
 		# если сами задумаем выйти после последнего видоса
@@ -2154,6 +2178,9 @@ class Application(tk.Frame):
 				self._points_added += 1  # type:ignore[has-type]
 
 		elif self.my_state == VIDEO_RENAMED:
+			if check_for_restart():
+				do_restart()
+
 			if tpc() - self.my_state_start > TIME_TO_START:
 				# ~ if int(self.i_exit.get()) == 0:
 				self.get_videos(self.first_run)
