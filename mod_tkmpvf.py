@@ -250,6 +250,8 @@ def set_volume():
 			"alexander polyak",
 			"vert dider",
 			"доктор гнус",
+			"береста",
+			"центральное телевидение",
 		),
 	}
 
