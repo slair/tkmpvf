@@ -254,6 +254,7 @@ def set_volume():
 			"центральное телевидение",
 			"brain time",
 			"the люди",
+			"sndk",
 		),
 	}
 
