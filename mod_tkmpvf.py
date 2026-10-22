@@ -2018,8 +2018,6 @@ class Application(tk.Frame):
 		_cmd_arr.append(f"--fs-screen={fs_screen}")
 		_cmd_arr.append("--volume-max=500")
 
-		volume_ = get_volume(self.fp_video)
-		_cmd_arr.append(f"--volume={volume_}")
 
 		if ADD_BRIGHTNESS:
 			_cmd_arr.append("--brightness=16")
@@ -2027,6 +2025,11 @@ class Application(tk.Frame):
 			_cmd_arr.append("--speed=1.33")
 		if IS_FOLDER_TG:
 			_cmd_arr.append(f"--screen={TG_MONITOR}")
+			_cmd_arr.append(f"--volume={TG_VOLUME}")
+		else:
+			volume_ = get_volume(self.fp_video)
+			_cmd_arr.append(f"--volume={volume_}")
+		
 		_cmd_arr.append("--")
 		_cmd_arr.append(self.fp_video)
 		logd("_cmd_arr=%r", _cmd_arr)
