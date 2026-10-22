@@ -80,7 +80,8 @@ DEFAULT_FONT_FAMILY = "Ubuntu Condensed"
 DEFAULT_FONT = (DEFAULT_FONT_FAMILY, DEFAULT_FONT_SIZE)
 CHANGE_FOCUS = False
 EXIT_CODE = -1
-
+STOP_SCREENSAVER = True
+SCREENSAVER_INTERVAL = 60.0
 ACT_WINDOW = None
 first_video = True
 FPL_VIDEO = None
@@ -1584,6 +1585,17 @@ def get_volume(fp: str) -> int:
 	return TPL_VOLUME
 
 
+def prevent_screensaver():
+	# ~ "Если не хотите тащить в проект C-расширения и D-Bus библиотеки, самый дешёвый вариант без изменения кода — просто вызвать xset s reset вместо xdg-screensaver reset. xset — это крошечная C-программа, которая делает один системный вызов, в отличие от жирного bash-скрипта xdg-screensaver."
+	subprocess.run(  # nosec
+		["/usr/bin/xdg-screensaver", "reset"],
+		stdout=subprocess.DEVNULL,
+		stderr=subprocess.DEVNULL,
+		check=False,
+		# close_fds=True по умолчанию, это хорошо
+	)
+
+
 class Application(tk.Frame):
 	my_state = None
 	player_pid = None
@@ -1618,6 +1630,8 @@ class Application(tk.Frame):
 		init_restart()
 
 		self.tpc_hide = 0.0
+
+		self.last_prevent_screensaver_tpc = 0.0
 
 		# если сами задумаем выйти после последнего видоса
 		self.exit_by_self = False
@@ -2057,6 +2071,13 @@ class Application(tk.Frame):
 
 		set_volume()
 
+		if STOP_SCREENSAVER:
+			if (
+				tpc() - self.last_prevent_screensaver_tpc
+			) > SCREENSAVER_INTERVAL:
+				prevent_screensaver()
+				self.last_prevent_screensaver_tpc = tpc()
+
 		if not self.ready:
 			self.after(REPINT_MSEC, self.on_every_second)
 			return
@@ -2262,6 +2283,9 @@ class Application(tk.Frame):
 		if e.keysym == "Escape":
 			logd("\n! Нажали Escape. Выход.")
 			self.do_close_master()
+		elif e.keysym == "F5":
+			self.i_stop_ss.set(not self.i_stop_ss.get())
+			self.cb_stop_ss_changed()
 		elif e.keysym == "F8":
 			self.i_bring_to_front.set(not self.i_bring_to_front.get())
 		elif e.keysym == "F9":
@@ -2652,7 +2676,27 @@ class Application(tk.Frame):
 			highlightthickness=0,
 			font=DEFAULT_FONT,
 		)
-		self.b_skip.pack(side="left", fill="y", expand=False, pady=4, padx=4)
+		# ~ self.b_skip.pack(side="left", fill="y", expand=False, pady=4, padx=4)
+
+		self.i_stop_ss = tk.IntVar(
+			value=int(config["global"].get("stop_screensaver", "1"))
+		)
+
+		self.cb_stop_ss = tk.Checkbutton(
+			self.f_video,
+			text=_("Stop ScreenSaver (F5)"),
+			variable=self.i_stop_ss,
+			onvalue=1,
+			offvalue=0,
+			bd=1,
+			relief="raised",
+			highlightthickness=0,
+			command=self.cb_stop_ss_changed,
+			font=DEFAULT_FONT,
+		)
+		self.cb_stop_ss.pack(
+			side="left", fill="y", padx=4, pady=4, ipady=4, ipadx=4
+		)
 
 		self.i_fullscreen = tk.IntVar(
 			value=int(config["global"].get("fullscreen", "0"))
@@ -2965,6 +3009,17 @@ class Application(tk.Frame):
 				self.send_key_to_player("F")
 			else:
 				self.send_key_to_player("G")
+
+	def cb_stop_ss_changed(self):
+		self.need_hide = False
+		value = self.i_stop_ss.get()
+		config_changed = change_config(
+			"global", "stop_screensaver", str(value)
+		)
+		if config_changed:
+			global STOP_SCREENSAVER
+			STOP_SCREENSAVER = True if value == 1 else False
+			logd("value=%r, STOP_SCREENSAVER=%r", value, STOP_SCREENSAVER)
 
 	def cb_bring_to_front_changed(self):
 		self.need_hide = False
