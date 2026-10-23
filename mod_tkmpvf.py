@@ -2051,6 +2051,9 @@ class Application(tk.Frame):
 		self.player_pid = po.pid  # type:ignore[assignment]
 
 		on_video_started(self.player_pid, self.i_fullscreen.get())
+		self.hover = False
+		self.need_hide = True
+		self.after(500, self.go_hide)
 
 	def bring_to_front(self, force=False):
 		if self.i_bring_to_front.get() == 1 or force:
