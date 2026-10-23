@@ -1338,10 +1338,10 @@ def delay_send_keys(
 def focus_store():
 	global ACT_WINDOW
 	ACT_WINDOW, WMCLASS, WMNAME = None, None, None
-	gaw = get_active_window()
-	logd("gaw=%r", gaw)
-	if gaw:
-		ACT_WINDOW = gaw
+	# ~ gaw = get_active_window()
+	# ~ logd("gaw=%r", gaw)
+	# ~ if gaw:
+		# ~ ACT_WINDOW = gaw
 		
 	if CHANGE_FOCUS:
 		gaw = get_active_window()
@@ -1689,7 +1689,7 @@ class Application(tk.Frame):
 		self.master.bind("<Motion>", self.on_mouse_move)
 
 		self.master.focus_set()
-		self.b_skip.focus_set()
+		self.b_pause.focus_set()
 
 		self.my_state = VIDEO_RENAMED
 		self.my_state_start = 1
@@ -2064,7 +2064,7 @@ class Application(tk.Frame):
 		if self.i_bring_to_front.get() == 1 or force:
 			focus_store()
 			self.master.state("normal")  # type:ignore[attr-defined]
-			self.b_skip.focus_force()
+			self.b_pause.focus_force()
 			self.master.lift()
 			self.master.focus_force()
 			self.master.attributes("-topmost", True)
@@ -2698,7 +2698,7 @@ class Application(tk.Frame):
 			highlightthickness=0,
 			font=DEFAULT_FONT,
 		)
-		# ~ self.b_skip.pack(side="left", fill="y", expand=False, pady=4, padx=4)
+		self.b_skip.pack(side="left", fill="y", expand=False, pady=4, padx=4)
 
 		self.i_stop_ss = tk.IntVar(
 			value=int(config["global"].get("stop_screensaver", "1"))
