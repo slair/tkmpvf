@@ -1338,6 +1338,11 @@ def delay_send_keys(
 def focus_store():
 	global ACT_WINDOW
 	ACT_WINDOW, WMCLASS, WMNAME = None, None, None
+	gaw = get_active_window()
+	logd("gaw=%r", gaw)
+	if gaw:
+		ACT_WINDOW = gaw
+		
 	if CHANGE_FOCUS:
 		gaw = get_active_window()
 		if gaw:
@@ -2061,6 +2066,11 @@ class Application(tk.Frame):
 			self.master.state("normal")  # type:ignore[attr-defined]
 			self.b_skip.focus_force()
 			self.master.lift()
+			self.master.focus_force()
+			self.master.attributes("-topmost", True)
+			self.master.after(
+				100, lambda: self.master.attributes("-topmost", False)
+			)
 			# ~ self.master.after_idle(self.master.attributes, '-topmost', False)
 
 	def change_label_height(self, label, min_height, max_height):
