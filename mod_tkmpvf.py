@@ -212,6 +212,8 @@ BASE_TPL_VOLUME_NIGHT = 80
 BASE_TPL_VOLUME = BASE_TPL_VOLUME_DAY
 
 TG_VOLUME = BASE_TPL_VOLUME - 10
+GAMES_VOLUME = BASE_TPL_VOLUME - 10
+NEWS_VOLUME = BASE_TPL_VOLUME - 10
 DEV_VOLUME = BASE_TPL_VOLUME + 10
 TPL_VOLUME = BASE_TPL_VOLUME
 
@@ -1582,6 +1584,12 @@ def get_volume(fp: str) -> int:
 		return TG_VOLUME
 	if dnfpl.endswith("_dev"):
 		return DEV_VOLUME
+	if dnfpl.endswith("_games"):
+		return GAMES_VOLUME
+	if dnfpl.endswith("_news"):
+		return NEWS_VOLUME
+	if dnfpl.endswith("_dev"):
+		return DEV_VOLUME
 	return TPL_VOLUME
 
 
@@ -2018,18 +2026,16 @@ class Application(tk.Frame):
 		_cmd_arr.append(f"--fs-screen={fs_screen}")
 		_cmd_arr.append("--volume-max=500")
 
-
 		if ADD_BRIGHTNESS:
 			_cmd_arr.append("--brightness=16")
 		if FASTER_SPEED:
 			_cmd_arr.append("--speed=1.33")
 		if IS_FOLDER_TG:
 			_cmd_arr.append(f"--screen={TG_MONITOR}")
-			_cmd_arr.append(f"--volume={TG_VOLUME}")
-		else:
-			volume_ = get_volume(self.fp_video)
-			_cmd_arr.append(f"--volume={volume_}")
-		
+
+		volume_ = get_volume(self.fp_video)
+		_cmd_arr.append(f"--volume={volume_}")
+
 		_cmd_arr.append("--")
 		_cmd_arr.append(self.fp_video)
 		logd("_cmd_arr=%r", _cmd_arr)
