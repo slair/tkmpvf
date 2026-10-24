@@ -258,6 +258,7 @@ def set_volume():
 			"brain time",
 			"the люди",
 			"sndk",
+			"большое путешествие",
 		),
 	}
 
