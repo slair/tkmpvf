@@ -244,7 +244,7 @@ def set_volume():
 			"·funniest animals ever·",
 		),
 		BASE_TPL_VOLUME - 20: (
-			"·kuplinov·",
+			"·kuplinov ► play·",
 			"·marmok·",
 			"·eugenesagaz·",
 			"·странное местечко·",
