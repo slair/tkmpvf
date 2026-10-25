@@ -86,7 +86,7 @@ ACT_WINDOW = None
 first_video = True
 FPL_VIDEO = None
 SOUND_DEVICE = 2
-SD_VOLUME = 85
+SD_VOLUME = 75
 
 hide_cooldown = 4.0  # секунды
 
@@ -246,12 +246,12 @@ def set_volume():
 			"·funniest animals ever·",
 		),
 		BASE_TPL_VOLUME - 20: (
-			"·kuplinov ► play·",
 			"·marmok·",
 			"·eugenesagaz·",
 			"·странное местечко·",
 		),
 		BASE_TPL_VOLUME - 10: (
+			"·kuplinov ► play·",
 			"·alexander polyak·",
 			"·vert dider·",
 			"·доктор гнус·",
