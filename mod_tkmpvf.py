@@ -85,6 +85,8 @@ SCREENSAVER_INTERVAL = 60.0
 ACT_WINDOW = None
 first_video = True
 FPL_VIDEO = None
+SOUND_DEVICE = 2
+SD_VOLUME = 85
 
 hide_cooldown = 4.0  # секунды
 
@@ -1170,7 +1172,9 @@ class Splash(tk.Frame):
 		if e.keysym == "Escape":
 			self.working = False
 			htk.random_disappearance(self.master)
-			say_with_queue("Гасим проигрыватель")
+			say_with_queue(
+				"Гасим проигрыватель", ad=SOUND_DEVICE, mpv_volume=SD_VOLUME
+			)
 			snd_play_mp_riat("squeezing-toy.wav")
 			self.master.destroy()
 
@@ -1349,8 +1353,8 @@ def focus_store():
 	# ~ gaw = get_active_window()
 	# ~ logd("gaw=%r", gaw)
 	# ~ if gaw:
-		# ~ ACT_WINDOW = gaw
-		
+	# ~ ACT_WINDOW = gaw
+
 	if CHANGE_FOCUS:
 		gaw = get_active_window()
 		if gaw:
@@ -1917,7 +1921,11 @@ class Application(tk.Frame):
 		seen_files = glob.glob("*.seen")
 		if seen_files:
 			if DONT_DELETE:
-				say_with_queue("Не буду удалять файлы из этого каталога")
+				say_with_queue(
+					"Не буду удалять файлы из этого каталога",
+					ad=SOUND_DEVICE,
+					mpv_volume=SD_VOLUME,
+				)
 				return
 
 			# ~ if int(self.i_delseen.get()) == 1 or ask_centered(
@@ -1946,7 +1954,9 @@ class Application(tk.Frame):
 		htk.random_disappearance(self.master)
 		self.splash.close()
 		snd_play_mp_riat("squeezing-toy.wav")
-		say_with_queue("Гасим проигрыватель")
+		say_with_queue(
+			"Гасим проигрыватель", ad=SOUND_DEVICE, mpv_volume=SD_VOLUME
+		)
 		os.system("report-videos >/dev/null 2>&1 &")  # nosec
 		global EXIT_CODE
 		EXIT_CODE = len(self.videos)
@@ -2075,9 +2085,10 @@ class Application(tk.Frame):
 			self.b_pause.focus_force()
 			self.master.lift()
 			self.master.focus_force()
-			self.master.attributes("-topmost", True)
+			self.master.attributes("-topmost", True)  # type:ignore[attr-defined]
 			self.master.after(
-				100, lambda: self.master.attributes("-topmost", False)
+				100,
+				lambda: self.master.attributes("-topmost", False),  # type:ignore[attr-defined]
 			)
 			# ~ self.master.after_idle(self.master.attributes, '-topmost', False)
 
@@ -2272,7 +2283,7 @@ class Application(tk.Frame):
 					# ~ os.system("report-videos >/dev/null 2>&1 &")  # nosec
 					self.osd_launched = True
 
-				snd_play_queue(SND_CLICK, mpv_volume=75)
+				snd_play_queue(SND_CLICK, mpv_volume=75, ad=SOUND_DEVICE)
 				state_duration = tpc() - self.my_state_start
 				self.lVideoTitle["text"] = "выход через %.1f" % (
 					TIME_TO_EXIT - state_duration
@@ -2280,7 +2291,7 @@ class Application(tk.Frame):
 
 				self.lStatus["text"] = "Нет video"
 				if state_duration > TIME_TO_EXIT:
-					snd_play_queue(SND_DRUM, mpv_volume=75)
+					snd_play_queue(SND_DRUM, mpv_volume=75, ad=SOUND_DEVICE)
 					# ~ self.master.destroy()
 					self.do_close_master()
 
@@ -2336,6 +2347,8 @@ class Application(tk.Frame):
 						say_with_queue(
 							"у вас Кнопка залипла. Завершаю работу",
 							narrator=random.choice(narrators),  # nosec
+							ad=SOUND_DEVICE,
+							mpv_volume=SD_VOLUME,
 						)
 						self.not_announced = False
 					self.i_exit.set(True)
@@ -2353,9 +2366,19 @@ class Application(tk.Frame):
 		if count_videos > 0:
 			suffix = random.choice(ann_suffixes)  # nosec
 			numsuf = num2text(count_videos, (suffix, "m"))  # .split()
-			say_with_queue(numsuf, narrator=narrator)
+			say_with_queue(
+				numsuf,
+				narrator=narrator,
+				ad=SOUND_DEVICE,
+				mpv_volume=SD_VOLUME,
+			)
 		else:
-			say_with_queue("А здесь нет вид^осов", narrator=narrator)
+			say_with_queue(
+				"А здесь нет вид^осов",
+				narrator=narrator,
+				ad=SOUND_DEVICE,
+				mpv_volume=SD_VOLUME,
+			)
 			# ~ say_mp_riat(
 			# ~ "А здесь нет вид^осов",
 			# ~ narrator=random.choice(narrators),  # nosec
@@ -2464,7 +2487,11 @@ class Application(tk.Frame):
 						self.update_splash()
 
 					if not self.splash.working and self.first_run:
-						say_with_queue("Гасим проигрыватель")
+						say_with_queue(
+							"Гасим проигрыватель",
+							ad=SOUND_DEVICE,
+							mpv_volume=SD_VOLUME,
+						)
 						snd_play_mp_riat("squeezing-toy.wav")
 						self.master.destroy()
 						EXIT(16)
@@ -2598,7 +2625,12 @@ class Application(tk.Frame):
 			narrator = random.choice(narrators)  # nosec
 			total_duration_str = td2words(timedelta(seconds=total_duration))
 			self.update_splash()
-			say_with_queue(total_duration_str, narrator=narrator)
+			say_with_queue(
+				total_duration_str,
+				narrator=narrator,
+				ad=SOUND_DEVICE,
+				mpv_volume=SD_VOLUME,
+			)
 
 	def update_splash(self):
 		if self.splash.working:
@@ -3174,12 +3206,15 @@ if __name__ == "__main__":
 
 	if DONT_DELETE:
 		say_with_queue(
-			"Не буду удалять файлы из этого каталога", mpv_volume=100
+			"Не буду удалять файлы из этого каталога",
+			mpv_volume=100,
+			ad=SOUND_DEVICE,
 		)
 	else:
 		say_with_queue(
 			"Просмотренные файлы будут удалены из этого каталога",
 			mpv_volume=100,
+			ad=SOUND_DEVICE,
 		)
 
 	main()
