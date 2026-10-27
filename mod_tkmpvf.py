@@ -239,11 +239,12 @@ def set_volume():
 			TPL_VOLUME = BASE_TPL_VOLUME
 
 	D_VOLUMES = {
-		BASE_TPL_VOLUME - 30: (
+		BASE_TPL_VOLUME - 25: (
 			"·failarmy·",
 			"·hài vô đối·",
 			"·holic unknowns·",
 			"·funniest animals ever·",
+			"·unusualvideos·",
 		),
 		BASE_TPL_VOLUME - 20: (
 			"·marmok·",
