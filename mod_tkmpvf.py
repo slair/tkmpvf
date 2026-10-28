@@ -269,6 +269,7 @@ def set_volume():
 			"·japan source·",
 			"·kreosan ·",
 			"·kugas travel·",
+			"·зомби чез·",
 		),
 	}
 
