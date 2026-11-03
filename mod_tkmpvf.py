@@ -270,6 +270,7 @@ def set_volume():
 			"·kreosan ·",
 			"·kugas travel·",
 			"·зомби чез·",
+			"·greengrass·",
 		),
 	}
 
@@ -2244,7 +2245,7 @@ class Application(tk.Frame):
 				self._points_added += 1  # type:ignore[has-type]
 
 		elif self.my_state == VIDEO_RENAMED:
-			if check_for_restart():
+			if check_for_restart() and not self.need_to_exit:
 				do_restart()
 
 			if tpc() - self.my_state_start > TIME_TO_START:
