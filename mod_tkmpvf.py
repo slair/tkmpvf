@@ -2215,21 +2215,26 @@ class Application(tk.Frame):
 						color_bg_renamed = COLOR_RENAMED_BG_FAILED
 
 					# fp: переименовывает vtt файлы
-					fp_name, ext = os.path.splitext(self.fp_video)
-					vtt_fp = fp_name + ".ru.vtt"
-					if os.path.exists(vtt_fp):
-						try:
-							os.rename(vtt_fp, vtt_fp + ".seen")
-						except PermissionError:
-							rename_status = (
-								"<vtt не удалось переименовать>\nнет прав"
-							)
-							color_fg_renamed = COLOR_RENAMED_FG_FAILED
-							color_bg_renamed = COLOR_RENAMED_BG_FAILED
-						except FileExistsError:
-							rename_status = "<vtt не удалось переименовать>\nтакой файл уже есть"
-							color_fg_renamed = COLOR_RENAMED_FG_FAILED
-							color_bg_renamed = COLOR_RENAMED_BG_FAILED
+					for st_ext in (".ru.vtt", ".ru.srt"):
+						fp_name, ext = os.path.splitext(self.fp_video)
+						vtt_fp = fp_name + st_ext
+						if os.path.exists(vtt_fp):
+							try:
+								os.rename(vtt_fp, vtt_fp + ".seen")
+							except PermissionError:
+								rename_status = (
+									"<субтитры не удалось переименовать>\n"
+									"нет прав"
+								)
+								color_fg_renamed = COLOR_RENAMED_FG_FAILED
+								color_bg_renamed = COLOR_RENAMED_BG_FAILED
+							except FileExistsError:
+								rename_status = (
+									"<субтитры не удалось "
+									"переименовать>\nтакой файл уже есть"
+								)
+								color_fg_renamed = COLOR_RENAMED_FG_FAILED
+								color_bg_renamed = COLOR_RENAMED_BG_FAILED
 
 					self.lVideoTitle["text"] = rename_status
 					self.lVideoTitle["fg"] = color_fg_renamed
