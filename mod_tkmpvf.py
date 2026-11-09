@@ -271,6 +271,7 @@ def set_volume():
 			"·kugas travel·",
 			"·зомби чез·",
 			"·greengrass·",
+			"·droider·",
 		),
 	}
 
