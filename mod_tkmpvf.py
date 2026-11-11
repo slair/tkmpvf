@@ -272,6 +272,7 @@ def set_volume():
 			"·зомби чез·",
 			"·greengrass·",
 			"·droider·",
+			"·shorts [короткометражки] deeafilm·",
 		),
 	}
 
