@@ -2750,9 +2750,11 @@ class Application(tk.Frame):
 		)
 		self.b_skip.pack(side="left", fill="y", expand=False, pady=4, padx=4)
 
-		self.i_stop_ss = tk.IntVar(
-			value=int(config["global"].get("stop_screensaver", "1"))
-		)
+		# ~ self.i_stop_ss = tk.IntVar(
+		# ~ value=int(config["global"].get("stop_screensaver", "1"))
+		# ~ )
+
+		self.i_stop_ss = tk.IntVar(value=1)
 
 		self.cb_stop_ss = tk.Checkbutton(
 			self.f_video,
