@@ -1595,14 +1595,16 @@ def ask_centered(title, message):
 def get_volume(fp: str) -> int:
 	fpl = fp.lower()
 	bnfpl = os.path.basename(fpl)
-	dnfpl = os.path.dirname(fpl)
+	dnfpl = os.path.realpath(os.path.dirname(fpl))
 	for k, v in D_VOLUMES.items():
 		for item in v:
 			if item in bnfpl:
 				logd("%r in %r -> %r", item, bnfpl, k)
 				return k
 
+	logd("dnfpl=%r", dnfpl)
 	if dnfpl.endswith("_tg all"):
+		logd("return TG_VOLUME")
 		return TG_VOLUME
 	if dnfpl.endswith("_dev"):
 		return DEV_VOLUME
@@ -1612,6 +1614,7 @@ def get_volume(fp: str) -> int:
 		return NEWS_VOLUME
 	if dnfpl.endswith("_dev"):
 		return DEV_VOLUME
+	logd("return TPL_VOLUME")
 	return TPL_VOLUME
 
 
