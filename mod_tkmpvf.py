@@ -273,6 +273,7 @@ def set_volume():
 			"·greengrass·",
 			"·droider·",
 			"·shorts [короткометражки] deeafilm·",
+			"·крайм архив 🔍·",
 		),
 	}
 
